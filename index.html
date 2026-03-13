@@ -1,0 +1,2939 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>InvoicePro — GST Invoice Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+[data-theme="dark"]{
+  --bg:#070B17;--surface:#0C1120;--card:#111827;--card2:#161F34;--card3:#1C2740;
+  --border:#1E2A42;--border2:#263350;--border3:#2E3E62;
+  --primary:#3B82F6;--primary2:#60A5FA;--primary-dark:#1D4ED8;--primary-bg:rgba(59,130,246,0.12);
+  --gold:#F59E0B;--gold2:#FCD34D;--gold-bg:rgba(245,158,11,0.1);--gold-bg2:rgba(245,158,11,0.18);
+  --text:#E8EEFF;--text2:#7A8EB8;--text3:#3E5070;
+  --green:#10B981;--red:#EF4444;--blue:#3B82F6;--cyan:#06B6D4;
+  --shadow:0 10px 48px rgba(0,0,0,0.7);--shadow2:0 4px 24px rgba(0,0,0,0.5);
+  --glass:rgba(12,17,32,0.85);
+  --glow-blue:0 0 24px rgba(59,130,246,0.15);--glow-gold:0 0 24px rgba(245,158,11,0.12);
+}
+[data-theme="light"]{
+  --bg:#EEF2FF;--surface:#FFFFFF;--card:#FFFFFF;--card2:#F8FAFF;--card3:#F1F5FF;
+  --border:#E2E8F4;--border2:#D1D9F0;--border3:#C4CFEA;
+  --primary:#2563EB;--primary2:#3B82F6;--primary-dark:#1D4ED8;--primary-bg:rgba(37,99,235,0.08);
+  --gold:#D97706;--gold2:#F59E0B;--gold-bg:rgba(217,119,6,0.08);--gold-bg2:rgba(217,119,6,0.15);
+  --text:#0F172A;--text2:#475569;--text3:#94A3B8;
+  --green:#059669;--red:#DC2626;--blue:#2563EB;--cyan:#0891B2;
+  --shadow:0 4px 24px rgba(30,50,120,0.12);--shadow2:0 2px 12px rgba(30,50,120,0.08);
+  --glass:rgba(255,255,255,0.9);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;overflow-x:hidden;transition:background 0.3s,color 0.3s}
+body::-webkit-scrollbar{width:6px}
+body::-webkit-scrollbar-track{background:var(--bg)}
+body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
+
+/* LOGIN */
+.login-bg{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden;background:var(--bg)}
+[data-theme="dark"] .login-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(59,130,246,0.15) 0%,transparent 70%)}
+[data-theme="dark"] .login-bg::after{content:'';position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(245,158,11,0.08),transparent);bottom:-100px;right:-100px;border-radius:50%}
+[data-theme="light"] .login-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(37,99,235,0.1) 0%,transparent 70%)}
+.login-card{background:var(--card);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:420px;padding:40px;box-shadow:var(--shadow);position:relative;z-index:1;animation:slideUp 0.4s ease}
+.login-logo{font-family:'Sora',serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
+.login-sub{color:var(--text3);font-size:13px;margin-bottom:32px}
+.login-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
+.login-desc{font-size:13px;color:var(--text2);margin-bottom:24px}
+
+/* HEADER */
+.app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow2)}
+[data-theme="dark"] .app-header{background:linear-gradient(180deg,rgba(12,17,32,0.98),rgba(10,15,28,0.95));border-bottom-color:#1E2A42;box-shadow:0 1px 0 rgba(59,130,246,0.08),0 4px 24px rgba(0,0,0,0.5)}
+.app-brand{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.app-brand-sub{font-size:11px;color:var(--text3);font-weight:400;font-family:'Plus Jakarta Sans',sans-serif;margin-left:8px;letter-spacing:0}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+.mob-header-right{display:none!important} /* hidden on desktop — shown only on mobile via media query */
+.user-pill{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--card2);border:1px solid var(--border);border-radius:50px;font-size:12px;color:var(--text2)}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white}
+
+/* LAYOUT */
+.app-body{padding:24px;max-width:1440px;margin:0 auto}
+.two-col{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
+@media(max-width:1100px){.two-col{grid-template-columns:1fr}}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;white-space:nowrap;letter-spacing:0.2px}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 4px 14px rgba(59,130,246,0.35)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,0.45)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#D97706);color:#fff;box-shadow:0 4px 14px rgba(245,158,11,0.3)}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,158,11,0.4)}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-outline:hover{background:var(--card2);color:var(--text);border-color:var(--border3)}
+.btn-outline-primary{background:var(--primary-bg);color:var(--primary2);border:1px solid rgba(59,130,246,0.25)}
+.btn-outline-primary:hover{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.4)}
+.btn-outline-gold{background:var(--gold-bg);color:var(--gold);border:1px solid rgba(245,158,11,0.25)}
+.btn-outline-gold:hover{background:var(--gold-bg2)}
+.btn-danger{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.25)}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+.btn-success{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.25)}
+.btn-success:hover{background:rgba(16,185,129,0.2)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:5px 10px;font-size:11px}
+.btn-icon{padding:8px;width:34px;height:34px;justify-content:center;border-radius:8px}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important}
+
+/* THEME TOGGLE */
+.theme-toggle{width:52px;height:28px;border-radius:14px;background:var(--card2);border:1px solid var(--border2);cursor:pointer;position:relative;transition:all 0.3s}
+.theme-toggle-knob{position:absolute;top:3px;width:20px;height:20px;border-radius:50%;transition:all 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px}
+[data-theme="dark"] .theme-toggle-knob{left:3px;background:var(--primary)}
+[data-theme="light"] .theme-toggle-knob{left:25px;background:var(--gold)}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color 0.2s}
+.card:hover{border-color:var(--border2)}
+[data-theme="dark"] .card{box-shadow:0 2px 12px rgba(0,0,0,0.3)}
+[data-theme="dark"] .card:hover{border-color:var(--border3);box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+.card-sm{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px}
+
+/* SECTION TITLE */
+.section-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title .dot{width:6px;height:6px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gold));flex-shrink:0}
+
+/* INPUTS */
+.field{margin-bottom:14px}
+.field-label{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px}
+.field-input{width:100%;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;outline:none;transition:all 0.2s;font-size:13px}
+.field-input:focus{border-color:var(--primary);background:var(--surface);box-shadow:0 0 0 3px var(--primary-bg)}
+[data-theme="dark"] .field-input{background:#0F172A;border-color:#1E2A42}
+[data-theme="dark"] .field-input:focus{background:#111827;box-shadow:0 0 0 3px rgba(59,130,246,0.18)}
+.field-input::placeholder{color:var(--text3)}
+textarea.field-input{resize:vertical;min-height:72px}
+select.field-input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238B9CC4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+@media(max-width:1024px){
+  /* Switch to hamburger menu on tablets and below */
+  .header-right{display:none!important}
+  .mob-header-right{display:flex!important}
+  .app-header{padding:0 16px;height:56px}
+  .app-brand-sub{display:none}
+}
+@media(max-width:768px){
+  /* Grids — g4 becomes 2×2, g3 becomes 1+2 fallback, g2 stays 2col */
+  .g3,.g4{grid-template-columns:1fr 1fr}
+  /* Only collapse to single column when explicitly needed */
+  .g3.stack,.g4.stack,.g2.stack{grid-template-columns:1fr}
+  /* Header */
+  .app-header{padding:0 14px;height:52px}
+  .app-brand{font-size:17px}
+  /* Body */
+  .app-body{padding:12px 10px}
+  .card{padding:14px 12px}
+  /* Invoice header - prevent wrapping */
+  .inv-header-left{min-width:0;flex:1;overflow:hidden}
+  .inv-title{font-size:20px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .inv-co-row{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px!important}
+  .inv-no-badge{white-space:nowrap;font-size:11px!important;padding:5px 8px!important;max-width:140px;text-align:center}
+  /* Modals */
+  .modal{border-radius:12px;margin:8px;max-height:96vh}
+  .modal-hdr{padding:12px 16px}
+  .modal-body{padding:12px 14px}
+  .modal-ftr{padding:10px 14px}
+  /* Modal inner grids — keep g2 as 2 cols, collapse g3/g4 to 2 cols */
+  .modal .g3,.modal .g4{grid-template-columns:1fr 1fr}
+  .modal .g2{grid-template-columns:1fr 1fr}
+  /* But full-width collapse for very small content */
+  .modal .g3.full,.modal .g4.full,.modal .g2.full{grid-template-columns:1fr}
+  /* History / tables */
+  .hist-row{flex-wrap:wrap;gap:6px}
+  .table-wrap{overflow-x:auto}
+  .ptable{min-width:700px}
+  .two-col{grid-template-columns:1fr}
+  /* Misc */
+  .tax-box{font-size:12px}
+  .btn-sm{padding:5px 10px;font-size:11px}
+  .stat-card{padding:12px 10px}
+  .stat-val{font-size:18px}
+  .admin-tabs{flex-wrap:wrap;gap:4px}
+  .admin-tab{font-size:11px;padding:6px 10px}
+  .dt-wrap{overflow-x:auto}
+  .dt{min-width:560px}
+  /* Overlay drawer shows */
+  .mob-drawer{display:flex!important}
+}
+/* Mobile drawer — hidden on desktop */
+.mob-drawer{display:none;position:fixed;inset:0;z-index:2000;flex-direction:column;}
+.mob-drawer-backdrop{flex:1;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)}
+.mob-drawer-panel{background:var(--card);border-top:2px solid var(--border2);padding:16px;max-height:85vh;overflow-y:auto;animation:slideUp 0.25s}
+.mob-nav-item{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);transition:all 0.15s;border:1px solid transparent}
+.mob-nav-item:hover,.mob-nav-item:active{background:var(--card2);border-color:var(--border2);color:var(--text)}
+.mob-nav-item.gold{color:var(--gold)}
+.mob-nav-item.blue{color:var(--primary2)}
+.mob-nav-item.green{color:var(--green)}
+.mob-nav-sep{height:1px;background:var(--border);margin:6px 0}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:16px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow);animation:slideUp 0.3s}
+.modal::-webkit-scrollbar{width:4px}
+.modal::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.modal-hdr{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:2}
+.modal-title{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:var(--text)}
+.modal-body{padding:24px}
+.modal-ftr{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--card);z-index:2}
+.close-btn{background:none;border:none;color:var(--text3);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;transition:all 0.2s;font-size:18px}
+.close-btn:hover{background:var(--card2);color:var(--text)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;letter-spacing:0.4px}
+.badge-primary{background:var(--primary-bg);color:var(--primary2)}
+.badge-gold{background:var(--gold-bg2);color:var(--gold)}
+.badge-green{background:rgba(16,185,129,0.1);color:var(--green)}
+.badge-red{background:rgba(239,68,68,0.1);color:var(--red)}
+.badge-blue{background:rgba(96,165,250,0.1);color:#60A5FA}
+
+/* PRODUCT TABLE */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+.ptable{width:100%;border-collapse:collapse;min-width:900px}
+.ptable th{background:var(--card2);border-bottom:2px solid var(--border2);padding:10px 8px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px;white-space:nowrap}
+.ptable th.r{text-align:right}
+.ptable td{border-bottom:1px solid var(--border);padding:5px 6px;vertical-align:middle}
+.ptable tr:last-child td{border-bottom:none}
+.ptable tr:hover td{background:rgba(59,130,246,0.03)}
+.p-input{width:100%;background:transparent;border:none;color:var(--text);padding:4px 6px;outline:none;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif}
+.p-input:focus{background:var(--card2);border-radius:5px}
+.p-input::placeholder{color:var(--text3)}
+.p-input.r{text-align:right}
+.p-input.gold{color:var(--gold);font-weight:600}
+.p-num{text-align:right;font-size:13px;color:var(--text2);padding:4px 8px;white-space:nowrap}
+.p-total{text-align:right;font-size:13px;font-weight:700;color:var(--text);padding:4px 8px;white-space:nowrap}
+.p-sno{text-align:center;font-size:11px;color:var(--text3);width:28px}
+
+/* HSN DROPDOWN */
+.hsn-wrap{position:relative}
+.hsn-drop{position:absolute;width:380px;background:var(--card);border:1.5px solid var(--border2);border-radius:10px;box-shadow:var(--shadow);z-index:99999;max-height:300px;overflow-y:auto}
+.hsn-drop::-webkit-scrollbar{width:4px}
+.hsn-drop::-webkit-scrollbar-thumb{background:var(--border2)}
+.hsn-opt{padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s}
+.hsn-opt:hover{background:var(--primary-bg)}
+.hsn-opt:last-child{border-bottom:none}
+.hsn-code{font-weight:700;color:var(--gold);font-size:13px;font-family:monospace}
+.hsn-desc{color:var(--text2);font-size:11px;margin-top:2px}
+
+/* TAX SUMMARY */
+.tax-box{background:var(--card2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tax-row{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid var(--border);font-size:13px}
+.tax-row:last-child{border-bottom:none}
+.tax-row.total-row{background:linear-gradient(135deg,var(--primary-bg),var(--gold-bg));border-top:2px solid var(--border2)}
+.tax-label{color:var(--text2)}
+.tax-val{font-weight:700;color:var(--text)}
+.tax-row.total-row .tax-label{color:var(--text);font-weight:700}
+.tax-row.total-row .tax-val{color:var(--primary2);font-size:16px}
+
+/* STAT CARDS */
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px}
+[data-theme="dark"] .stat-card{box-shadow:0 2px 12px rgba(0,0,0,0.3)}
+.stat-val{font-family:'Sora',sans-serif;font-size:24px;font-weight:800;color:var(--text)}
+.stat-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:3px}
+.stat-change{font-size:11px;color:var(--green);margin-top:4px;font-weight:600}
+
+/* ADMIN PANEL */
+.admin-tabs{display:flex;gap:4px;padding:6px;background:var(--card2);border-radius:10px;margin-bottom:20px}
+.admin-tab{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all 0.2s}
+.admin-tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow2)}
+
+/* DATA TABLE */
+.dt{width:100%;border-collapse:collapse}
+.dt th{background:var(--surface);border-bottom:2px solid var(--border2);padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px}
+.dt td{border-bottom:1px solid var(--border);padding:10px 12px;font-size:13px}
+.dt tr:hover td{background:var(--primary-bg)}
+.dt-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:420px;overflow-y:auto}
+.dt-wrap::-webkit-scrollbar{width:4px}
+.dt-wrap::-webkit-scrollbar-thumb{background:var(--border2)}
+
+/* ALERT */
+.alert{border-radius:8px;padding:12px 16px;font-size:13px;display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
+.alert-warn{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);color:var(--gold)}
+.alert-info{background:var(--primary-bg);border:1px solid rgba(59,130,246,0.2);color:var(--primary2)}
+
+/* LOGO PREVIEW */
+.logo-box{width:88px;height:88px;border:2px dashed var(--border2);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--card2);cursor:pointer;transition:all 0.2s}
+.logo-box:hover{border-color:var(--primary);background:var(--primary-bg)}
+.logo-box img{width:100%;height:100%;object-fit:contain}
+
+/* AMOUNT IN WORDS */
+.amt-words{background:var(--gold-bg);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--gold2);font-style:italic;margin-top:8px}
+
+/* GSTIN VALID */
+.gstin-wrap{position:relative}
+.gstin-badge{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700}
+
+/* HISTORY ROW */
+.hist-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s}
+.hist-row:hover{background:var(--primary-bg)}
+.hist-row:last-child{border-bottom:none}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:11px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);animation:slideInRight 0.3s;font-size:13px;max-width:320px}
+.toast-success{border-left:3px solid var(--green)}
+.toast-error{border-left:3px solid var(--red)}
+.toast-info{border-left:3px solid var(--primary)}
+
+/* PASSWORD FIELD */
+.pw-wrap{position:relative}
+.pw-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text3);background:none;border:none;padding:4px}
+
+/* DIVIDER */
+.sep{height:1px;background:var(--border);margin:18px 0}
+.sep-text{display:flex;align-items:center;gap:10px;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:0.8px;margin:14px 0}
+.sep-text::before,.sep-text::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--primary);border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block}
+
+/* INVOICE NUM DISPLAY */
+.inv-no-badge{background:linear-gradient(135deg,var(--primary-bg),var(--gold-bg));border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-family:monospace;font-size:15px;font-weight:700;color:var(--gold);letter-spacing:1px;white-space:nowrap}
+[data-theme="dark"] .inv-no-badge{box-shadow:0 0 16px rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.25)}
+
+/* SCROLLBAR for modals */
+.scroll-y{overflow-y:auto;max-height:380px}
+.scroll-y::-webkit-scrollbar{width:4px}
+.scroll-y::-webkit-scrollbar-thumb{background:var(--border2)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ── CONSTANTS ── */
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses' };
+const UNITS = ['Nos','Pcs','Kg','Gm','Ltr','Ml','Mtr','Cm','Sqft','Box','Set','Pair','Roll','Pack','Bag','Bottle','Can','Sheet','Hour','Month'];
+const TAX_RATES = ['0','0.1','0.25','1','1.5','3','5','6','7.5','9','12','14','18','28'];
+const DEFAULT_TERMS = `1. Payment is due within 30 days from the date of invoice.
+2. Goods once sold will not be taken back or exchanged.
+3. Interest @ 18% per annum will be charged on overdue payments.
+4. Subject to local jurisdiction. All disputes shall be settled amicably.
+5. E. & O.E. (Errors and Omissions Excepted).
+6. This is a computer-generated invoice and does not require a physical signature.`;
+const STATE_CODES = {'01':'Jammu & Kashmir','02':'Himachal Pradesh','03':'Punjab','04':'Chandigarh','05':'Uttarakhand','06':'Haryana','07':'Delhi','08':'Rajasthan','09':'Uttar Pradesh','10':'Bihar','11':'Sikkim','12':'Arunachal Pradesh','13':'Nagaland','14':'Manipur','15':'Mizoram','16':'Tripura','17':'Meghalaya','18':'Assam','19':'West Bengal','20':'Jharkhand','21':'Odisha','22':'Chhattisgarh','23':'Madhya Pradesh','24':'Gujarat','27':'Maharashtra','29':'Karnataka','30':'Goa','32':'Kerala','33':'Tamil Nadu','36':'Telangana','37':'Andhra Pradesh'};
+
+/* ══════════════════════════════════════════════════════════════
+   🔥 FIREBASE CONFIG — CHANGE THESE VALUES FOR EACH CUSTOMER
+   ══════════════════════════════════════════════════════════════
+   Where to get these values:
+   1. Go to console.firebase.google.com
+   2. Open the customer's project
+   3. Click the ⚙️ gear → Project Settings
+   4. Scroll to "Your apps" → Web app → copy the firebaseConfig object
+   ══════════════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey:            "PASTE_API_KEY_HERE",
+  authDomain:        "PASTE_PROJECT_ID.firebaseapp.com",
+  databaseURL:       "https://PASTE_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "PASTE_PROJECT_ID",
+  storageBucket:     "PASTE_PROJECT_ID.appspot.com",
+  messagingSenderId: "PASTE_SENDER_ID",
+  appId:             "PASTE_APP_ID"
+};
+
+/* ══════════════════════════════════════════════════════════════
+   👑 SUPER ADMIN EMAILS — CHANGE FOR EACH CUSTOMER
+   These emails get Super Admin access automatically on first load
+   ══════════════════════════════════════════════════════════════ */
+const SUPER_ADMINS = ['adithya@business.com','invoice@business.com'];
+const isSuperAdmin = (email='') => SUPER_ADMINS.includes(email.toLowerCase());
+
+/* ── FIREBASE INIT ── */
+let _fbApp = null;
+let _fbDb  = null;
+const getDb = () => {
+  if(!_fbDb){
+    if(!firebase.apps.length) _fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+    else _fbApp = firebase.app();
+    _fbDb = firebase.database();
+  }
+  return _fbDb;
+};
+
+/* ── STORAGE — in-memory cache synced with Firebase Realtime DB ── */
+const _cache = {};
+
+// Load ALL keys from Firebase into local cache on startup (one read, fast)
+const loadCache = async () => {
+  try {
+    const snap = await getDb().ref('invoicepro').once('value');
+    const data = snap.val();
+    if(data) Object.entries(data).forEach(([k,v]) => { _cache[k] = v; });
+    console.log('✅ Firebase loaded', Object.keys(_cache).length, 'keys');
+  } catch(e) {
+    console.warn('⚠️ Firebase load failed, using localStorage fallback:', e.message);
+    for(let i=0; i<localStorage.length; i++){
+      const k = localStorage.key(i);
+      try{ _cache[k] = JSON.parse(localStorage.getItem(k)); }catch(e){}
+    }
+  }
+};
+
+const S = {
+  get: (k, d=null) => {
+    const v = _cache[k];
+    return v !== undefined ? v : d;
+  },
+  set: (k, v) => {
+    _cache[k] = v;
+    // Backup to localStorage
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){}
+    // Write to Firebase async (non-blocking, never slows the UI)
+    getDb().ref('invoicepro/' + k).set(v)
+      .catch(e => console.warn('Firebase write failed:', e.message));
+  }
+};
+const fmt  = n => '₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN = n => Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const today  = ()=>new Date().toISOString().split('T')[0];
+const fmtDate= d=>{if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+const nowTime= ()=>{const d=new Date();const h=d.getHours().toString().padStart(2,'0'),mi=d.getMinutes().toString().padStart(2,'0'),s=d.getSeconds().toString().padStart(2,'0');return`${h}:${mi}:${s}`;}
+const validateGSTIN = g=>/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(g||'');
+const stateCode = g=>g&&g.length>=2?g.substring(0,2):null;
+const stateName = g=>g&&g.length>=2?(STATE_CODES[g.substring(0,2)]||'Other State'):'';
+const getFY = ()=>{const d=new Date(),y=d.getFullYear(),m=d.getMonth()+1;return m>=4?y:y-1;};
+const genInvNo = (docType)=>{
+  const fy=getFY();
+  const prefix = docType==='DEBIT NOTE'?'INVDN':docType==='CREDIT NOTE'?'INVCN':'INV';
+  const key=SK.CTR+'_'+prefix+'_'+fy;
+  let c=S.get(key,1);
+  const no=`${prefix}-${fy}-${String(c).padStart(4,'0')}`;
+  S.set(key,c+1);
+  return no;
+};
+
+const numberToWords = (amount)=>{
+  if(!amount||amount===0)return'Zero Rupees Only';
+  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  const toW=n=>{if(n===0)return'';if(n<20)return ones[n]+' ';if(n<100)return tens[Math.floor(n/10)]+' '+(n%10?ones[n%10]+' ':'');return ones[Math.floor(n/100)]+'Hundred '+(n%100?toW(n%100):'');};
+  const r=Math.floor(amount),p=Math.round((amount-r)*100);
+  let res='';
+  if(r>0){
+    const cr=Math.floor(r/10000000),lakh=Math.floor((r%10000000)/100000),thou=Math.floor((r%100000)/1000),rest=r%1000;
+    if(cr)res+=toW(cr)+'Crore ';if(lakh)res+=toW(lakh)+'Lakh ';if(thou)res+=toW(thou)+'Thousand ';if(rest)res+=toW(rest);
+    res+='Rupees ';
+  }
+  if(p>0)res+='and '+toW(p)+'Paise ';
+  return res.trim()+' Only';
+};
+
+/* ── SEEDS ── */
+/* ── AUDIT LOG ── */
+const logAudit = (action, detail, user) => {
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+  const logs = S.get(SK.AUDIT, []).filter(l => new Date(l.ts).getTime() > thirtyDaysAgo);
+  const entry = { id: Date.now().toString(), action, detail, user: user?.email||'system', userName: user?.name||'System', ts: new Date().toISOString() };
+  const updated = [entry, ...logs].slice(0, 500);
+  S.set(SK.AUDIT, updated);
+};
+
+const seedUsers = ()=>{
+  let users = S.get(SK.USERS,[]);
+  const superAdminDefs = [
+    {id:'SA1',email:'Adithya@business.com',name:'Adithya M',password:'Business@2026',role:'superadmin',active:true},
+    {id:'SA2',email:'Invoice@business.com',name:'Invoice Admin',password:'Business@2026',role:'superadmin',active:true},
+  ];
+  superAdminDefs.forEach(sa=>{
+    if(!users.find(u=>u.email.toLowerCase()===sa.email.toLowerCase()))
+      users=[sa,...users];
+  });
+  S.set(SK.USERS,users);
+  return users;
+};
+
+/* ── TOAST ── */
+let _toast = null;
+const toast = { success:m=>_toast&&_toast(m,'success'), error:m=>_toast&&_toast(m,'error'), info:m=>_toast&&_toast(m,'info') };
+const Toast = ()=>{
+  const [list,setList]=useState([]);
+  useEffect(()=>{_toast=(msg,type)=>{const id=Date.now();setList(p=>[...p,{id,msg,type}]);setTimeout(()=>setList(p=>p.filter(x=>x.id!==id)),3500);};},[]);
+  return <div className="toast-wrap">{list.map(t=>(
+    <div key={t.id} className={`toast toast-${t.type}`}>
+      <span>{t.type==='success'?'✓':t.type==='error'?'✗':'ℹ'}</span><span>{t.msg}</span>
+    </div>))}</div>;
+};
+
+/* ── ICON ── */
+const Ic = ({n,s=15})=>{
+  const p={stroke:'currentColor',strokeWidth:'1.8',fill:'none',width:s,height:s,viewBox:'0 0 24 24'};
+  const icons = {
+    building:<svg {...p}><path d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M8 10v2m0 4v2M12 10v2m0 4v2M16 10v2m0 4v2"/></svg>,
+    tag:<svg {...p}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82zM7 7h.01"/></svg>,
+    history:<svg {...p}><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4H1"/><polyline points="1 3 1 7 5 7"/></svg>,
+    plus:<svg {...p} strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>,
+    trash:<svg {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>,
+    edit:<svg {...p}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>,
+    save:<svg {...p}><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+    pdf:<svg {...p}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+    xlsx:<svg {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12l2 2 4-4M8 8h8M8 16h4"/></svg>,
+    x:<svg {...p} strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+    users:<svg {...p}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+    shield:<svg {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+    sun:<svg {...p}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+    moon:<svg {...p}><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>,
+    logout:<svg {...p}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>,
+    dashboard:<svg {...p}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+    settings:<svg {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83l-.06.06a2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
+    check:<svg {...p} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>,
+    copy:<svg {...p}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>,
+    new:<svg {...p}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
+    eye:<svg {...p}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+    eyeoff:<svg {...p}><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
+    lock:<svg {...p}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+    bank:<svg {...p}><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>,
+    upload:<svg {...p}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>,
+    refresh:<svg {...p}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
+  };
+  return icons[n]||null;
+};
+
+/* ── PDF GENERATOR (Redesigned) ── */
+const makePDF = (inv, co, terms) => {
+  try {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const PW=210, PH=297, ML=14, MR=14, CW=PW-ML-MR;
+
+  // Globex-style professional palette
+  const WHITE=[255,255,255], BG=[247,248,252];
+  const BLUE=[30,85,135], LBLUE=[212,226,242];
+  const DARK=[22,22,22], MED=[95,95,95], LGRAY=[165,165,165], XGRAY=[218,218,222];
+  const ALTROW=[244,247,252];
+
+  const gstType=inv.gstType||'INTRA', docType=(inv.isB2C?'TAX INVOICE (B2C)':(inv.docType||'TAX INVOICE'));
+  const items=(inv.items||[]).filter(r=>r.desc);
+
+  // Page frame with corner circles
+  const drawPageFrame=(isFirst)=>{
+    doc.setFillColor(...BG); doc.rect(0,0,PW,PH,'F');
+    doc.setFillColor(...WHITE); doc.rect(11,11,PW-22,PH-22,'F');
+    // Vertical border lines
+    doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5);
+    doc.line(11,11,11,PH-11); doc.line(PW-11,11,PW-11,PH-11);
+    doc.line(11,11,PW-11,11); doc.line(11,PH-11,PW-11,PH-11);
+    // Corner circle decorations
+    [[11,11],[PW-11,11],[11,PH-11],[PW-11,PH-11]].forEach(([x,y])=>{
+      doc.setFillColor(...XGRAY); doc.circle(x,y,3.5,'F');
+      doc.setFillColor(...WHITE); doc.circle(x,y,2,'F');
+    });
+    if(!isFirst){
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...BLUE);
+      doc.text((co.name||'')+' — '+docType+' (cont.)',ML+2,22);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MED);
+      doc.text('Invoice: '+(inv.invNo||''),PW-MR-2,22,{align:'right'});
+      doc.setDrawColor(...XGRAY); doc.setLineWidth(0.4); doc.line(ML,25,PW-MR,25);
+    }
+  };
+
+  drawPageFrame(true);
+  let Y=15;
+
+  // COMPANY NAME + DETAILS (left) / LOGO (right)
+  const logoAreaX=PW-MR-34;
+  if(co.logo){
+    try{
+      const mime=co.logo.substring(5,co.logo.indexOf(';'));
+      const ext=mime.split('/')[1].toUpperCase();
+      doc.addImage(co.logo,ext==='JPG'?'JPEG':ext,logoAreaX,Y,32,32);
+    }catch(e){}
+  }
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...DARK);
+  doc.text(co.name||'Your Company',ML+2,Y+7);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MED);
+  const addrStr=[co.address,co.city,co.state,co.pin].filter(Boolean).join(', ');
+  let coY=Y+12;
+  if(addrStr){doc.splitTextToSize(addrStr,logoAreaX-ML-8).slice(0,2).forEach(l=>{doc.text(l,ML+2,coY);coY+=3.8;});}
+  if(co.gstin) {doc.text('GSTIN: '+co.gstin,ML+2,coY);coY+=3.8;}
+  if(co.email) {doc.text('Email: '+co.email,ML+2,coY);coY+=3.8;}
+  if(co.phone) {doc.text('Phone: '+co.phone,ML+2,coY);coY+=3.8;}
+  if(co.website){doc.text(co.website,ML+2,coY);}
+
+  Y=Math.max(coY+5,Y+36);
+  doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5); doc.line(ML,Y,PW-MR,Y); Y+=5;
+
+  // BILL TO / SHIP TO
+  const colW=(CW/2)-3, col2X=ML+colW+6;
+  // Headers
+  doc.setFillColor(...LBLUE); doc.rect(ML,Y,colW,7,'F');
+  doc.setFillColor(...LBLUE); doc.rect(col2X,Y,colW,7,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...BLUE);
+  doc.text('BILL TO',ML+4,Y+5.2);
+  doc.text('SHIP TO',col2X+4,Y+5.2);
+  Y+=9;
+
+  const bt=inv.billTo||{};
+  const stData=inv.sameAddress?bt:(inv.shipTo||bt);
+
+  const drawCustomer=(cx,d,maxW)=>{
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...DARK);
+    doc.text(d.name||'',cx+2,Y+5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MED);
+    const ls=[];
+    if(d.address)ls.push(d.address);
+    const cc=[d.city,d.state,d.pin].filter(Boolean).join(', ');
+    if(cc)ls.push(cc);
+    if(d.gstin)ls.push('GSTIN: '+d.gstin);
+    if(d.phone)ls.push('Ph: '+d.phone);
+    if(d.email)ls.push(d.email);
+    let ly=Y+10; ls.slice(0,5).forEach(l=>{doc.splitTextToSize(l,maxW-4).forEach(s=>{doc.text(s,cx+2,ly);ly+=3.8;});});
+    return ly;
+  };
+  const bBot=drawCustomer(ML,bt,colW);
+  const sBot=drawCustomer(col2X,stData,colW);
+  Y=Math.max(bBot,sBot)+6;
+
+  doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5); doc.line(ML,Y,PW-MR,Y); Y+=5;
+
+  // INVOICE TITLE + META
+  const isCDN = inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE';
+
+  // Right side — Number / Date / Due Date / PO — always unchanged
+  const mRows=[
+    ['Number:', inv.invNo||'—'],
+    ['Date:', fmtDate(inv.date)||'—'],
+    ['Due Date:', inv.dueDate?fmtDate(inv.dueDate):'—'],
+    ...(inv.poNo?[['PO / Ref:',inv.poNo]]:[]),
+  ];
+
+  // Section height: enough for right rows, minimum 22
+  const sectionH = Math.max(mRows.length * 5.5 + 5, 22);
+
+  // LEFT: Big document title
+  doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...BLUE);
+  doc.text(docType, ML+2, Y+10);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...LGRAY);
+  doc.text(gstType==='INTRA'?'Intra-State (CGST + SGST)':'Inter-State (IGST)', ML+2, Y+16);
+
+  // CENTRE: Orig. Inv No + Date — in the blank space between title and right meta
+  // Label column at x=92, value right-aligned at x=148 (4mm before right meta labels)
+  if(isCDN && (inv.origInvNo || inv.origInvDate)){
+    const cLabelX = 92;   // label starts here
+    const cValX   = 148;  // value right-aligned here
+    let cy = Y+5;
+    if(inv.origInvNo){
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...MED);
+      doc.text('Orig. Inv No:', cLabelX, cy);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...DARK);
+      doc.text(inv.origInvNo, cValX, cy, {align:'right'});
+      cy += 5.5;
+    }
+    if(inv.origInvDate){
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...MED);
+      doc.text('Orig. Inv Date:', cLabelX, cy);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...DARK);
+      doc.text(fmtDate(inv.origInvDate), cValX, cy, {align:'right'});
+    }
+  }
+
+  // RIGHT: Number / Date / Due Date / PO — exactly as before
+  let iy = Y+3;
+  mRows.forEach(([l,v])=>{
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...MED);
+    doc.text(l, PW-MR-44, iy);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...DARK);
+    doc.text(v, PW-MR-2, iy, {align:'right'});
+    iy += 5.5;
+  });
+
+  Y+=sectionH; doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5); doc.line(ML,Y,PW-MR,Y); Y+=3;
+
+  // PRODUCTS TABLE — wide columns, never wraps headers
+  const bS={fontSize:8,cellPadding:{top:4,bottom:4,left:3,right:3},textColor:DARK,lineColor:XGRAY,lineWidth:0,overflow:'linebreak',fillColor:WHITE};
+  // Reduce header cell padding to keep row compact
+  const hS={fillColor:BLUE,textColor:WHITE,fontStyle:'bold',fontSize:7.5,halign:'center',cellPadding:{top:4,bottom:4,left:2,right:2},lineColor:BLUE,lineWidth:0};
+  const aS={fillColor:ALTROW};
+
+  let tH,tB,cS;
+  // Total available = 182mm
+
+  if(gstType==='INTRA'){
+    // 7 cols: DESC(50)+HSN(19)+QTY(16)+RATE(25)+TAX%(12)+TAX AMT(28)+AMT(32)=182
+    // HSN=19 ensures 6-digit codes never wrap. Short header labels prevent header row wrapping.
+    tH=[['DESCRIPTION','HSN/SAC','QTY','RATE (Rs.)','TAX%','TAX (Rs.)','AMOUNT (Rs.)']];
+    tB=items.map((r)=>{
+      const tR=parseFloat(r.taxRate)||0,gst=parseFloat(r.gstAmt)||0;
+      return[r.desc||'',r.hsnCode||'',(r.qty||1)+' '+(r.unit||'Nos'),fmtN(r.rate||0),
+             tR+'%',fmtN(gst),fmtN(r.total||0)];
+    });
+    cS={0:{cellWidth:50},1:{cellWidth:19,halign:'center'},2:{cellWidth:16,halign:'center'},
+        3:{cellWidth:25,halign:'right'},4:{cellWidth:12,halign:'center'},
+        5:{cellWidth:28,halign:'right'},6:{cellWidth:32,halign:'right'}};
+  } else {
+    // 6 cols: DESC(64)+HSN(19)+QTY(16)+RATE(27)+IGST(26)+AMT(30)=182
+    tH=[['DESCRIPTION','HSN/SAC','QTY','RATE (Rs.)','IGST (Rs.)','AMOUNT (Rs.)']];
+    tB=items.map((r)=>{
+      const tR=parseFloat(r.taxRate)||0,gst=parseFloat(r.gstAmt)||0;
+      return[r.desc||'',r.hsnCode||'',(r.qty||1)+' '+(r.unit||'Nos'),
+             fmtN(r.rate||0),fmtN(gst),fmtN(r.total||0)];
+    });
+    cS={0:{cellWidth:64},1:{cellWidth:19,halign:'center'},2:{cellWidth:16,halign:'center'},
+        3:{cellWidth:27,halign:'right'},4:{cellWidth:26,halign:'right'},5:{cellWidth:30,halign:'right'}};
+  }
+
+  doc.autoTable({startY:Y,head:tH,body:tB,styles:bS,headStyles:hS,alternateRowStyles:aS,columnStyles:cS,
+    margin:{left:ML,right:MR,top:32},showHead:'everyPage',tableLineColor:XGRAY,tableLineWidth:0.3,
+    didDrawCell:(d)=>{
+      try{if(d.section==='body'){doc.setDrawColor(...XGRAY);doc.setLineWidth(0.2);doc.line(ML,d.cell.y+d.cell.height,ML+d.table.width,d.cell.y+d.cell.height);}}catch(e){}
+    },
+    didDrawPage:(d)=>{if(d.pageNumber>1)drawPageFrame(false);}
+  });
+
+  Y=doc.lastAutoTable.finalY;
+
+  // TOTALS BLOCK (right side)
+  const sub=parseFloat(inv.subtotal)||0,tgst=parseFloat(inv.totalGST)||0;
+  const roff=parseFloat(inv.roundOff)||0,grand=parseFloat(inv.grand)||0;
+  const bMap=inv.taxBreakdown||{};
+
+  const sRows=[['SUB-TOTAL','Rs. '+fmtN(sub)]];
+  // Consolidated totals — one line each for CGST, SGST or IGST
+  let totalCGST=0,totalSGST=0,totalIGST=0;
+  Object.entries(bMap).filter(([,a])=>a>0).forEach(([rate,amt])=>{
+    if(gstType==='INTRA'){totalCGST+=amt/2;totalSGST+=amt/2;}
+    else{totalIGST+=amt;}
+  });
+  if(gstType==='INTRA'){
+    if(totalCGST>0)sRows.push(['TOTAL CGST','Rs. '+fmtN(totalCGST)]);
+    if(totalSGST>0)sRows.push(['TOTAL SGST','Rs. '+fmtN(totalSGST)]);
+  } else {
+    if(totalIGST>0)sRows.push(['TOTAL IGST','Rs. '+fmtN(totalIGST)]);
+  }
+  if(tgst>0)sRows.push(['TOTAL TAX','Rs. '+fmtN(tgst)]);
+  if(roff!==0)sRows.push(['ROUND OFF',(roff>0?'+ ':'- ')+'Rs. '+fmtN(Math.abs(roff))]);
+
+  const totW=96,totX=PW-MR-totW,rowH=7,grandH=9;
+  const totBlock=sRows.length*rowH+grandH;
+  if(Y+totBlock+8>PH-32){doc.addPage();drawPageFrame(false);Y=32;}
+  else Y+=4;
+
+  sRows.forEach(([lbl,val],i)=>{
+    const ry=Y+i*rowH, isBold=lbl.startsWith('TOTAL')||lbl.startsWith('SUB')||lbl.startsWith('GRAND');
+    if(i===0){doc.setDrawColor(...XGRAY);doc.setLineWidth(0.3);doc.line(totX,ry,PW-MR,ry);}
+    doc.setDrawColor(...XGRAY);doc.setLineWidth(0.2);doc.line(totX,ry+rowH,PW-MR,ry+rowH);
+    doc.setFont('helvetica',isBold?'bold':'normal');doc.setFontSize(8.5);
+    doc.setTextColor(isBold?DARK[0]:MED[0],isBold?DARK[1]:MED[1],isBold?DARK[2]:MED[2]);
+    doc.text(lbl,totX+4,ry+5);
+    doc.setFont('helvetica',isBold?'bold':'normal');doc.setTextColor(...DARK);
+    doc.text(val,PW-MR-2,ry+5,{align:'right'});
+  });
+
+  // Grand Total — blue row
+  const gY=Y+sRows.length*rowH;
+  doc.setFillColor(...BLUE); doc.rect(totX,gY,totW,grandH,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...WHITE);
+  doc.text('GRAND TOTAL',totX+4,gY+6.2);
+  doc.text('Rs. '+fmtN(grand),PW-MR-2,gY+6.2,{align:'right'});
+
+  Y=gY+grandH+8;
+
+  // Amount in words (left of totals block)
+  if(sub>0){
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...MED);
+    doc.text('Amount in Words:',ML+2,gY-sRows.length*rowH+6);
+    doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(...MED);
+    doc.splitTextToSize(numberToWords(grand),totX-ML-6).slice(0,3).forEach((l,i)=>doc.text(l,ML+2,gY-sRows.length*rowH+12+i*4.8));
+  }
+
+  doc.setDrawColor(...XGRAY);doc.setLineWidth(0.5);doc.line(ML,Y,PW-MR,Y);Y+=6;
+  if(Y+52>PH-22){doc.addPage();drawPageFrame(false);Y=32;}
+
+  // BANK DETAILS + SIGNATURE
+  const pmW=CW*0.52,sigX=ML+pmW+10,sigW=CW-pmW-10;
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...DARK);
+  doc.text('BANK DETAILS',ML+2,Y+6);
+  doc.setDrawColor(...DARK);doc.setLineWidth(0.5);doc.line(ML+2,Y+8,ML+38,Y+8);
+
+  if(co.bankName||co.bankAccount){
+    let by=Y+13;
+    [['Bank Name',co.bankName],['Account Holder',co.name],['Account Number',co.bankAccount],['IFSC Code',co.bankIFSC],['Branch',co.bankBranch]].filter(([,v])=>v).forEach(([l,v])=>{
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...MED);doc.text(l,ML+2,by);
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...DARK);doc.text(': '+(v||''),ML+37,by);by+=5.2;
+    });
+  } else {
+    doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(...LGRAY);doc.text('No bank details configured.',ML+2,Y+16);
+  }
+
+  const sigMid=sigX+sigW/2,sigLY=Y+22;
+  doc.setDrawColor(...DARK);doc.setLineWidth(0.5);doc.line(sigX+6,sigLY,sigX+sigW-6,sigLY);
+  doc.setFont('helvetica','italic');doc.setFontSize(10.5);doc.setTextColor(...DARK);
+  doc.text('Signature',sigMid,sigLY-3,{align:'center'});
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...DARK);
+  doc.text('Authorized Signatory',sigMid,sigLY+6,{align:'center'});
+  if(co.signatory){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...MED);doc.text(co.signatory,sigMid,sigLY+12,{align:'center'});}
+
+  Y+=44;doc.setDrawColor(...XGRAY);doc.setLineWidth(0.5);doc.line(ML,Y,PW-MR,Y);Y+=5;
+
+  // TERMS & CONDITIONS
+  const tLines=(terms||DEFAULT_TERMS).split('\n').filter(Boolean);
+  const tH2=Math.min(tLines.length*5+14,48);
+  if(Y+tH2<PH-18){
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...DARK);
+    doc.text('TERMS & CONDITIONS',ML+2,Y+6);
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MED);
+    let ty=Y+12;
+    tLines.slice(0,7).forEach(t=>{
+      doc.setFillColor(...MED);doc.circle(ML+4,ty-1.5,0.9,'F');
+      doc.splitTextToSize(t,CW-9).forEach(s=>{if(ty<Y+tH2){doc.text(s,ML+7,ty);ty+=4.6;}});
+    });
+  }
+
+  // FOOTER all pages
+  const tp=doc.internal.getNumberOfPages();
+  for(let pg=1;pg<=tp;pg++){
+    doc.setPage(pg);
+    doc.setFont('helvetica','italic');doc.setFontSize(6.8);doc.setTextColor(...LGRAY);
+    doc.text('This is a computer generated invoice and does not require a physical signature.',PW/2,PH-8,{align:'center'});
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...BLUE);
+    doc.text('InvoicePro  |  GST Invoice Manager',ML+2,PH-4);
+    doc.setFont('helvetica','normal');doc.setTextColor(...LGRAY);
+    doc.text('Page '+pg+' of '+tp,PW-MR-2,PH-4,{align:'right'});
+  }
+
+  doc.save((inv.invNo||'Invoice')+'.pdf');
+  // Auto-save to folder if set
+  autoSavePDF(doc, inv);
+  toast.success('PDF downloaded!');
+  }catch(err){console.error('PDF Error:',err);toast.error('PDF error: '+(err.message||String(err)));}
+};
+
+/* ── EXCEL EXPORT ── */
+/* ── FOLDER HANDLE (File System Access API) ── */
+let _folderHandle = null; // persists in memory per session
+
+const pickSaveFolder = async () => {
+  try {
+    if(!window.showDirectoryPicker){
+      toast.error('Auto-folder save needs Chrome or Edge browser.');
+      return false;
+    }
+    _folderHandle = await window.showDirectoryPicker({mode:'readwrite'});
+    toast.success('✅ Save folder set! PDFs will auto-save to B2B / B2C subfolders.');
+    return true;
+  } catch(e) {
+    if(e.name!=='AbortError') toast.error('Could not set folder: '+e.message);
+    return false;
+  }
+};
+
+const autoSavePDF = async (doc, inv) => {
+  if(!_folderHandle){ return; } // no folder set — skip auto-save
+  try {
+    const folderName = inv.isB2C ? 'B2C Invoices' : (inv.docType==='DEBIT NOTE'?'Debit Notes':inv.docType==='CREDIT NOTE'?'Credit Notes':'B2B Invoices');
+    // Create subfolder if not exists
+    const subFolder = await _folderHandle.getDirectoryHandle(folderName, {create:true});
+    const fileName = (inv.invNo||'Invoice')+'.pdf';
+    const fileHandle = await subFolder.getFileHandle(fileName, {create:true});
+    const writable = await fileHandle.createWritable();
+    const pdfBlob = doc.output('blob');
+    await writable.write(pdfBlob);
+    await writable.close();
+    toast.success(`📁 Auto-saved to ${folderName}/${fileName}`);
+  } catch(e) {
+    console.warn('Auto-save failed:', e.message);
+  }
+};
+
+/* ── GSTR-1 EXPORT ── */
+const makeGSTR1 = (invoices) => {
+  const XLSX = window.XLSX;
+  const wb = XLSX.utils.book_new();
+  const taxInvs = invoices.filter(i=>i.docType!=='CREDIT NOTE'&&i.docType!=='DEBIT NOTE');
+  const b2b = taxInvs.filter(i=>!i.isB2C&&i.billTo?.gstin);
+  const b2c = taxInvs.filter(i=>i.isB2C||!i.billTo?.gstin);
+  const credits = invoices.filter(i=>i.docType==='CREDIT NOTE');
+  const debits  = invoices.filter(i=>i.docType==='DEBIT NOTE');
+
+  // ── B2B Sheet ──
+  const b2bHead=['GSTIN of Recipient','Receiver Name','Invoice Number','Invoice Date','Invoice Value','Place of Supply','Reverse Charge','Invoice Type','E-Commerce GSTIN','Rate','Taxable Value','IGST','CGST','SGST','Cess'];
+  const b2bRows=[b2bHead];
+  b2b.forEach(inv=>{
+    (inv.items||[]).filter(r=>r.desc).forEach(r=>{
+      const tR=parseFloat(r.taxRate)||0,tax=parseFloat(r.taxable)||0,gst=parseFloat(r.gstAmt)||0;
+      const gt=inv.gstType||'INTRA';
+      b2bRows.push([
+        (inv.billTo?.gstin||'').toUpperCase(),inv.billTo?.name||'',inv.invNo||'',fmtDate(inv.date)||'',
+        Number(inv.grand||0).toFixed(2),
+        inv.billTo?.state||stateName(inv.billTo?.gstin)||'',
+        'N','Regular','',tR,
+        Number(tax).toFixed(2),
+        gt==='INTER'?Number(gst).toFixed(2):'',
+        gt==='INTRA'?Number(gst/2).toFixed(2):'',
+        gt==='INTRA'?Number(gst/2).toFixed(2):'',
+        ''
+      ]);
+    });
+  });
+  const wsB2B=XLSX.utils.aoa_to_sheet(b2bRows);
+  wsB2B['!cols']=[{wch:20},{wch:22},{wch:16},{wch:14},{wch:14},{wch:18},{wch:10},{wch:12},{wch:14},{wch:8},{wch:14},{wch:12},{wch:12},{wch:12},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,wsB2B,'B2B');
+
+  // ── B2C Sheet ──
+  const b2cHead=['Type','Place of Supply','Rate','Taxable Value','IGST','CGST','SGST','Cess'];
+  const b2cRows=[b2cHead];
+  b2c.forEach(inv=>{
+    (inv.items||[]).filter(r=>r.desc).forEach(r=>{
+      const tR=parseFloat(r.taxRate)||0,tax=parseFloat(r.taxable)||0,gst=parseFloat(r.gstAmt)||0;
+      const gt=inv.gstType||'INTRA';
+      b2cRows.push(['B2C',inv.billTo?.state||'',tR,Number(tax).toFixed(2),
+        gt==='INTER'?Number(gst).toFixed(2):'',
+        gt==='INTRA'?Number(gst/2).toFixed(2):'',
+        gt==='INTRA'?Number(gst/2).toFixed(2):'','']);
+    });
+  });
+  const wsB2C=XLSX.utils.aoa_to_sheet(b2cRows);
+  wsB2C['!cols']=[{wch:10},{wch:18},{wch:8},{wch:14},{wch:12},{wch:12},{wch:12},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,wsB2C,'B2C');
+
+  // ── HSN Summary ──
+  const hsnMap={};
+  invoices.forEach(inv=>{
+    const sign=inv.docType==='CREDIT NOTE'?-1:1;
+    (inv.items||[]).filter(r=>r.desc&&r.hsnCode).forEach(r=>{
+      const k=r.hsnCode;
+      if(!hsnMap[k])hsnMap[k]={hsn:r.hsnCode,desc:r.desc,uom:r.unit||'Nos',qty:0,val:0,tax:0,igst:0,cgst:0,sgst:0};
+      const tax=parseFloat(r.taxable)||0,gst=parseFloat(r.gstAmt)||0;
+      const gt=inv.gstType||'INTRA';
+      hsnMap[k].qty+=sign*(parseFloat(r.qty)||0);
+      hsnMap[k].val+=sign*(parseFloat(r.total)||0);
+      hsnMap[k].tax+=sign*tax;
+      if(gt==='INTER')hsnMap[k].igst+=sign*gst;
+      else{hsnMap[k].cgst+=sign*gst/2;hsnMap[k].sgst+=sign*gst/2;}
+    });
+  });
+  const hsnHead=['HSN/SAC','Description','UOM','Total Qty','Total Value','Taxable Value','IGST','CGST','SGST','Cess'];
+  const hsnRows=[hsnHead,...Object.values(hsnMap).map(h=>[h.hsn,h.desc,h.uom,h.qty.toFixed(2),h.val.toFixed(2),h.tax.toFixed(2),h.igst.toFixed(2),h.cgst.toFixed(2),h.sgst.toFixed(2),'0'])];
+  const wsHSN=XLSX.utils.aoa_to_sheet(hsnRows);
+  wsHSN['!cols']=[{wch:12},{wch:30},{wch:8},{wch:10},{wch:14},{wch:14},{wch:12},{wch:12},{wch:12},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,wsHSN,'HSN Summary');
+
+  // ── Document Summary ──
+  const dsHead=['Nature of Document','Sr No From','Sr No To','Total Issued','Total Cancelled'];
+  const dsRows=[dsHead,
+    ['Invoices for outward supply',b2b[0]?.invNo||'-',b2b[b2b.length-1]?.invNo||'-',b2b.length,0],
+    ['Invoices for inward supply (B2C)',b2c[0]?.invNo||'-',b2c[b2c.length-1]?.invNo||'-',b2c.length,0],
+    ['Debit Notes',debits[0]?.invNo||'-',debits[debits.length-1]?.invNo||'-',debits.length,0],
+    ['Credit Notes',credits[0]?.invNo||'-',credits[credits.length-1]?.invNo||'-',credits.length,0],
+  ];
+  const wsDS=XLSX.utils.aoa_to_sheet(dsRows);
+  wsDS['!cols']=[{wch:34},{wch:18},{wch:18},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,wsDS,'Document Summary');
+
+  // ── CDNR — Credit / Debit Notes with Original Invoice Reference ──
+  const cdnrHead=[
+    'GSTIN of Recipient','Receiver Name',
+    'Note No','Note Date','Note Type','Note Value',
+    'Original Invoice No','Original Invoice Date',
+    'Place of Supply','Reverse Charge',
+    'Rate','Taxable Value','IGST','CGST','SGST','Cess'
+  ];
+  const cdnrRows=[cdnrHead];
+  [...credits,...debits].forEach(inv=>{
+    const sign=inv.docType==='CREDIT NOTE'?-1:1;
+    const noteType=inv.docType==='CREDIT NOTE'?'C':'D';
+    (inv.items||[]).filter(r=>r.desc).forEach(r=>{
+      const tR=parseFloat(r.taxRate)||0,tax=parseFloat(r.taxable)||0,gst=parseFloat(r.gstAmt)||0;
+      const gt=inv.gstType||'INTRA';
+      cdnrRows.push([
+        (inv.billTo?.gstin||'').toUpperCase(),
+        inv.billTo?.name||'',
+        inv.invNo||'',
+        fmtDate(inv.date)||'',
+        noteType,
+        Number(Math.abs(inv.grand||0)).toFixed(2),
+        inv.origInvNo||'',
+        inv.origInvDate?fmtDate(inv.origInvDate):'',
+        inv.billTo?.state||stateName(inv.billTo?.gstin)||'',
+        'N',
+        tR,
+        Number(sign*tax).toFixed(2),
+        gt==='INTER'?Number(sign*gst).toFixed(2):'',
+        gt==='INTRA'?Number(sign*gst/2).toFixed(2):'',
+        gt==='INTRA'?Number(sign*gst/2).toFixed(2):'',
+        ''
+      ]);
+    });
+  });
+  const wsCDNR=XLSX.utils.aoa_to_sheet(cdnrRows);
+  wsCDNR['!cols']=[{wch:20},{wch:22},{wch:16},{wch:14},{wch:8},{wch:14},{wch:18},{wch:18},{wch:18},{wch:10},{wch:8},{wch:14},{wch:12},{wch:12},{wch:12},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,wsCDNR,'CDNR (Credit-Debit Notes)');
+
+  XLSX.writeFile(wb,`GSTR1_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast.success('GSTR-1 report downloaded!');
+};
+
+/* ── PURCHASE REGISTER EXCEL ── */
+const makePurchaseExcel = (expenses) => {
+  const XLSX = window.XLSX;
+  const wb = XLSX.utils.book_new();
+
+  // ── Purchase Register Sheet ──
+  const headers = [
+    'Sl.No','Date','Vendor / Supplier Name','Vendor GSTIN','Vendor State',
+    'Bill No / Ref No','Bill Date','Category','Description',
+    'HSN / SAC','Unit','Qty','Rate (Rs.)','Taxable Amount (Rs.)',
+    'GST Type','Tax Rate %','CGST %','CGST Amount (Rs.)','SGST %','SGST Amount (Rs.)',
+    'IGST %','IGST Amount (Rs.)','Total Tax (Rs.)','Total Amount (Rs.)',
+    'Payment Mode','Payment Status','Paid Date','Notes','Recorded By'
+  ];
+  const rows = [headers];
+  let sl = 1;
+  expenses.forEach(e => {
+    const tR = parseFloat(e.taxRate)||0;
+    const tax = parseFloat(e.taxable)||0;
+    const gst = parseFloat(e.gstAmt)||0;
+    const gt  = e.gstType||'INTRA';
+    rows.push([
+      sl++,
+      e.date||'', e.vendor||'', (e.vendorGSTIN||'').toUpperCase(), e.vendorState||'',
+      e.billNo||'', e.billDate||'', e.category||'', e.description||'',
+      e.hsnCode||'', e.unit||'Nos', parseFloat(e.qty)||1, parseFloat(e.rate)||0,
+      Number(tax).toFixed(2),
+      gt, tR,
+      gt==='INTRA'?tR/2:'', gt==='INTRA'?Number(gst/2).toFixed(2):'',
+      gt==='INTRA'?tR/2:'', gt==='INTRA'?Number(gst/2).toFixed(2):'',
+      gt!=='INTRA'?tR:'',    gt!=='INTRA'?Number(gst).toFixed(2):'',
+      Number(gst).toFixed(2),
+      Number(parseFloat(e.total)||0).toFixed(2),
+      e.payMode||'', e.payStatus||'', e.paidDate||'',
+      e.notes||'', e.createdBy||''
+    ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:5},{wch:12},{wch:24},{wch:20},{wch:14},{wch:14},{wch:12},{wch:16},{wch:30},
+    {wch:10},{wch:8},{wch:6},{wch:12},{wch:18},{wch:10},{wch:8},{wch:8},{wch:14},{wch:8},{wch:14},
+    {wch:8},{wch:14},{wch:14},{wch:16},{wch:14},{wch:14},{wch:12},{wch:24},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Purchase Register');
+
+  // ── Category Summary Sheet ──
+  const catMap = {};
+  expenses.forEach(e => {
+    const cat = e.category||'Uncategorized';
+    if(!catMap[cat]) catMap[cat]={cat,count:0,taxable:0,tax:0,total:0,paid:0,pending:0};
+    catMap[cat].count++;
+    catMap[cat].taxable += parseFloat(e.taxable)||0;
+    catMap[cat].tax     += parseFloat(e.gstAmt)||0;
+    catMap[cat].total   += parseFloat(e.total)||0;
+    if((e.payStatus||'').toLowerCase()==='paid') catMap[cat].paid += parseFloat(e.total)||0;
+    else catMap[cat].pending += parseFloat(e.total)||0;
+  });
+  const catHead = ['Category','No. of Bills','Taxable (Rs.)','Total Tax (Rs.)','Total Amount (Rs.)','Paid (Rs.)','Pending (Rs.)'];
+  const catRows = [catHead, ...Object.values(catMap).map(c=>[c.cat,c.count,c.taxable.toFixed(2),c.tax.toFixed(2),c.total.toFixed(2),c.paid.toFixed(2),c.pending.toFixed(2)])];
+  const totRow = ['TOTAL', expenses.length,
+    Object.values(catMap).reduce((s,c)=>s+c.taxable,0).toFixed(2),
+    Object.values(catMap).reduce((s,c)=>s+c.tax,0).toFixed(2),
+    Object.values(catMap).reduce((s,c)=>s+c.total,0).toFixed(2),
+    Object.values(catMap).reduce((s,c)=>s+c.paid,0).toFixed(2),
+    Object.values(catMap).reduce((s,c)=>s+c.pending,0).toFixed(2)
+  ];
+  catRows.push(totRow);
+  const wsCat = XLSX.utils.aoa_to_sheet(catRows);
+  wsCat['!cols']=[{wch:20},{wch:12},{wch:16},{wch:16},{wch:18},{wch:16},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, wsCat, 'Category Summary');
+
+  // ── Monthly Summary Sheet ──
+  const monMap = {};
+  expenses.forEach(e => {
+    const m = e.date?.substring(0,7)||'?';
+    if(!monMap[m]) monMap[m]={month:m,count:0,taxable:0,tax:0,total:0};
+    monMap[m].count++;
+    monMap[m].taxable += parseFloat(e.taxable)||0;
+    monMap[m].tax     += parseFloat(e.gstAmt)||0;
+    monMap[m].total   += parseFloat(e.total)||0;
+  });
+  const monHead=['Month','No. of Bills','Taxable (Rs.)','Total Tax (Rs.)','Total Amount (Rs.)'];
+  const monRows=[monHead,...Object.entries(monMap).sort().map(([m,v])=>[m,v.count,v.taxable.toFixed(2),v.tax.toFixed(2),v.total.toFixed(2)])];
+  const wsM = XLSX.utils.aoa_to_sheet(monRows);
+  wsM['!cols']=[{wch:12},{wch:12},{wch:16},{wch:16},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, wsM, 'Monthly Summary');
+
+  XLSX.writeFile(wb, `PurchaseRegister_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast.success('Purchase Register downloaded!');
+};
+
+const makeExcel = (invoices) => {
+  const XLSX = window.XLSX;
+  const wb = XLSX.utils.book_new();
+  const headers = [
+    'Sl.No','Document Type','Invoice No','Invoice Date',
+    'Original Invoice No','Original Invoice Date',
+    'Sent to Customer','Customer Name','Customer GSTIN','Customer State',
+    'Bill To Address','HSN/SAC','Description','Unit','Qty','Rate (Rs.)','Discount %',
+    'Taxable Amount (Rs.)','GST Type','Tax Rate %','CGST %','CGST Amount (Rs.)','SGST %',
+    'SGST Amount (Rs.)','IGST %','IGST Amount (Rs.)','Total Tax (Rs.)','Invoice Total (Rs.)',
+    'PO/Reference No','Notes','Created By'
+  ];
+  const rows=[headers];
+  let sl=1;
+  invoices.forEach(inv=>{
+    const items=(inv.items||[]).filter(r=>r.desc);
+    const gt=inv.gstType||'INTRA';
+    const dt=inv.isB2C?'TAX INVOICE (B2C)':(inv.docType||'TAX INVOICE');
+    const isCN=dt==='CREDIT NOTE';
+    const sign=isCN?-1:1;
+    const isCDN = inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE';
+    items.forEach(r=>{
+      const tR=parseFloat(r.taxRate)||0, tax=parseFloat(r.taxable)||0, gst=parseFloat(r.gstAmt)||0;
+      rows.push([
+        sl++,
+        dt,
+        inv.invNo||'',
+        fmtDate(inv.date)||'',
+        isCDN?(inv.origInvNo||''):'',
+        isCDN?(inv.origInvDate?fmtDate(inv.origInvDate):''):'',
+        inv.sentToCustomer?'Yes':'No',
+        inv.billTo?.name||'',
+        (inv.billTo?.gstin||'').toUpperCase(),
+        stateName(inv.billTo?.gstin)||inv.billTo?.state||'',
+        [inv.billTo?.address,inv.billTo?.city,inv.billTo?.state,inv.billTo?.pin].filter(Boolean).join(', '),
+        r.hsnCode||'',
+        r.desc||'',
+        r.unit||'Nos',
+        r.qty||1,
+        r.rate||0,
+        r.discount||0,
+        Number(sign*tax).toFixed(2),
+        gt,
+        tR,
+        gt==='INTRA'?tR/2:'',
+        gt==='INTRA'?Number(sign*gst/2).toFixed(2):'',
+        gt==='INTRA'?tR/2:'',
+        gt==='INTRA'?Number(sign*gst/2).toFixed(2):'',
+        gt!=='INTRA'?tR:'',
+        gt!=='INTRA'?Number(sign*gst).toFixed(2):'',
+        Number(sign*gst).toFixed(2),
+        Number(parseFloat(inv.grand)||0).toFixed(2),
+        inv.poNo||'',
+        inv.notes||'',
+        inv.createdBy||'',
+      ]);
+    });
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  // 31 cols: Sl,DocType,InvNo,InvDate,OrigInvNo,OrigInvDate,Sent,CustName,GSTIN,State,Addr,HSN,Desc,Unit,Qty,Rate,Disc,Taxable,GSTType,TaxRate,CGST%,CGSTAmt,SGST%,SGSTAmt,IGST%,IGSTAmt,TotalTax,Total,PO,Notes,CreatedBy
+  ws['!cols']=[{wch:5},{wch:20},{wch:16},{wch:13},{wch:16},{wch:16},{wch:8},{wch:22},{wch:20},{wch:16},{wch:28},{wch:12},{wch:28},{wch:8},{wch:7},{wch:12},{wch:8},{wch:18},{wch:10},{wch:9},{wch:8},{wch:16},{wch:8},{wch:16},{wch:8},{wch:16},{wch:14},{wch:18},{wch:14},{wch:22},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Sales Register');
+  // Monthly Summary — CN values reduce totals
+  const totals={};
+  invoices.forEach(inv=>{
+    const isCN=inv.docType==='CREDIT NOTE', sign=isCN?-1:1;
+    const isB2C=inv.isB2C||false;
+    (inv.items||[]).filter(r=>r.desc).forEach(r=>{
+      const m=inv.date?.substring(0,7)||'?';
+      if(!totals[m])totals[m]={inv:0,b2c:0,cn:0,dn:0,taxable:0,tax:0,total:0};
+      totals[m].taxable+=sign*(parseFloat(r.taxable)||0);
+      totals[m].tax+=sign*(parseFloat(r.gstAmt)||0);
+      totals[m].total+=sign*(parseFloat(r.total)||0);
+    });
+    const m=inv.date?.substring(0,7)||'?';
+    if(!totals[m])totals[m]={inv:0,b2c:0,cn:0,dn:0,taxable:0,tax:0,total:0};
+    if(isCN)totals[m].cn++;
+    else if(inv.docType==='DEBIT NOTE')totals[m].dn++;
+    else if(isB2C)totals[m].b2c++;
+    else totals[m].inv++;
+  });
+  const summRows=[['Month','B2B Invoices','B2C Invoices','Debit Notes','Credit Notes','Net Taxable (Rs.)','Net Tax (Rs.)','Net Total (Rs.)'],
+    ...Object.entries(totals).sort().map(([m,v])=>[m,v.inv,v.b2c,v.dn,v.cn,Number(v.taxable).toFixed(2),Number(v.tax).toFixed(2),Number(v.total).toFixed(2)])];
+  const ws2=XLSX.utils.aoa_to_sheet(summRows);
+  ws2['!cols']=[{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:22},{wch:18},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Monthly Summary');
+  XLSX.writeFile(wb, `SalesRegister_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast.success('Excel downloaded!');
+};
+
+/* ── MODALS ── */
+const CompanyModal = ({onClose})=>{
+  const [d,setD]=useState(S.get(SK.CO,{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',website:'',logo:'',bankName:'',bankAccount:'',bankIFSC:'',bankBranch:'',signatory:'',panNo:''}));
+  const [prev,setPrev]=useState(d.logo||'');
+  const fileRef=useRef();
+  const up=k=>e=>setD(p=>({...p,[k]:e.target.value}));
+  const save=()=>{if(!d.name){toast.error('Company name required');return;}S.set(SK.CO,d);toast.success('Company saved!');onClose();};
+  const handleLogo=e=>{const f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){toast.error('Max 2MB');return;}const r=new FileReader();r.onload=ev=>{const b=ev.target.result;setD(p=>({...p,logo:b}));setPrev(b);};r.readAsDataURL(f);};
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal" style={{maxWidth:700}}>
+      <div className="modal-hdr"><span className="modal-title">🏢 Company Details</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
+      <div className="modal-body">
+        <div style={{display:'flex',gap:16,alignItems:'flex-start',marginBottom:18}}>
+          <div>
+            <div className="field-label">Logo</div>
+            <div className="logo-box" onClick={()=>fileRef.current.click()}>
+              {prev?<img src={prev} alt="logo"/>:<div style={{textAlign:'center',color:'var(--text3)',fontSize:11}}><Ic n="upload" s={20}/><div style={{marginTop:4}}>Upload</div></div>}
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleLogo}/>
+            {prev&&<button className="btn btn-danger btn-sm" style={{marginTop:6,width:88}} onClick={()=>{setPrev('');setD(p=>({...p,logo:''}));}}>Remove</button>}
+          </div>
+          <div style={{flex:1}}>
+            <div className="field"><label className="field-label">Company Name *</label><input className="field-input" value={d.name} onChange={up('name')} placeholder="Your Business Name"/></div>
+            <div className="g2">
+              <div className="field"><label className="field-label">GSTIN</label><input className="field-input" value={d.gstin} onChange={e=>setD(p=>({...p,gstin:e.target.value.toUpperCase()}))} placeholder="29AAAAA0000A1Z5" maxLength={15} style={{textTransform:'uppercase'}}/></div>
+              <div className="field"><label className="field-label">PAN Number</label><input className="field-input" value={d.panNo} onChange={up('panNo')} placeholder="AAAAA0000A" maxLength={10} style={{textTransform:'uppercase'}}/></div>
+            </div>
+          </div>
+        </div>
+        <div className="sep-text">Address</div>
+        <div className="field"><label className="field-label">Street Address</label><textarea className="field-input" value={d.address} onChange={up('address')} rows={2} placeholder="Door No, Street, Area"/></div>
+        <div className="g3">
+          <div className="field"><label className="field-label">City</label><input className="field-input" value={d.city} onChange={up('city')} placeholder="City"/></div>
+          <div className="field"><label className="field-label">State</label><input className="field-input" value={d.state} onChange={up('state')} placeholder="State"/></div>
+          <div className="field"><label className="field-label">PIN Code</label><input className="field-input" value={d.pin} onChange={up('pin')} placeholder="560001" maxLength={6}/></div>
+        </div>
+        <div className="sep-text">Contact</div>
+        <div className="g3">
+          <div className="field"><label className="field-label">Phone</label><input className="field-input" value={d.phone} onChange={up('phone')}/></div>
+          <div className="field"><label className="field-label">Email</label><input className="field-input" value={d.email} onChange={up('email')}/></div>
+          <div className="field"><label className="field-label">Website</label><input className="field-input" value={d.website} onChange={up('website')}/></div>
+        </div>
+        <div className="sep-text">Bank Details</div>
+        <div className="g2">
+          <div className="field"><label className="field-label">Bank Name</label><input className="field-input" value={d.bankName} onChange={up('bankName')}/></div>
+          <div className="field"><label className="field-label">Account Number</label><input className="field-input" value={d.bankAccount} onChange={up('bankAccount')}/></div>
+          <div className="field"><label className="field-label">IFSC Code</label><input className="field-input" value={d.bankIFSC} onChange={up('bankIFSC')} style={{textTransform:'uppercase'}}/></div>
+          <div className="field"><label className="field-label">Branch Name</label><input className="field-input" value={d.bankBranch} onChange={up('bankBranch')}/></div>
+        </div>
+        <div className="field" style={{maxWidth:340}}><label className="field-label">Authorised Signatory Name</label><input className="field-input" value={d.signatory} onChange={up('signatory')} placeholder="Proprietor / Director"/></div>
+      </div>
+      <div className="modal-ftr"><button className="btn btn-outline" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={save}><Ic n="save"/>Save Company</button></div>
+    </div>
+  </div>;
+};
+
+const HSNModal = ({onClose})=>{
+  const [list,setList]=useState(S.get(SK.HSN,[]));
+  const [form,setForm]=useState({code:'',desc:'',taxRate:'18',unit:'Nos',type:'HSN',category:''});
+  const [editing,setEditing]=useState(null);
+  const [q,setQ]=useState('');
+  const up=k=>e=>setForm(p=>({...p,[k]:e.target.value}));
+  const filtered=list.filter(h=>h.code.includes(q)||h.desc.toLowerCase().includes(q.toLowerCase())||(h.category||'').toLowerCase().includes(q.toLowerCase()));
+  const save=()=>{
+    if(!form.code||!form.desc){toast.error('Code & description required');return;}
+    let u;
+    if(editing!==null){u=list.map((h,i)=>i===editing?{...form}:h);}
+    else{if(list.find(h=>h.code===form.code)){toast.error('Code exists');return;}u=[...list,{...form}];}
+    setList(u);S.set(SK.HSN,u);setForm({code:'',desc:'',taxRate:'18',unit:'Nos',type:'HSN',category:''});setEditing(null);
+    toast.success(editing!==null?'Updated!':'Added!');
+  };
+  const del=i=>{const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.HSN,u);toast.info('Deleted');};
+  const editE=i=>{setForm({...list[i]});setEditing(i);};
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal" style={{maxWidth:900}}>
+      <div className="modal-hdr"><span className="modal-title">🏷️ HSN / SAC Database</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
+      <div className="modal-body">
+        <div className="card" style={{marginBottom:18}}>
+          <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editing!==null?'✏️ Edit Entry':'➕ Add HSN/SAC Code'}</div>
+          <div className="g4">
+            <div className="field"><label className="field-label">Type</label><select className="field-input" value={form.type} onChange={up('type')}><option value="HSN">HSN (Goods)</option><option value="SAC">SAC (Services)</option></select></div>
+            <div className="field"><label className="field-label">Code *</label><input className="field-input" value={form.code} onChange={up('code')} placeholder="e.g. 8471" maxLength={8}/></div>
+            <div className="field"><label className="field-label">GST Rate %</label><select className="field-input" value={form.taxRate} onChange={up('taxRate')}>{TAX_RATES.map(r=><option key={r} value={r}>{r}%</option>)}</select></div>
+            <div className="field"><label className="field-label">Default Unit</label><select className="field-input" value={form.unit} onChange={up('unit')}>{UNITS.map(u=><option key={u}>{u}</option>)}</select></div>
+          </div>
+          <div className="g2">
+            <div className="field"><label className="field-label">Description *</label><input className="field-input" value={form.desc} onChange={up('desc')} placeholder="Detailed description of goods/services"/></div>
+            <div className="field"><label className="field-label">Category (optional)</label><input className="field-input" value={form.category} onChange={up('category')} placeholder="e.g. Electronics, IT Products"/></div>
+          </div>
+          <div style={{display:'flex',gap:10}}>
+            <button className="btn btn-primary" onClick={save}>{editing!==null?'Update':'Add Entry'}</button>
+            {editing!==null&&<button className="btn btn-outline" onClick={()=>{setForm({code:'',desc:'',taxRate:'18',unit:'Nos',type:'HSN',category:''});setEditing(null);}}>Cancel</button>}
+          </div>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <span style={{color:'var(--text2)',fontSize:13}}>{list.length} entries</span>
+          <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 Search..." style={{maxWidth:260}}/>
+        </div>
+        {filtered.length>0?(<div className="dt-wrap"><table className="dt" style={{width:'100%'}}><thead><tr><th>Type</th><th>Code</th><th>Description</th><th>Category</th><th>Rate</th><th>Unit</th><th style={{width:80}}>Actions</th></tr></thead>
+        <tbody>{filtered.map((h,i)=>{const idx=list.indexOf(h);return(<tr key={i}><td><span className={`badge ${h.type==='SAC'?'badge-blue':'badge-gold'}`}>{h.type}</span></td><td style={{fontWeight:700,color:'var(--gold)',fontFamily:'monospace'}}>{h.code}</td><td style={{maxWidth:250}}>{h.desc}</td><td style={{color:'var(--text3)',fontSize:12}}>{h.category||'—'}</td><td><span className="badge badge-green">{h.taxRate}%</span></td><td style={{color:'var(--text2)'}}>{h.unit}</td><td><div style={{display:'flex',gap:5}}><button className="btn btn-sm btn-outline btn-icon" onClick={()=>editE(idx)}><Ic n="edit" s={12}/></button><button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(idx)}><Ic n="trash" s={12}/></button></div></td></tr>);})}</tbody>
+        </table></div>):<div style={{textAlign:'center',padding:'32px',color:'var(--text3)'}}>{q?'No matches.':'No entries yet.'}</div>}
+      </div>
+      <div className="modal-ftr"><button className="btn btn-primary" onClick={onClose}>Done</button></div>
+    </div>
+  </div>;
+};
+
+const TermsModal = ({onClose})=>{
+  const [t,setT]=useState(S.get(SK.TERMS,DEFAULT_TERMS));
+  const save=()=>{S.set(SK.TERMS,t);toast.success('Terms saved!');onClose();};
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal" style={{maxWidth:600}}>
+      <div className="modal-hdr"><span className="modal-title">📋 Terms & Conditions</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
+      <div className="modal-body">
+        <p style={{color:'var(--text2)',fontSize:13,marginBottom:14}}>These appear at the bottom of each PDF invoice. Edit as needed.</p>
+        <textarea className="field-input" value={t} onChange={e=>setT(e.target.value)} rows={12} style={{fontFamily:'monospace',fontSize:12.5}}/>
+        <button className="btn btn-outline btn-sm" style={{marginTop:10}} onClick={()=>setT(DEFAULT_TERMS)}>Reset to Default</button>
+      </div>
+      <div className="modal-ftr"><button className="btn btn-outline" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={save}><Ic n="save"/>Save</button></div>
+    </div>
+  </div>;
+};
+
+/* ── CUSTOMER DATABASE MODAL ── */
+/* ── EXPENSE TRACKER ── */
+const EXP_CATEGORIES = ['Raw Materials','Packaging','Freight / Transport','Office Supplies','Rent','Electricity / Utilities','Labour / Wages','Professional Fees','Repairs & Maintenance','Software / IT','Travel & Conveyance','Advertising / Marketing','Bank Charges','Insurance','Statutory / Tax Payments','Other'];
+const PAY_MODES = ['Cash','Bank Transfer / NEFT','UPI / GPay / PhonePe','Cheque','Credit Card','Debit Card','Other'];
+
+const blankExp = (user) => ({
+  id: Date.now().toString(), date: today(), vendor:'', vendorGSTIN:'', vendorState:'',
+  billNo:'', billDate:'', category:'', description:'', hsnCode:'', unit:'Nos',
+  qty:1, rate:'', taxable:0, taxRate:'18', gstType:'INTRA', gstAmt:0, total:0,
+  payMode:'Bank Transfer / NEFT', payStatus:'Paid', paidDate: today(),
+  notes:'', createdBy: user?.email||''
+});
+
+const ExpenseModal = ({onClose, currentUser})=>{
+  const [expenses, setExpenses] = useState(S.get(SK.EXP,[]));
+  const [form, setForm] = useState(()=>blankExp(currentUser));
+  const [tab, setTab] = useState('list');
+  const [editId, setEditId] = useState(null);
+  const [q, setQ] = useState('');
+  const [filterCat, setFilterCat] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const isAdmin = currentUser?.role==='admin'||currentUser?.role==='superadmin';
+
+  const calcExp = (f) => {
+    const qty=parseFloat(f.qty)||0, rate=parseFloat(f.rate)||0;
+    const taxable=qty*rate, tR=parseFloat(f.taxRate)||0;
+    const gstAmt = taxable*tR/100;
+    return {...f, taxable:taxable.toFixed(2), gstAmt:gstAmt.toFixed(2), total:(taxable+gstAmt).toFixed(2)};
+  };
+  const upF = k => e => setForm(p=>calcExp({...p,[k]:e.target.value}));
+
+  const saveExp = () => {
+    if(!form.vendor){toast.error('Vendor name required');return;}
+    if(!form.description&&!form.category){toast.error('Description or Category required');return;}
+    const calc = {...calcExp(form), vendorGSTIN:(form.vendorGSTIN||'').toUpperCase()};
+    let updated;
+    if(editId){
+      updated = expenses.map(e=>e.id===editId?{...calc,id:editId}:e);
+      logAudit('EXPENSE_EDITED',`${calc.vendor} — ${calc.category} — ₹${calc.total}`,currentUser);
+      toast.success('Expense updated!');
+    } else {
+      const newE = {...calc, id:Date.now().toString(), createdAt:new Date().toISOString()};
+      updated = [...expenses, newE];
+      logAudit('EXPENSE_ADDED',`${calc.vendor} — ${calc.category} — ₹${calc.total}`,currentUser);
+      toast.success('Expense saved!');
+    }
+    setExpenses(updated); S.set(SK.EXP, updated);
+    setForm(blankExp(currentUser)); setEditId(null); setTab('list');
+  };
+
+  const delExp = id => {
+    if(!isAdmin){toast.error('Only Admin can delete expenses');return;}
+    if(!window.confirm('Delete this expense?'))return;
+    const e = expenses.find(x=>x.id===id);
+    const updated = expenses.filter(x=>x.id!==id);
+    setExpenses(updated); S.set(SK.EXP,updated);
+    logAudit('EXPENSE_DELETED',`${e?.vendor} — ${e?.category} — ₹${e?.total}`,currentUser);
+    toast.info('Expense deleted');
+  };
+
+  const editExp = e => { setForm({...e}); setEditId(e.id); setTab('add'); };
+
+  const filtered = expenses.filter(e=>{
+    const mQ = !q || e.vendor?.toLowerCase().includes(q.toLowerCase()) || e.description?.toLowerCase().includes(q.toLowerCase()) || e.billNo?.toLowerCase().includes(q.toLowerCase()) || e.category?.toLowerCase().includes(q.toLowerCase());
+    const mC = !filterCat || e.category===filterCat;
+    const mS = !filterStatus || e.payStatus===filterStatus;
+    return mQ&&mC&&mS;
+  }).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+
+  const totalExpense = filtered.reduce((s,e)=>s+parseFloat(e.total||0),0);
+  const totalTax     = filtered.reduce((s,e)=>s+parseFloat(e.gstAmt||0),0);
+  const totalPaid    = filtered.filter(e=>e.payStatus==='Paid').reduce((s,e)=>s+parseFloat(e.total||0),0);
+  const totalPending = filtered.filter(e=>e.payStatus!=='Paid').reduce((s,e)=>s+parseFloat(e.total||0),0);
+
+  const payBadge = s => s==='Paid'?{bg:'#F0FDF4',color:'#166534'}:s==='Pending'?{bg:'#FEF2F2',color:'#DC2626'}:{bg:'#FEF3C7',color:'#92400E'};
+
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal" style={{maxWidth:1100,width:'96vw'}}>
+      <div className="modal-hdr">
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <span className="modal-title">🧾 Expense / Purchase Tracker</span>
+          <span style={{fontSize:11,color:'var(--text3)',background:'var(--card2)',padding:'3px 10px',borderRadius:20,border:'1px solid var(--border)'}}>
+            {expenses.length} records
+          </span>
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          {isAdmin&&<button className="btn btn-success btn-sm" onClick={()=>makePurchaseExcel(expenses)}><Ic n="xlsx" s={13}/>Purchase Register</button>}
+          {!isAdmin&&<span style={{fontSize:11,color:'#B45309',background:'#FEF3C7',padding:'3px 10px',borderRadius:20,border:'1px solid #FDE68A'}}>🔒 Reports: Admin only</span>}
+          <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
+        </div>
+      </div>
+
+      <div className="modal-body">
+        {/* Tabs */}
+        <div style={{display:'flex',gap:8,marginBottom:16}}>
+          {[['list','📋 All Expenses'],['add', editId?'✏️ Edit Expense':'➕ Add Expense']].map(([k,l])=>(
+            <button key={k} onClick={()=>{setTab(k);if(k==='add'&&!editId)setForm(blankExp(currentUser));}}
+              style={{padding:'7px 18px',borderRadius:8,fontSize:12,fontWeight:tab===k?700:500,cursor:'pointer',
+                border:`2px solid ${tab===k?'var(--primary)':'var(--border2)'}`,
+                background:tab===k?'var(--primary-bg)':'transparent',
+                color:tab===k?'var(--primary2)':'var(--text2)'}}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        {/* ── LIST TAB ── */}
+        {tab==='list'&&<>
+          {/* Summary Cards */}
+          <div className="g4" style={{marginBottom:16}}>
+            <div className="stat-card"><div className="stat-val" style={{fontSize:15,color:'var(--red)'}}>{fmt(totalExpense)}</div><div className="stat-lbl">Total Expenses</div></div>
+            <div className="stat-card"><div className="stat-val" style={{fontSize:15}}>{fmt(totalTax)}</div><div className="stat-lbl">Total Input Tax (GST)</div></div>
+            <div className="stat-card" style={{borderLeft:'3px solid #166534'}}><div className="stat-val" style={{fontSize:15,color:'#166534'}}>{fmt(totalPaid)}</div><div className="stat-lbl">Paid</div></div>
+            <div className="stat-card" style={{borderLeft:'3px solid #DC2626'}}><div className="stat-val" style={{fontSize:15,color:'#DC2626'}}>{fmt(totalPending)}</div><div className="stat-lbl">Pending Payment</div></div>
+          </div>
+
+          {/* Filters */}
+          <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+            <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
+              placeholder="🔍 Search vendor, description, bill no, category..."
+              style={{flex:1,minWidth:200}}/>
+            <select className="field-input" value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{width:180}}>
+              <option value="">All Categories</option>
+              {EXP_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+            <select className="field-input" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} style={{width:130}}>
+              <option value="">All Status</option>
+              <option value="Paid">Paid</option>
+              <option value="Pending">Pending</option>
+              <option value="Partial">Partial</option>
+            </select>
+          </div>
+
+          {filtered.length>0?(
+            <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'52vh',overflowY:'auto'}}>
+              {/* Header */}
+              <div style={{display:'grid',gridTemplateColumns:'100px 1fr 120px 110px 100px 100px 110px',gap:0,padding:'8px 12px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',position:'sticky',top:0,zIndex:2}}>
+                <span>Date</span><span>Vendor / Description</span><span>Category</span><span>Bill No</span><span>Amount</span><span>Status</span><span>Actions</span>
+              </div>
+              {filtered.map((e,i)=>{
+                const pb=payBadge(e.payStatus);
+                return(
+                <div key={i} style={{display:'grid',gridTemplateColumns:'100px 1fr 120px 110px 100px 100px 110px',gap:0,padding:'10px 12px',borderBottom:'1px solid var(--border)',alignItems:'center'}}>
+                  <div style={{fontSize:12,color:'var(--text3)'}}>{fmtDate(e.date)}</div>
+                  <div>
+                    <div style={{fontWeight:700,color:'var(--text)',fontSize:13}}>{e.vendor}</div>
+                    <div style={{fontSize:11,color:'var(--text3)'}}>{e.description||e.category}</div>
+                    {e.billNo&&<div style={{fontSize:10,color:'var(--gold)',fontFamily:'monospace'}}>Bill: {e.billNo}</div>}
+                  </div>
+                  <div style={{fontSize:11,color:'var(--text2)',background:'var(--card2)',padding:'2px 7px',borderRadius:6,textAlign:'center'}}>{e.category||'—'}</div>
+                  <div style={{fontSize:11,color:'var(--text3)',fontFamily:'monospace'}}>{e.billNo||'—'}</div>
+                  <div style={{fontWeight:700,color:'var(--red)',fontSize:13}}>{fmt(e.total)}</div>
+                  <span style={{padding:'3px 8px',borderRadius:12,fontSize:10,fontWeight:700,background:pb.bg,color:pb.color,textAlign:'center'}}>{e.payStatus||'—'}</span>
+                  <div style={{display:'flex',gap:5}}>
+                    <button className="btn btn-xs btn-outline" onClick={()=>editExp(e)}><Ic n="edit" s={11}/>Edit</button>
+                    {isAdmin&&<button className="btn btn-xs btn-danger" onClick={()=>delExp(e.id)}><Ic n="trash" s={11}/></button>}
+                  </div>
+                </div>);
+              })}
+            </div>
+          ):<div style={{textAlign:'center',padding:'50px',color:'var(--text3)'}}>
+              <div style={{fontSize:40,marginBottom:10}}>🧾</div>
+              <div style={{fontSize:14}}>No expenses recorded yet.</div>
+              <div style={{fontSize:12,marginTop:4}}>Click "Add Expense" to start tracking purchases.</div>
+            </div>}
+        </>}
+
+        {/* ── ADD / EDIT TAB ── */}
+        {tab==='add'&&<div>
+          {/* Row 1: Date, Vendor, GSTIN, State */}
+          <div className="g4" style={{marginBottom:4}}>
+            <div className="field"><label className="field-label">Date *</label><input type="date" className="field-input" value={form.date} onChange={upF('date')}/></div>
+            <div className="field"><label className="field-label">Vendor / Supplier Name *</label><input className="field-input" value={form.vendor} onChange={upF('vendor')} placeholder="Supplier name"/></div>
+            <div className="field"><label className="field-label">Vendor GSTIN</label><input className="field-input" value={form.vendorGSTIN||''} onChange={e=>setForm(p=>calcExp({...p,vendorGSTIN:e.target.value.toUpperCase()}))} placeholder="29XXXXX0000X1Z5" maxLength={15} style={{textTransform:'uppercase'}}/></div>
+            <div className="field"><label className="field-label">Vendor State</label><input className="field-input" value={form.vendorState||''} onChange={upF('vendorState')} placeholder="e.g. Karnataka"/></div>
+          </div>
+          {/* Row 2: Bill No, Bill Date, Category */}
+          <div className="g3" style={{marginBottom:4}}>
+            <div className="field"><label className="field-label">Bill / Invoice No</label><input className="field-input" value={form.billNo||''} onChange={upF('billNo')} placeholder="INV/BILL-001"/></div>
+            <div className="field"><label className="field-label">Bill Date</label><input type="date" className="field-input" value={form.billDate||''} onChange={upF('billDate')}/></div>
+            <div className="field"><label className="field-label">Category *</label>
+              <select className="field-input" value={form.category||''} onChange={upF('category')}>
+                <option value="">— Select Category —</option>
+                {EXP_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          {/* Row 3: Description, HSN, Unit */}
+          <div className="g3" style={{marginBottom:4}}>
+            <div className="field"><label className="field-label">Description / Item</label><input className="field-input" value={form.description||''} onChange={upF('description')} placeholder="What was purchased?"/></div>
+            <div className="field"><label className="field-label">HSN / SAC Code</label><input className="field-input" value={form.hsnCode||''} onChange={upF('hsnCode')} placeholder="84713010"/></div>
+            <div className="field"><label className="field-label">Unit</label>
+              <select className="field-input" value={form.unit||'Nos'} onChange={upF('unit')}>
+                {['Nos','Kg','Gm','Ltr','Mtr','Box','Pcs','Set','Pair','Month','Year','Job','Other'].map(u=><option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+          </div>
+          {/* Row 4: Qty, Rate, Tax Rate, GST Type */}
+          <div className="g4" style={{marginBottom:4}}>
+            <div className="field"><label className="field-label">Qty</label><input type="number" className="field-input" value={form.qty} onChange={upF('qty')} min="0"/></div>
+            <div className="field"><label className="field-label">Rate (Rs.)</label><input type="number" className="field-input" value={form.rate} onChange={upF('rate')} placeholder="0.00" min="0"/></div>
+            <div className="field"><label className="field-label">GST Rate</label>
+              <select className="field-input" value={form.taxRate} onChange={upF('taxRate')}>
+                {['0','5','12','18','28'].map(r=><option key={r} value={r}>{r}%</option>)}
+              </select>
+            </div>
+            <div className="field"><label className="field-label">GST Type</label>
+              <select className="field-input" value={form.gstType||'INTRA'} onChange={upF('gstType')}>
+                <option value="INTRA">Intra-State (CGST+SGST)</option>
+                <option value="INTER">Inter-State (IGST)</option>
+              </select>
+            </div>
+          </div>
+          {/* Calculated totals display */}
+          <div style={{display:'flex',gap:12,padding:'10px 14px',background:'var(--card2)',borderRadius:10,marginBottom:12,border:'1px solid var(--border)',flexWrap:'wrap'}}>
+            <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Taxable</div><div style={{fontWeight:700,color:'var(--text)'}}>{fmt(form.taxable)}</div></div>
+            <div style={{color:'var(--border2)'}}>|</div>
+            {form.gstType==='INTRA'?<>
+              <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>CGST ({parseFloat(form.taxRate)/2}%)</div><div style={{fontWeight:700,color:'var(--text2)'}}>{fmt(parseFloat(form.gstAmt)/2)}</div></div>
+              <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>SGST ({parseFloat(form.taxRate)/2}%)</div><div style={{fontWeight:700,color:'var(--text2)'}}>{fmt(parseFloat(form.gstAmt)/2)}</div></div>
+            </>:<div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>IGST ({form.taxRate}%)</div><div style={{fontWeight:700,color:'var(--text2)'}}>{fmt(form.gstAmt)}</div></div>}
+            <div style={{color:'var(--border2)'}}>|</div>
+            <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Total GST</div><div style={{fontWeight:700,color:'var(--text)'}}>{fmt(form.gstAmt)}</div></div>
+            <div style={{color:'var(--border2)'}}>|</div>
+            <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Total Amount</div><div style={{fontWeight:800,color:'var(--primary2)',fontSize:16}}>{fmt(form.total)}</div></div>
+          </div>
+          {/* Row 5: Payment details */}
+          <div className="g4" style={{marginBottom:4}}>
+            <div className="field"><label className="field-label">Payment Mode</label>
+              <select className="field-input" value={form.payMode||''} onChange={upF('payMode')}>
+                {PAY_MODES.map(m=><option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            <div className="field"><label className="field-label">Payment Status</label>
+              <select className="field-input" value={form.payStatus||'Paid'} onChange={upF('payStatus')}>
+                <option value="Paid">✅ Paid</option>
+                <option value="Pending">⏳ Pending</option>
+                <option value="Partial">🔶 Partial</option>
+              </select>
+            </div>
+            <div className="field"><label className="field-label">Paid Date</label><input type="date" className="field-input" value={form.paidDate||''} onChange={upF('paidDate')}/></div>
+            <div className="field"><label className="field-label">Notes / Remarks</label><input className="field-input" value={form.notes||''} onChange={upF('notes')} placeholder="Any additional notes..."/></div>
+          </div>
+        </div>}
+      </div>
+
+      <div className="modal-ftr">
+        {tab==='list'&&<button className="btn btn-primary" onClick={onClose}>Close</button>}
+        {tab==='add'&&<>
+          <button className="btn btn-outline" onClick={()=>{setForm(blankExp(currentUser));setEditId(null);setTab('list');}}>Cancel</button>
+          <button className="btn btn-primary" onClick={saveExp}><Ic n="save"/>{editId?'Update Expense':'Save Expense'}</button>
+        </>}
+      </div>
+    </div>
+  </div>;
+};
+
+const CustomerModal = ({onClose, onSelect})=>{
+  const blank={name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',notes:''};
+  const [list,setList]=useState(S.get(SK.CUST,[]));
+  const [form,setForm]=useState(blank);
+  const [editing,setEditing]=useState(null);
+  const [q,setQ]=useState('');
+  const [tab,setTab]=useState(onSelect?'search':'list');
+
+  const save=()=>{
+    if(!form.name){toast.error('Customer name required');return;}
+    let u;
+    if(editing!==null){u=list.map((c,i)=>i===editing?{...form}:c);}
+    else{
+      if(list.find(c=>c.name.toLowerCase()===form.name.toLowerCase()&&c.gstin===form.gstin)){toast.error('Customer already exists');return;}
+      u=[...list,{...form,createdAt:new Date().toISOString()}];
+    }
+    setList(u);S.set(SK.CUST,u);
+    setForm(blank);setEditing(null);setTab('list');
+    toast.success(editing!==null?'Customer updated!':'Customer saved!');
+  };
+  const del=i=>{if(!window.confirm('Delete customer?'))return;const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.CUST,u);};
+  const edit=i=>{setForm({...list[i]});setEditing(i);setTab('add');};
+  const filtered=list.filter(c=>!q||c.name.toLowerCase().includes(q.toLowerCase())||c.gstin?.includes(q)||c.city?.toLowerCase().includes(q.toLowerCase()));
+
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal" style={{maxWidth:860}}>
+      <div className="modal-hdr">
+        <span className="modal-title">👥 Customer Database</span>
+        <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
+      </div>
+      <div className="modal-body">
+        <div style={{display:'flex',gap:8,marginBottom:16}}>
+          {[['list',`📋 All Customers (${list.length})`],['add',editing!==null?'✏️ Edit Customer':'➕ Add Customer']].map(([k,l])=>(
+            <button key={k} onClick={()=>setTab(k)}
+              style={{padding:'7px 18px',borderRadius:8,fontSize:12,fontWeight:tab===k?700:500,cursor:'pointer',
+                border:`2px solid ${tab===k?'var(--primary)':'var(--border2)'}`,
+                background:tab===k?'var(--primary-bg)':'transparent',
+                color:tab===k?'var(--primary2)':'var(--text2)'}}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        {tab==='list'&&(
+          <>
+            <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 Search by name, GSTIN, city..." style={{marginBottom:12}}/>
+            {filtered.length>0?(
+              <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'50vh',overflowY:'auto'}}>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 130px 110px 120px auto',gap:0,padding:'8px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>
+                  <span>Name</span><span>GSTIN</span><span>City</span><span>Phone</span><span>Actions</span>
+                </div>
+                {filtered.map((c,i)=>(
+                  <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 130px 110px 120px auto',gap:0,padding:'10px 14px',borderBottom:'1px solid var(--border)',alignItems:'center'}}>
+                    <div>
+                      <div style={{fontWeight:700,color:'var(--text)',fontSize:13}}>{c.name}</div>
+                      {c.email&&<div style={{fontSize:11,color:'var(--text3)'}}>{c.email}</div>}
+                    </div>
+                    <div style={{fontFamily:'monospace',fontSize:11,color:'var(--gold)'}}>{c.gstin||'—'}</div>
+                    <div style={{fontSize:12,color:'var(--text2)'}}>{c.city||'—'}</div>
+                    <div style={{fontSize:12,color:'var(--text2)'}}>{c.phone||'—'}</div>
+                    <div style={{display:'flex',gap:5}}>
+                      {onSelect&&<button className="btn btn-sm btn-outline-primary" onClick={()=>{onSelect(c);onClose();}}>Select</button>}
+                      <button className="btn btn-sm btn-outline btn-icon" onClick={()=>edit(list.indexOf(c))}><Ic n="edit" s={12}/></button>
+                      <button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(list.indexOf(c))}><Ic n="trash" s={12}/></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ):<div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>
+                <div style={{fontSize:36,marginBottom:8}}>👥</div>
+                <div>No customers yet. Add your first customer!</div>
+              </div>}
+          </>
+        )}
+
+        {tab==='add'&&(
+          <div>
+            <div className="g2">
+              <div className="field"><label className="field-label">Customer Name *</label><input className="field-input" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="Business or Individual Name"/></div>
+              <div className="field"><label className="field-label">GSTIN</label><input className="field-input" value={form.gstin||''} onChange={e=>setForm(p=>({...p,gstin:e.target.value.toUpperCase()}))} placeholder="29XXXXX0000X1Z5" maxLength={15}/></div>
+            </div>
+            <div className="field"><label className="field-label">Address</label><textarea className="field-input" value={form.address||''} onChange={e=>setForm(p=>({...p,address:e.target.value}))} rows={2} placeholder="Street, Area"/></div>
+            <div className="g3">
+              <div className="field"><label className="field-label">City</label><input className="field-input" value={form.city||''} onChange={e=>setForm(p=>({...p,city:e.target.value}))}/></div>
+              <div className="field"><label className="field-label">State</label><input className="field-input" value={form.state||''} onChange={e=>setForm(p=>({...p,state:e.target.value}))}/></div>
+              <div className="field"><label className="field-label">PIN</label><input className="field-input" value={form.pin||''} onChange={e=>setForm(p=>({...p,pin:e.target.value}))} maxLength={6}/></div>
+            </div>
+            <div className="g2">
+              <div className="field"><label className="field-label">Phone</label><input className="field-input" value={form.phone||''} onChange={e=>setForm(p=>({...p,phone:e.target.value}))}/></div>
+              <div className="field"><label className="field-label">Email</label><input className="field-input" value={form.email||''} onChange={e=>setForm(p=>({...p,email:e.target.value}))}/></div>
+            </div>
+            <div className="field"><label className="field-label">Notes</label><input className="field-input" value={form.notes||''} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Any notes about this customer..."/></div>
+          </div>
+        )}
+      </div>
+      <div className="modal-ftr">
+        {tab==='add'&&<><button className="btn btn-outline" onClick={()=>{setForm(blank);setEditing(null);setTab('list');}}>Cancel</button><button className="btn btn-primary" onClick={save}><Ic n="save"/>Save Customer</button></>}
+        {tab==='list'&&<button className="btn btn-primary" onClick={onClose}>Done</button>}
+      </div>
+    </div>
+  </div>;
+};
+
+const HistoryModal = ({onClose,onLoad,currentUser})=>{
+  const [invs,setInvs]=useState(S.get(SK.INV,[]));
+  const [q,setQ]=useState('');
+  const co=S.get(SK.CO,{});
+  const isAdmin=currentUser?.role==='admin'||currentUser?.role==='superadmin';
+  const del=id=>{
+    if(!window.confirm('Delete this invoice permanently?'))return;
+    const inv=invs.find(i=>i.invNo===id);
+    const u=invs.filter(i=>i.invNo!==id);setInvs(u);S.set(SK.INV,u);
+    logAudit('INVOICE_DELETED',`${inv?.invNo} — ${inv?.billTo?.name} — ₹${Math.abs(inv?.grand||0)}`,currentUser);
+    toast.info('Invoice deleted');
+  };
+  const sorted=[...invs].filter(i=>!q||i.invNo?.toLowerCase().includes(q.toLowerCase())||i.billTo?.name?.toLowerCase().includes(q.toLowerCase())||(i.docType||'').toLowerCase().includes(q.toLowerCase())||(i.isB2C?'b2c':'b2b').includes(q.toLowerCase())).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  const total=invs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const mn=new Date(),mInvs=invs.filter(i=>{const d=new Date(i.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();});
+  const docBadge=(dt,isB2C)=>{
+    if(isB2C) return {label:'B2C',bg:'#E0F2FE',color:'#0369A1'};
+    if(dt==='DEBIT NOTE') return {label:'DN',bg:'#FEF3C7',color:'#92400E'};
+    if(dt==='CREDIT NOTE') return {label:'CN',bg:'#D1FAE5',color:'#065F46'};
+    return {label:'B2B',bg:'var(--primary-bg)',color:'var(--primary2)'};
+  };
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal" style={{maxWidth:1100,width:'95vw'}}>
+      <div className="modal-hdr">
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <span className="modal-title">📂 Invoice History</span>
+          <span style={{fontSize:11,color:'var(--text3)',background:'var(--card2)',padding:'3px 10px',borderRadius:20,border:'1px solid var(--border)'}}>
+            {sorted.length} of {invs.length} records
+          </span>
+          {!isAdmin&&<span style={{fontSize:11,color:'#B45309',background:'#FEF3C7',padding:'3px 10px',borderRadius:20,border:'1px solid #FDE68A'}}>
+            🔒 View only — contact admin to delete
+          </span>}
+        </div>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          {isAdmin&&<><button className="btn btn-outline-primary btn-sm" onClick={()=>makeGSTR1(invs)}><Ic n="xlsx" s={13}/>GSTR-1</button>
+          <button className="btn btn-success btn-sm" onClick={()=>makeExcel(invs)}><Ic n="xlsx" s={13}/>Sales Register</button></>}
+          {!isAdmin&&<span style={{fontSize:11,color:'#B45309',background:'#FEF3C7',padding:'3px 10px',borderRadius:20,border:'1px solid #FDE68A'}}>🔒 Reports: Admin only</span>}
+          <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
+        </div>
+      </div>
+      <div className="modal-body">
+        <div className="g4" style={{marginBottom:18}}>
+          <div className="stat-card"><div className="stat-val">{invs.length}</div><div className="stat-lbl">Total Records</div></div>
+          <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:total<0?'var(--red)':undefined}}>{fmt(total)}</div><div className="stat-lbl">Net Revenue</div></div>
+          <div className="stat-card"><div className="stat-val">{mInvs.length}</div><div className="stat-lbl">This Month</div></div>
+          <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{fmt(mInvs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0))}</div><div className="stat-lbl">Month Revenue</div></div>
+        </div>
+        <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
+          placeholder="🔍 Search by invoice no., customer name, type (B2B / B2C / Debit / Credit)..."
+          style={{marginBottom:12,fontSize:13}}/>
+        {sorted.length>0?(
+          <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'55vh',overflowY:'auto'}}>
+            {/* Table header */}
+            <div style={{display:'flex',gap:8,padding:'8px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',position:'sticky',top:0,zIndex:2}}>
+              <span style={{minWidth:44}}>Type</span>
+              <span style={{minWidth:150}}>Invoice No.</span>
+              <span style={{flex:1}}>Customer</span>
+              <span style={{minWidth:90}}>Date</span>
+              <span style={{minWidth:80}}>Status</span>
+              <span style={{minWidth:40,textAlign:'center'}}>Sent</span>
+              <span style={{minWidth:120,textAlign:'right'}}>Amount</span>
+              <span style={{minWidth:isAdmin?170:120,textAlign:'center'}}>Actions</span>
+            </div>
+            {sorted.map((inv,i)=>{
+              const b=docBadge(inv.docType,inv.isB2C);
+              const isCN=inv.docType==='CREDIT NOTE';
+              const stCfg={Draft:{bg:'#F1F5F9',color:'#475569'},Sent:{bg:'#EFF6FF',color:'#1D4ED8'},Paid:{bg:'#F0FDF4',color:'#166534'},Overdue:{bg:'#FEF2F2',color:'#DC2626'}}[inv.status||'Draft']||{bg:'#F1F5F9',color:'#475569'};
+              return(
+              <div key={i} className="hist-row" style={{padding:'10px 14px'}}>
+                <span style={{background:b.bg,color:b.color,borderRadius:5,padding:'3px 8px',fontSize:10,fontWeight:700,minWidth:44,textAlign:'center',display:'inline-block'}}>{b.label}</span>
+                <div style={{fontFamily:'monospace',fontWeight:700,color:'var(--gold)',minWidth:150,fontSize:13}}>{inv.invNo}</div>
+                <div style={{flex:1,color:'var(--text)',fontSize:13}}>{inv.billTo?.name||'Unknown'}</div>
+                <div style={{color:'var(--text3)',fontSize:12,minWidth:90}}>{fmtDate(inv.date)}</div>
+                <span style={{minWidth:80,padding:'2px 8px',borderRadius:12,fontSize:10,fontWeight:700,background:stCfg.bg,color:stCfg.color,textAlign:'center'}}>
+                  {(inv.status||'Draft')==='Draft'?'📝 Draft':(inv.status)==='Sent'?'📤 Sent':(inv.status)==='Paid'?'✅ Paid':'⚠️ Overdue'}
+                </span>
+                <div style={{minWidth:40,textAlign:'center',fontSize:14}}>
+                  {inv.sentToCustomer?<span title="Sent to customer">📤</span>:<span style={{color:'var(--text3)',fontSize:11}}>—</span>}
+                </div>
+                <div style={{fontWeight:700,color:isCN?'var(--red)':'var(--text)',minWidth:120,textAlign:'right',fontSize:13}}>
+                  {isCN&&<span style={{color:'var(--red)'}}>− </span>}{fmt(Math.abs(inv.grand))}
+                </div>
+                <div style={{display:'flex',gap:6,minWidth:isAdmin?170:120,justifyContent:'flex-end'}}>
+                  <button className="btn btn-sm btn-outline-primary" onClick={()=>{onLoad(inv);onClose();}}>Load</button>
+                  <button className="btn btn-sm btn-outline btn-icon" title="Download PDF" onClick={()=>{makePDF(inv,co,S.get(SK.TERMS,DEFAULT_TERMS));}}><Ic n="pdf" s={12}/></button>
+                  {isAdmin&&(
+                    <button className="btn btn-sm btn-danger btn-icon" title="Delete (Admin only)" onClick={()=>del(inv.invNo)}><Ic n="trash" s={12}/></button>
+                  )}
+                </div>
+              </div>);})}
+          </div>
+        ):<div style={{textAlign:'center',padding:'60px',color:'var(--text3)'}}>
+            <div style={{fontSize:40,marginBottom:12}}>📭</div>
+            <div>No records saved yet.</div>
+          </div>}
+      </div>
+      <div className="modal-ftr">
+        <span style={{fontSize:12,color:'var(--text3)'}}>
+          {isAdmin?'✅ Admin — full access':'👁️ Staff — view & download only'}
+        </span>
+        <button className="btn btn-primary" onClick={onClose}>Close</button>
+      </div>
+    </div>
+  </div>;
+};
+
+/* ── PRODUCT ROW ── */
+const ProductRow = ({row,idx,onChange,onDelete,hsnList,gstType})=>{
+  const [showDrop,setShowDrop]=useState(false);
+  const [hsnQ,setHsnQ]=useState(row.hsnCode||'');
+  const [dropPos,setDropPos]=useState({top:0,left:0,width:0});
+  const inputRef=useRef();
+  const dropRef=useRef();
+
+  // Close on outside click
+  useEffect(()=>{
+    const h=e=>{
+      if(inputRef.current&&!inputRef.current.contains(e.target)&&
+         dropRef.current&&!dropRef.current.contains(e.target))
+        setShowDrop(false);
+    };
+    document.addEventListener('mousedown',h);
+    return()=>document.removeEventListener('mousedown',h);
+  },[]);
+
+  // Recalculate position every time dropdown opens or on scroll/resize
+  const updatePos=()=>{
+    if(inputRef.current){
+      const r=inputRef.current.getBoundingClientRect();
+      // Use fixed positioning — coordinates are always relative to viewport, no scroll offset needed
+      setDropPos({top:r.bottom+4, left:r.left, width:Math.max(r.width,380)});
+    }
+  };
+
+  useEffect(()=>{
+    if(showDrop){
+      updatePos();
+      window.addEventListener('scroll',updatePos,true);
+      window.addEventListener('resize',updatePos);
+      return()=>{
+        window.removeEventListener('scroll',updatePos,true);
+        window.removeEventListener('resize',updatePos);
+      };
+    }
+  },[showDrop]);
+
+  // Show ALL matches
+  const matched=hsnQ.length>0
+    ?hsnList.filter(h=>
+        h.code.startsWith(hsnQ)||
+        h.code.includes(hsnQ)||
+        h.desc.toLowerCase().includes(hsnQ.toLowerCase())
+      ).slice(0,15)
+    :[];
+  const calc=updated=>{
+    const qty=parseFloat(updated.qty)||0, rate=parseFloat(updated.rate)||0;
+    const disc=parseFloat(updated.discount)||0, tax=parseFloat(updated.taxRate)||0;
+    const gross=qty*rate, discAmt=gross*(disc/100), taxable=gross-discAmt;
+    updated.taxable=taxable.toFixed(2);
+    updated.gstAmt=(taxable*tax/100).toFixed(2);
+    updated.total=(taxable*(1+tax/100)).toFixed(2);
+    return updated;
+  };
+  const up=k=>e=>{const updated=calc({...row,[k]:e.target.value});onChange(idx,updated);};
+  const selectHSN=h=>{
+    const updated=calc({...row,hsnCode:h.code,taxRate:h.taxRate,unit:h.unit,desc:row.desc||h.desc});
+    // Auto fill description ONLY if empty
+    if(!row.desc) updated.desc=h.desc;
+    onChange(idx,updated);
+    setHsnQ(h.code);
+    setShowDrop(false);
+  };
+  const taxLabel=gstType==='INTRA'?`CGST${parseFloat(row.taxRate||0)/2}%+SGST${parseFloat(row.taxRate||0)/2}%`:`IGST ${row.taxRate||0}%`;
+  return <tr>
+    <td className="p-sno">{idx+1}</td>
+    <td style={{minWidth:220}}>
+      <input className="p-input" value={row.desc||''} onChange={up('desc')} placeholder="Enter product/service description..."/>
+    </td>
+    <td style={{minWidth:130}}>
+      <div className="hsn-wrap">
+        <input ref={inputRef} className="p-input gold" value={hsnQ}
+          onChange={e=>{setHsnQ(e.target.value);up('hsnCode')(e);setShowDrop(true);}}
+          onFocus={()=>setShowDrop(true)}
+          placeholder="HSN/SAC" style={{maxWidth:110}}/>
+        {showDrop&&matched.length>0&&ReactDOM.createPortal(
+          <div ref={dropRef} style={{
+            position:'fixed',
+            top:dropPos.top, left:dropPos.left,
+            width:380, background:'var(--card)',
+            border:'1.5px solid var(--border2)',
+            borderRadius:10, boxShadow:'0 8px 40px rgba(0,0,0,0.4)',
+            zIndex:99999, maxHeight:300, overflowY:'auto'
+          }}>
+            <div style={{padding:'6px 12px',fontSize:10,color:'var(--text3)',borderBottom:'1px solid var(--border)',fontWeight:600,background:'var(--card2)',borderRadius:'10px 10px 0 0'}}>
+              🔍 {matched.length} result{matched.length!==1?'s':''} found
+            </div>
+            {matched.map((h,j)=>(
+              <div key={j} className="hsn-opt" onMouseDown={(e)=>{e.preventDefault();selectHSN(h);}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span className="hsn-code">{h.code}</span>
+                  <span className="badge badge-green" style={{fontSize:10}}>{h.taxRate}%</span>
+                </div>
+                <div className="hsn-desc">{h.desc}</div>
+                {h.category&&<div style={{fontSize:10,color:'var(--text3)',marginTop:1}}>{h.category}</div>}
+              </div>
+            ))}
+          </div>,
+          document.body
+        )}
+      </div>
+    </td>
+    <td style={{minWidth:90}}>
+      <select value={row.unit||'Nos'} onChange={up('unit')} className="p-input" style={{maxWidth:80}}>
+        {UNITS.map(u=><option key={u} value={u}>{u}</option>)}
+      </select>
+    </td>
+    <td style={{minWidth:70}}><input type="number" className="p-input r" value={row.qty||''} onChange={up('qty')} placeholder="1" min="0"/></td>
+    <td style={{minWidth:90}}><input type="number" className="p-input r" value={row.rate||''} onChange={up('rate')} placeholder="0.00" min="0"/></td>
+    <td style={{minWidth:60}}><input type="number" className="p-input r" value={row.discount||''} onChange={up('discount')} placeholder="0" min="0" max="100"/></td>
+    <td style={{minWidth:80}}>
+      <select value={row.taxRate||'18'} onChange={up('taxRate')} className="p-input" style={{maxWidth:72}}>
+        {TAX_RATES.map(r=><option key={r} value={r}>{r}%</option>)}
+      </select>
+    </td>
+    <td className="p-num" style={{minWidth:100}}>{fmt(row.taxable||0)}</td>
+    <td style={{minWidth:130,fontSize:10,color:'var(--text3)',textAlign:'center',whiteSpace:'nowrap'}}>{taxLabel}</td>
+    <td className="p-total" style={{minWidth:100}}>{fmt(row.total||0)}</td>
+    <td style={{width:38}}>
+      <button className="btn btn-icon btn-danger btn-sm" onClick={()=>onDelete(idx)}><Ic n="trash" s={13}/></button>
+    </td>
+  </tr>;
+};
+
+/* ── ADMIN PANEL ── */
+const AdminPanel = ({currentUser,onClose})=>{
+  const [tab,setTab]=useState('dashboard');
+  const [users,setUsers]=useState(()=>seedUsers());
+  const [uForm,setUForm]=useState({email:'',name:'',password:'',role:'user',active:true});
+  const [editUID,setEditUID]=useState(null);
+  const [showPw,setShowPw]=useState(false);
+  const [auditQ,setAuditQ]=useState('');
+  const modalBodyRef=useRef();
+  const invs=S.get(SK.INV,[]);
+  const co=S.get(SK.CO,{});
+  const isSuper=isSuperAdmin(currentUser?.email);
+
+  const total=invs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const mn=new Date(),mInvs=invs.filter(i=>{const d=new Date(i.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();});
+  const cnCount=invs.filter(i=>i.docType==='CREDIT NOTE').length;
+  const dnCount=invs.filter(i=>i.docType==='DEBIT NOTE').length;
+  const hsnCount=(S.get(SK.HSN,[])).length;
+  const expenses=S.get(SK.EXP,[]);
+  const totalExp=expenses.reduce((s,e)=>s+(parseFloat(e.total)||0),0);
+  const netProfit=total-totalExp;
+
+  const saveUser=()=>{
+    if(!uForm.email||!uForm.name||!uForm.password){toast.error('All fields required');return;}
+    if(!uForm.email.includes('@')){toast.error('Valid email required');return;}
+    // Prevent admin from creating superadmin
+    if(!isSuper&&uForm.role==='superadmin'){toast.error('Only Super Admin can assign Super Admin role');return;}
+    let updated;
+    if(editUID){
+      updated=users.map(u=>u.id===editUID?{...u,...uForm}:u);
+    } else {
+      if(users.find(u=>u.email.toLowerCase()===uForm.email.toLowerCase())){toast.error('Email exists');return;}
+      const newU={id:Date.now().toString(),...uForm,createdAt:new Date().toISOString()};
+      updated=[...users,newU];
+    }
+    setUsers(updated);S.set(SK.USERS,updated);
+    logAudit(editUID?'USER_EDITED':'USER_CREATED',`${uForm.name} (${uForm.email}) role:${uForm.role}`,currentUser);
+    setUForm({email:'',name:'',password:'',role:'user',active:true});setEditUID(null);
+    toast.success(editUID?'User updated!':'User created!');
+  };
+  const delUser=id=>{
+    if(!isSuper){toast.error('Only Super Admin can delete users');return;}
+    const u=users.find(u=>u.id===id);
+    if(isSuperAdmin(u?.email)){toast.error('Cannot delete Super Admin');return;}
+    if(id===currentUser.id){toast.error('Cannot delete yourself');return;}
+    if(!window.confirm(`Delete user "${u?.name}"?`))return;
+    const updated=users.filter(u=>u.id!==id);setUsers(updated);S.set(SK.USERS,updated);
+    logAudit('USER_DELETED',`${u?.name} (${u?.email})`,currentUser);
+    toast.info('User deleted');
+  };
+  const editUser=u=>{
+    if(isSuperAdmin(u.email)&&!isSuper){toast.error('Only Super Admin can edit Super Admin credentials');return;}
+    setUForm({email:u.email,name:u.name,password:u.password,role:u.role,active:u.active});
+    setEditUID(u.id);
+    setTab('users');
+    // Scroll modal body to top so the form is visible on mobile
+    setTimeout(()=>modalBodyRef.current?.scrollTo({top:0,behavior:'smooth'}),50);
+  };
+  const toggleActive=id=>{
+    const u=users.find(u=>u.id===id);
+    if(isSuperAdmin(u?.email)){toast.error('Cannot deactivate Super Admin');return;}
+    const updated=users.map(u=>u.id===id?{...u,active:!u.active}:u);setUsers(updated);S.set(SK.USERS,updated);
+    logAudit('USER_TOGGLED',`${u?.name} → ${u?.active?'Inactive':'Active'}`,currentUser);
+  };
+
+  const auditLogs=S.get(SK.AUDIT,[]).filter(l=>!auditQ||
+    l.action.toLowerCase().includes(auditQ.toLowerCase())||
+    l.detail.toLowerCase().includes(auditQ.toLowerCase())||
+    l.userName.toLowerCase().includes(auditQ.toLowerCase()));
+
+  const roleBadge=r=>r==='superadmin'?{cls:'badge-gold',label:'Super Admin'}:r==='admin'?{cls:'badge-primary',label:'Admin'}:{cls:'badge-green',label:'User'};
+
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal" style={{maxWidth:980}}>
+      <div className="modal-hdr">
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <span style={{fontSize:22}}>{isSuper?'👑':'🛡️'}</span>
+          <div>
+            <div className="modal-title">{isSuper?'Super Admin Panel':'Admin Panel'}</div>
+            <div style={{fontSize:11,color:'var(--text3)'}}>Logged in as: {currentUser.name} {isSuper&&<span style={{color:'var(--gold)',fontWeight:700}}>★ Super Admin</span>}</div>
+          </div>
+        </div>
+        <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
+      </div>
+      <div className="modal-body" ref={modalBodyRef}>
+        <div className="admin-tabs">
+          {[['dashboard','Dashboard'],['users','Users'],['invoices','All Invoices'],['audit','Audit Log'],['export','Export Data']].map(([k,l])=>(
+            <button key={k} className={`admin-tab${tab===k?' active':''}`} onClick={()=>setTab(k)}>{l}</button>))}
+        </div>
+
+        {tab==='dashboard'&&(
+          <div>
+            <div className="g4" style={{marginBottom:20}}>
+              <div className="stat-card" style={{background:'linear-gradient(135deg,#1E3A8A,#1D4ED8)'}}><div className="stat-val" style={{color:'#fff'}}>{invs.length}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>Total Records</div></div>
+              <div className="stat-card" style={{background:'linear-gradient(135deg,#064E3B,#065F46)'}}><div className="stat-val" style={{color:'#6EE7B7',fontSize:16}}>{fmt(total)}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>Net Revenue</div></div>
+              <div className="stat-card" style={{background:'linear-gradient(135deg,#7F1D1D,#991B1B)'}}><div className="stat-val" style={{color:'#FCA5A5',fontSize:16}}>{fmt(totalExp)}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>Total Expenses</div></div>
+              <div className="stat-card" style={{background:netProfit>=0?'linear-gradient(135deg,#14532D,#15803D)':'linear-gradient(135deg,#450A0A,#7F1D1D)'}}><div className="stat-val" style={{color:netProfit>=0?'#86EFAC':'#FCA5A5',fontSize:16}}>{fmt(netProfit)}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>Net Profit</div></div>
+            </div>
+            <div className="g4" style={{marginBottom:12}}>
+              <div className="stat-card" style={{background:'linear-gradient(135deg,#78350F,#92400E)'}}><div className="stat-val" style={{color:'#FCD34D'}}>{mInvs.length}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>This Month</div></div>
+              <div className="stat-card" style={{background:'linear-gradient(135deg,#4A044E,#701A75)'}}><div className="stat-val" style={{color:'#E879F9',fontSize:16}}>{fmt(mInvs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0))}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>Month Revenue</div></div>
+              <div className="stat-card" style={{background:'linear-gradient(135deg,#1C1917,#292524)'}}><div className="stat-val" style={{color:'#D6D3D1',fontSize:16}}>{fmt(expenses.filter(e=>{const d=new Date(e.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();}).reduce((s,e)=>s+(parseFloat(e.total)||0),0))}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>Month Expenses</div></div>
+              <div className="stat-card"><div className="stat-val">{expenses.length}</div><div className="stat-lbl">Purchase Records</div></div>
+            </div>
+            <div className="g3">
+              <div className="stat-card"><div className="stat-val">{users.length}</div><div className="stat-lbl">App Users</div></div>
+              <div className="stat-card"><div className="stat-val">{hsnCount}</div><div className="stat-lbl">HSN Entries</div></div>
+              <div className="stat-card"><div className="stat-val">{co.name||'—'}</div><div className="stat-lbl">Company</div></div>
+              <div className="stat-card" style={{borderLeft:'3px solid #B45309'}}><div className="stat-val" style={{color:'#B45309'}}>{dnCount}</div><div className="stat-lbl">Debit Notes</div></div>
+              <div className="stat-card" style={{borderLeft:'3px solid #065F46'}}><div className="stat-val" style={{color:'#065F46'}}>{cnCount}</div><div className="stat-lbl">Credit Notes</div></div>
+            </div>
+          </div>
+        )}
+
+        {tab==='users'&&(
+          <div>
+            <div className="card" style={{marginBottom:18}}>
+              <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editUID?'✏️ Edit User':'➕ Add New User'}</div>
+              {!isSuper&&<div style={{fontSize:11,color:'#B45309',background:'#FEF3C7',padding:'6px 10px',borderRadius:6,marginBottom:12,border:'1px solid #FDE68A'}}>
+                ℹ️ As Admin you can create and edit users. Only Super Admin can delete users or assign Super Admin role.
+              </div>}
+              <div className="g2">
+                <div className="field"><label className="field-label">Full Name *</label><input className="field-input" value={uForm.name} onChange={e=>setUForm(p=>({...p,name:e.target.value}))} placeholder="Full Name"/></div>
+                <div className="field"><label className="field-label">Email Address *</label><input className="field-input" value={uForm.email} onChange={e=>setUForm(p=>({...p,email:e.target.value}))} placeholder="user@company.com" type="email"/></div>
+              </div>
+              <div className="g3">
+                <div className="field">
+                  <label className="field-label">Password *</label>
+                  <div className="pw-wrap">
+                    <input className="field-input" type={showPw?'text':'password'} value={uForm.password} onChange={e=>setUForm(p=>({...p,password:e.target.value}))} placeholder="Min 8 chars"/>
+                    <button className="pw-eye" onClick={()=>setShowPw(p=>!p)}>{showPw?<Ic n="eyeoff" s={14}/>:<Ic n="eye" s={14}/>}</button>
+                  </div>
+                </div>
+                <div className="field"><label className="field-label">Role</label>
+                  <select className="field-input" value={uForm.role} onChange={e=>setUForm(p=>({...p,role:e.target.value}))}>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                    {isSuper&&<option value="superadmin">Super Admin</option>}
+                  </select>
+                </div>
+                <div className="field"><label className="field-label">Status</label><select className="field-input" value={uForm.active?'1':'0'} onChange={e=>setUForm(p=>({...p,active:e.target.value==='1'}))}><option value="1">Active</option><option value="0">Inactive</option></select></div>
+              </div>
+              <div style={{display:'flex',gap:10}}>
+                <button className="btn btn-primary" onClick={saveUser}>{editUID?'Update User':'Create User'}</button>
+                {editUID&&<button className="btn btn-outline" onClick={()=>{setUForm({email:'',name:'',password:'',role:'user',active:true});setEditUID(null);}}>Cancel</button>}
+              </div>
+            </div>
+            <div className="dt-wrap">
+              <table className="dt" style={{width:'100%'}}>
+                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th style={{width:isSuper?140:100}}>Actions</th></tr></thead>
+                <tbody>{users.map(u=>{const rb=roleBadge(u.role);return(
+                  <tr key={u.id}>
+                    <td style={{fontWeight:600}}>{u.name}{isSuperAdmin(u.email)&&<span style={{color:'var(--gold)',fontSize:11,marginLeft:4}}>★</span>}</td>
+                    <td style={{color:'var(--text2)'}}>{u.email}</td>
+                    <td><span className={`badge ${rb.cls}`}>{rb.label}</span></td>
+                    <td>
+                      <span className={`badge ${u.active?'badge-green':'badge-red'}`} style={{cursor:isSuperAdmin(u.email)?'default':'pointer'}}
+                        onClick={()=>!isSuperAdmin(u.email)&&toggleActive(u.id)}>
+                        {u.active?'Active':'Inactive'}
+                      </span>
+                    </td>
+                    <td style={{color:'var(--text3)',fontSize:12}}>{u.createdAt?.split('T')[0]||'—'}</td>
+                    <td>
+                      <div style={{display:'flex',gap:5}}>
+                        <button className="btn btn-xs btn-outline" onClick={()=>editUser(u)}
+                          disabled={isSuperAdmin(u.email)&&!isSuper}
+                          style={{opacity:isSuperAdmin(u.email)&&!isSuper?0.3:1,cursor:isSuperAdmin(u.email)&&!isSuper?'not-allowed':'pointer'}}
+                          title={isSuperAdmin(u.email)&&!isSuper?'Super Admin credentials are protected':'Edit user'}>
+                          <Ic n="edit" s={11}/>Edit</button>
+                        {isSuper&&!isSuperAdmin(u.email)&&<button className="btn btn-xs btn-danger" onClick={()=>delUser(u.id)}><Ic n="trash" s={11}/></button>}
+                      </div>
+                    </td>
+                  </tr>);})}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {tab==='audit'&&(
+          <div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+              <span style={{color:'var(--text2)',fontSize:13,fontWeight:600}}>📋 Audit Log — {auditLogs.length} entries</span>
+              {isSuper&&<button className="btn btn-sm btn-danger" onClick={()=>{if(window.confirm('Clear all audit logs?')){S.set(SK.AUDIT,[]);toast.info('Audit log cleared');}}}>🗑️ Clear Log</button>}
+            </div>
+            <input className="field-input" value={auditQ} onChange={e=>setAuditQ(e.target.value)} placeholder="🔍 Search by action, user or detail..." style={{marginBottom:12}}/>
+            {auditLogs.length>0?(
+              <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'52vh',overflowY:'auto'}}>
+                <div style={{display:'grid',gridTemplateColumns:'120px 1fr 130px 150px',gap:0,padding:'7px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',position:'sticky',top:0}}>
+                  <span>Action</span><span>Detail</span><span>By</span><span>When</span>
+                </div>
+                {auditLogs.map((l,i)=>{
+                  const aColor={INVOICE_CREATED:'#166534',INVOICE_EDITED:'#1D4ED8',USER_CREATED:'#6D28D9',USER_EDITED:'#0369A1',USER_DELETED:'#DC2626',USER_TOGGLED:'#B45309'}[l.action]||'var(--text3)';
+                  return(
+                  <div key={i} style={{display:'grid',gridTemplateColumns:'120px 1fr 130px 150px',gap:0,padding:'9px 14px',borderBottom:'1px solid var(--border)',alignItems:'start'}}>
+                    <span style={{fontSize:10,fontWeight:700,color:aColor,background:aColor+'22',padding:'2px 7px',borderRadius:8,display:'inline-block'}}>{l.action.replace(/_/g,' ')}</span>
+                    <span style={{fontSize:12,color:'var(--text)',paddingRight:8,lineHeight:1.5}}>{l.detail}</span>
+                    <span style={{fontSize:11,color:'var(--text2)',fontWeight:600}}>{l.userName}</span>
+                    <span style={{fontSize:10,color:'var(--text3)',fontFamily:'monospace'}}>{new Date(l.ts).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+                  </div>);
+                })}
+              </div>
+            ):<div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>
+                <div style={{fontSize:32,marginBottom:8}}>📋</div>
+                <div>No audit entries yet. Actions will appear here.</div>
+              </div>}
+          </div>
+        )}
+
+        {tab==='invoices'&&(
+          <div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+              <span style={{color:'var(--text2)',fontSize:13}}>{invs.length} invoices total</span>
+              <button className="btn btn-success btn-sm" onClick={()=>makeExcel(invs)}><Ic n="xlsx" s={13}/>Download Sales Register (Excel)</button>
+              <button className="btn btn-outline-primary btn-sm" style={{marginLeft:8}} onClick={()=>makeGSTR1(invs)}><Ic n="xlsx" s={13}/>Download GSTR-1 (Excel)</button>
+              <button className="btn btn-outline btn-sm" style={{marginLeft:8}} onClick={()=>makePurchaseExcel(S.get(SK.EXP,[]))}><Ic n="xlsx" s={13}/>Download Purchase Register</button>
+            </div>
+            <div className="dt-wrap">
+              <table className="dt" style={{width:'100%'}}>
+                <thead><tr><th>Invoice No</th><th>Date</th><th>Time</th><th>Customer</th><th>GSTIN</th><th>GST Type</th><th>Total</th><th>By</th></tr></thead>
+                <tbody>{[...invs].sort((a,b)=>new Date(b.date)-new Date(a.date)).map((inv,i)=>(
+                  <tr key={i}>
+                    <td style={{fontFamily:'monospace',fontWeight:700,color:'var(--gold)'}}>{inv.invNo}</td>
+                    <td>{fmtDate(inv.date)}</td>
+                    <td style={{color:'var(--text3)',fontSize:12}}>{inv.time||'—'}</td>
+                    <td style={{fontWeight:600}}>{inv.billTo?.name||'—'}</td>
+                    <td style={{fontFamily:'monospace',fontSize:12,color:'var(--text2)'}}>{inv.billTo?.gstin||'—'}</td>
+                    <td><span className={`badge ${inv.gstType==='INTRA'?'badge-green':'badge-blue'}`}>{inv.gstType==='INTRA'?'CGST+SGST':'IGST'}</span></td>
+                    <td style={{fontWeight:700}}>{fmt(inv.grand)}</td>
+                    <td style={{color:'var(--text3)',fontSize:12}}>{inv.createdBy||'—'}</td>
+                  </tr>))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {tab==='export'&&(
+          <div>
+            <div className="alert alert-info" style={{marginBottom:20}}><Ic n="xlsx" s={16}/><div><strong>Sales Register</strong> — All invoices with line-wise item details including GST breakup, timestamps, and created-by user info.</div></div>
+            <div className="g2">
+              <div className="card" style={{textAlign:'center',padding:30}}>
+                <div style={{fontSize:48,marginBottom:12}}>📊</div>
+                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:8}}>Sales Register</div>
+                <div style={{color:'var(--text2)',fontSize:13,marginBottom:18}}>Line-wise export of all invoices with HSN, tax breakup, timestamps, customer details.</div>
+                <button className="btn btn-success" onClick={()=>makeExcel(invs)}><Ic n="xlsx"/>Download Excel ({invs.length} invoices)</button>
+              </div>
+              <div className="card" style={{textAlign:'center',padding:30}}>
+                <div style={{fontSize:48,marginBottom:12}}>📋</div>
+                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:8}}>Data Backup</div>
+                <div style={{color:'var(--text2)',fontSize:13,marginBottom:18}}>Export all app data as JSON for backup or transfer to another computer.</div>
+                <button className="btn btn-outline-primary" onClick={()=>{
+                  const data={company:S.get(SK.CO,{}),hsn:S.get(SK.HSN,[]),invoices:S.get(SK.INV,[]),terms:S.get(SK.TERMS,'')};
+                  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+                  const url=URL.createObjectURL(blob);
+                  const a=document.createElement('a');a.href=url;a.download='InvoicePro_Backup.json';a.click();
+                  toast.success('Backup downloaded!');
+                }}><Ic n="save"/>Download Backup (JSON)</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>;
+};
+
+/* ── LOGIN ── */
+const Login = ({onLogin})=>{
+  const [email,setEmail]=useState('');
+  const [pw,setPw]=useState('');
+  const [showPw,setShowPw]=useState(false);
+  const [err,setErr]=useState('');
+  const [loading,setLoading]=useState(false);
+  const login=()=>{
+    setErr('');setLoading(true);
+    setTimeout(()=>{
+      const users=seedUsers();
+      const u=users.find(u=>u.email.toLowerCase()===email.toLowerCase()&&u.password===pw);
+      if(!u){setErr('Invalid email or password.');setLoading(false);return;}
+      if(!u.active){setErr('Account is deactivated. Contact admin.');setLoading(false);return;}
+      logAudit('USER_LOGIN',`Login from browser`,u);
+      onLogin(u);setLoading(false);
+    },600);
+  };
+  return <div className="login-bg">
+    <div className="login-card">
+      <div className="login-logo">InvoicePro</div>
+      <div className="login-sub">GST Invoice Manager</div>
+      <div className="login-title">Welcome back</div>
+      <div className="login-desc" style={{marginBottom:28}}>Sign in to manage your invoices</div>
+      <div className="field">
+        <label className="field-label">Email Address</label>
+        <input className="field-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" onKeyDown={e=>e.key==='Enter'&&login()}/>
+      </div>
+      <div className="field" style={{marginBottom:20}}>
+        <label className="field-label">Password</label>
+        <div className="pw-wrap">
+          <input className="field-input" type={showPw?'text':'password'} value={pw} onChange={e=>setPw(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&login()}/>
+          <button className="pw-eye" onClick={()=>setShowPw(p=>!p)}>{showPw?<Ic n="eyeoff" s={14}/>:<Ic n="eye" s={14}/>}</button>
+        </div>
+      </div>
+      {err&&<div style={{color:'var(--red)',fontSize:13,marginBottom:14,padding:'10px 14px',background:'rgba(239,68,68,0.08)',borderRadius:8,border:'1px solid rgba(239,68,68,0.2)'}}>{err}</div>}
+      <button className="btn btn-primary" style={{width:'100%',justifyContent:'center',padding:'11px',fontSize:14}} onClick={login} disabled={loading}>
+        {loading?<><span className="spinner"/><span>Signing in...</span></>:<><Ic n="lock" s={14}/>Sign In</>}
+      </button>
+
+      <div style={{marginTop:28,borderTop:'1px solid var(--border)',paddingTop:20}}>
+        <div style={{textAlign:'center',fontSize:11,color:'var(--text3)',marginBottom:10,textTransform:'uppercase',letterSpacing:'0.6px',fontWeight:600}}>Need Help?</div>
+        <div style={{background:'var(--card2)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px',fontSize:12}}>
+          <div style={{color:'var(--text2)',marginBottom:8,lineHeight:1.6}}>
+            For login credentials, technical support, or any issues with this application — please contact:
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 0',borderTop:'1px solid var(--border)'}}>
+            <span style={{fontSize:15}}>📧</span>
+            <a href="mailto:contact@business.com" style={{color:'var(--primary2)',fontWeight:600,textDecoration:'none',fontSize:13}}>contact@business.com</a>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 0',borderTop:'1px solid var(--border)'}}>
+            <span style={{fontSize:15}}>📞</span>
+            <a href="tel:+918800112233" style={{color:'var(--primary2)',fontWeight:600,textDecoration:'none',fontSize:13}}>+91 8800112233</a>
+          </div>
+        </div>
+        <div style={{textAlign:'center',marginTop:12,fontSize:10,color:'var(--text3)'}}>
+          InvoicePro © {new Date().getFullYear()} — All rights reserved
+        </div>
+      </div>
+
+    </div>
+  </div>;
+};
+
+/* ── INVOICE FORM ── */
+const newItem  = ()=>({desc:'',hsnCode:'',unit:'Nos',qty:1,rate:'',discount:0,taxRate:'18',taxable:0,gstAmt:0,total:0});
+const newInvoice = (user,docType)=>({invNo:genInvNo(docType||'TAX INVOICE'),date:today(),dueDate:'',poNo:'',
+  billTo:{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:''},
+  shipTo:{name:'',address:'',city:'',state:'',pin:''},
+  sameAddress:true,items:[newItem()],notes:'',gstType:'INTRA',docType:docType||'TAX INVOICE',isB2C:false,
+  status:'Draft',sentToCustomer:false,paidDate:'',
+  origInvNo:'',origInvDate:'',
+  subtotal:0,taxBreakdown:{},totalGST:0,roundOff:0,grand:0,
+  createdBy:user?.email||'',time:nowTime()
+});
+
+const InvoiceForm = ({currentUser,initial,onSave})=>{
+  const [inv,setInv]=useState(()=>initial||newInvoice(currentUser));
+  const co=S.get(SK.CO,{});
+  const hsnList=S.get(SK.HSN,[]);
+  const [showCustModal,setShowCustModal]=useState(false);
+  const [custQ,setCustQ]=useState('');
+  const [showCustDrop,setShowCustDrop]=useState(false);
+  const custList=S.get(SK.CUST,[]);
+  const custMatched=custQ.length>1?custList.filter(c=>c.name.toLowerCase().includes(custQ.toLowerCase())||c.gstin?.includes(custQ)).slice(0,6):[];
+  const custInputRef=useRef();
+  const custDropRef=useRef();
+  useEffect(()=>{const h=e=>{if(custInputRef.current&&!custInputRef.current.contains(e.target)&&custDropRef.current&&!custDropRef.current.contains(e.target))setShowCustDrop(false);};document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h);},[]);
+
+  // ── Original Invoice autocomplete state ──
+  const [origInvQ,setOrigInvQ]=useState(inv.origInvNo||'');
+  const [showOrigDrop,setShowOrigDrop]=useState(false);
+  const origInvRef=useRef();
+  const origDropRef=useRef();
+  // Only show TAX INVOICEs (not CN/DN) in the reference list
+  const allTaxInvs=S.get(SK.INV,[]).filter(i=>i.docType==='TAX INVOICE'&&i.invNo);
+  const origMatched=origInvQ.length>0
+    ?allTaxInvs.filter(i=>i.invNo.toLowerCase().includes(origInvQ.toLowerCase())||(i.billTo?.name||'').toLowerCase().includes(origInvQ.toLowerCase())).slice(0,8)
+    :allTaxInvs.slice(-8).reverse(); // show 8 most recent when field is focused but empty
+  useEffect(()=>{const h=e=>{if(origInvRef.current&&!origInvRef.current.contains(e.target)&&origDropRef.current&&!origDropRef.current.contains(e.target))setShowOrigDrop(false);};document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h);},[]);
+  // Sync origInvQ when inv.origInvNo changes from outside (e.g. loading from history)
+  useEffect(()=>{setOrigInvQ(inv.origInvNo||'');},[inv.origInvNo]);
+  // Reset origInvQ when docType flips between note types
+  useEffect(()=>{
+    if(inv.docType!=='CREDIT NOTE'&&inv.docType!=='DEBIT NOTE'){
+      setOrigInvQ(''); setShowOrigDrop(false);
+    }
+  },[inv.docType]);
+
+  const fillCustomer=c=>{
+    setInv(p=>({...p,billTo:{name:c.name,address:c.address||'',city:c.city||'',state:c.state||'',pin:c.pin||'',gstin:c.gstin||'',phone:c.phone||'',email:c.email||''}}));
+    setCustQ(c.name);setShowCustDrop(false);
+  };
+  const saveCustomerFromBillTo=()=>{
+    const bt=inv.billTo;
+    if(!bt.name){toast.error('Customer name required');return;}
+    const existing=custList.findIndex(c=>c.name.toLowerCase()===bt.name.toLowerCase());
+    let u;
+    if(existing>=0){u=custList.map((c,i)=>i===existing?{...c,...bt}:c);toast.success('Customer updated in database!');}
+    else{u=[...custList,{...bt,createdAt:new Date().toISOString()}];toast.success('Customer saved to database!');}
+    S.set(SK.CUST,u);
+  };
+
+  const STATUS_CFG={
+    'Draft':    {bg:'#F1F5F9',color:'#475569',border:'#CBD5E1'},
+    'Sent':     {bg:'#EFF6FF',color:'#1D4ED8',border:'#BFDBFE'},
+    'Paid':     {bg:'#F0FDF4',color:'#166534',border:'#86EFAC'},
+    'Overdue':  {bg:'#FEF2F2',color:'#DC2626',border:'#FECACA'},
+  };
+
+  // Recalculate totals
+  useEffect(()=>{
+    const items=inv.items||[];
+    let sub=0,gstMap={};
+    items.forEach(r=>{
+      const taxable=parseFloat(r.taxable)||0, gst=parseFloat(r.gstAmt)||0, rate=r.taxRate||'0';
+      sub+=taxable;gstMap[rate]=(gstMap[rate]||0)+gst;
+    });
+    const tgst=Object.values(gstMap).reduce((a,b)=>a+b,0);
+    const raw=sub+tgst, rounded=Math.round(raw), roff=parseFloat((rounded-raw).toFixed(2));
+    setInv(p=>({...p,subtotal:sub.toFixed(2),taxBreakdown:gstMap,totalGST:tgst.toFixed(2),roundOff:roff,grand:rounded}));
+  },[JSON.stringify(inv.items)]);
+
+  // GST type determination — B2C uses manual toggle, B2B uses GSTIN comparison
+  useEffect(()=>{
+    if(inv.isB2C) return; // B2C gstType is set manually via toggle
+    const sc=stateCode(co.gstin),bc=stateCode(inv.billTo?.gstin);
+    let type='INTRA';
+    if(sc&&bc&&sc!==bc)type='INTER';
+    setInv(p=>({...p,gstType:type}));
+  },[inv.billTo?.gstin, inv.isB2C]);
+
+  const upB=k=>e=>setInv(p=>({...p,billTo:{...p.billTo,[k]:e.target.value}}));
+  const upS=k=>e=>setInv(p=>({...p,shipTo:{...p.shipTo,[k]:e.target.value}}));
+  const upF=k=>e=>setInv(p=>({...p,[k]:e.target.value}));
+  const addItem=()=>setInv(p=>({...p,items:[...p.items,newItem()]}));
+  const updateItem=(i,u)=>setInv(p=>({...p,items:p.items.map((it,j)=>j===i?u:it)}));
+  const deleteItem=i=>setInv(p=>({...p,items:p.items.filter((_,j)=>j!==i)}));
+
+  const save=(autoNew=false)=>{
+    if(!inv.billTo?.name){toast.error('Customer name required');return;}
+    const isCN = inv.docType==='CREDIT NOTE';
+    const grandVal = isCN ? -Math.abs(inv.grand||0) : Math.abs(inv.grand||0);
+    // Always store GSTIN in uppercase
+    const cleanBillTo = {...inv.billTo, gstin:(inv.billTo?.gstin||'').toUpperCase()};
+    const toSave = {...inv, grand: grandVal, billTo: cleanBillTo};
+    const invs=S.get(SK.INV,[]);
+    const ex=invs.findIndex(i=>i.invNo===inv.invNo);
+    let updated;
+    const isEdit = ex>=0;
+    if(isEdit){updated=[...invs];updated[ex]={...toSave};}else{updated=[...invs,{...toSave}];}
+    S.set(SK.INV,updated);
+    logAudit(isEdit?'INVOICE_EDITED':'INVOICE_CREATED', `${inv.docType} ${inv.invNo} — ${inv.billTo?.name} — ₹${Math.abs(grandVal)}`, currentUser);
+    if(onSave)onSave(toSave);
+    toast.success(`${inv.docType} ${inv.invNo} saved!`);
+    if(autoNew) setTimeout(()=>setInv(newInvoice(currentUser)),400);
+  };
+
+  const gstType=inv.gstType;
+  const sellerSC=stateCode(co.gstin);
+  const buyerGSTINOK=inv.billTo?.gstin?validateGSTIN(inv.billTo.gstin):true;
+  const terms=S.get(SK.TERMS,DEFAULT_TERMS);
+
+  return <div>
+    {/* Invoice Header */}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:18,gap:10}}>
+      <div className="inv-header-left">
+        <div className="inv-title" style={{fontFamily:'Sora,sans-serif',fontSize:26,fontWeight:800,color:'var(--text)'}}>
+          {inv.docType==='DEBIT NOTE'?'New Debit Note':inv.docType==='CREDIT NOTE'?'New Credit Note':inv.isB2C?'New B2C Invoice':'New Tax Invoice'}
+        </div>
+        <div className="inv-co-row" style={{color:'var(--text3)',fontSize:13,marginTop:3,display:'flex',alignItems:'center',gap:6}}>
+          {co.name&&<span style={{color:'var(--text2)',fontWeight:600,flexShrink:0}}>{co.name}</span>}
+          {co.gstin&&<span style={{fontFamily:'monospace',fontSize:11,flexShrink:0}}>{co.gstin}</span>}
+          {sellerSC&&<span className="badge badge-primary" style={{flexShrink:0}}>{stateName(co.gstin)}</span>}
+        </div>
+      </div>
+      <div className="inv-no-badge" style={{flexShrink:0}}>{inv.invNo}</div>
+    </div>
+
+    {!co.name&&<div className="alert alert-warn"><span>⚠️</span><span>Please configure <strong>Company Details</strong> before creating invoices.</span></div>}
+
+    {/* Invoice Meta */}
+    <div className="card" style={{marginBottom:16}}>
+      {/* Document Type Selector */}
+      <div style={{marginBottom:16}}>
+        <div className="field-label" style={{marginBottom:8}}>Document Type</div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          {[['TAX INVOICE','var(--primary)','var(--primary-bg)','var(--primary2)','📄 Tax Invoice (B2B)',false],
+            ['TAX INVOICE','#0369A1','#E0F2FE','#0369A1','🧾 Tax Invoice (B2C)',true],
+            ['DEBIT NOTE','#B45309','#FEF3C7','#92400E','📈 Debit Note',false],
+            ['CREDIT NOTE','#065F46','#D1FAE5','#064E3B','📉 Credit Note',false]].map(([dt,bc,bg,tc,label,b2c])=>{
+            const isActive = inv.docType===dt && (!!inv.isB2C===b2c);
+            return(
+            <button key={label} onClick={()=>{
+              const newNo=genInvNo(dt);
+              // Reset orig invoice fields when switching doc types
+              const wasNote=(inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE');
+              const isNote=(dt==='CREDIT NOTE'||dt==='DEBIT NOTE');
+              const typeChanged = inv.docType!==dt || (!!inv.isB2C!==b2c);
+              if(typeChanged && (wasNote||isNote)){
+                setOrigInvQ('');
+                setShowOrigDrop(false);
+              }
+              setInv(p=>({...p,docType:dt,invNo:newNo,isB2C:b2c,
+                origInvNo: typeChanged&&(wasNote||isNote)?'':'',
+                origInvDate: typeChanged&&(wasNote||isNote)?'':'',
+                gstType: b2c?'INTRA':p.gstType
+              }));
+            }}
+              style={{padding:'7px 18px',borderRadius:8,
+                border:`2px solid ${isActive?bc:'var(--border2)'}`,
+                background:isActive?bg:'transparent',
+                color:isActive?tc:'var(--text2)',
+                fontWeight:isActive?700:500,fontSize:12,cursor:'pointer',transition:'all 0.2s',letterSpacing:'0.3px'}}>
+              {label}
+            </button>);
+          })}
+        </div>
+        {inv.docType==='CREDIT NOTE'&&<div style={{marginTop:8,fontSize:11,color:'#065F46',background:'#D1FAE5',padding:'5px 10px',borderRadius:6}}>
+          ⚠️ Credit Note values will be stored as <strong>negative</strong> and will reduce revenue totals.
+        </div>}
+        {/* Original Invoice Reference — only for Credit Note & Debit Note */}
+        {(inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE')&&(
+          <div style={{marginTop:12,padding:'14px 16px',background:inv.docType==='CREDIT NOTE'?'rgba(16,185,129,0.07)':'rgba(245,158,11,0.07)',borderRadius:12,border:`1px solid ${inv.docType==='CREDIT NOTE'?'rgba(16,185,129,0.25)':'rgba(245,158,11,0.25)'}`}}>
+            {/* Header */}
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+              <div style={{width:28,height:28,borderRadius:8,background:inv.docType==='CREDIT NOTE'?'rgba(16,185,129,0.15)':'rgba(245,158,11,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>
+                {inv.docType==='CREDIT NOTE'?'📉':'📈'}
+              </div>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:inv.docType==='CREDIT NOTE'?'var(--green)':'var(--gold)',textTransform:'uppercase',letterSpacing:'0.7px'}}>
+                  Original Invoice Reference
+                </div>
+                <div style={{fontSize:10,color:'var(--text3)',marginTop:1}}>Required for GST filing — select from your saved invoices</div>
+              </div>
+              {inv.origInvNo&&<div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:5,padding:'3px 10px',borderRadius:20,background:inv.docType==='CREDIT NOTE'?'rgba(16,185,129,0.1)':'rgba(245,158,11,0.1)',border:`1px solid ${inv.docType==='CREDIT NOTE'?'rgba(16,185,129,0.3)':'rgba(245,158,11,0.3)'}`,fontSize:11,fontWeight:700,color:inv.docType==='CREDIT NOTE'?'var(--green)':'var(--gold)'}}>
+                <span>✓</span><span>Linked</span>
+              </div>}
+            </div>
+            <div className="g2">
+              {/* ── Invoice No Search ── */}
+              <div className="field" style={{marginBottom:0,position:'relative'}}>
+                <label className="field-label">Original Invoice No *</label>
+                <div ref={origInvRef} style={{position:'relative'}}>
+                  <input className="field-input" value={origInvQ}
+                    onChange={e=>{setOrigInvQ(e.target.value);setInv(p=>({...p,origInvNo:e.target.value,origInvDate:''}));setShowOrigDrop(true);}}
+                    onFocus={()=>setShowOrigDrop(true)}
+                    placeholder="Type to search invoices…"
+                    style={{fontFamily:'monospace',paddingRight:32,
+                      borderColor: inv.origInvNo ? (inv.docType==='CREDIT NOTE'?'rgba(16,185,129,0.5)':'rgba(245,158,11,0.5)') : undefined
+                    }}
+                    autoComplete="off"
+                  />
+                  {/* Clear button */}
+                  {origInvQ&&<button onClick={()=>{setOrigInvQ('');setInv(p=>({...p,origInvNo:'',origInvDate:''}));}}
+                    style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--text3)',cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',padding:0}}>✕</button>}
+                </div>
+                {/* Dropdown */}
+                {showOrigDrop&&origMatched.length>0&&ReactDOM.createPortal(
+                  <div ref={origDropRef} style={{position:'fixed',zIndex:9999,background:'var(--card)',border:'1px solid var(--border2)',borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.4)',overflow:'hidden',minWidth:320,maxWidth:460,maxHeight:280,overflowY:'auto',
+                    ...(() => {
+                      const el = origInvRef.current?.querySelector('input');
+                      if(!el)return{top:200,left:200};
+                      const r=el.getBoundingClientRect();
+                      return{top:r.bottom+4,left:r.left};
+                    })()
+                  }}>
+                    <div style={{padding:'8px 12px 6px',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',borderBottom:'1px solid var(--border)'}}>
+                      {origInvQ?`Results for "${origInvQ}"`:'Recent Invoices'}
+                    </div>
+                    {origMatched.map((oi,idx)=>(
+                      <div key={idx}
+                        onMouseDown={e=>{
+                          e.preventDefault();
+                          setOrigInvQ(oi.invNo);
+                          setInv(p=>({...p,origInvNo:oi.invNo,origInvDate:oi.date||''}));
+                          setShowOrigDrop(false);
+                          toast.success(`Linked to ${oi.invNo}`);
+                        }}
+                        style={{padding:'10px 14px',cursor:'pointer',borderBottom:'1px solid var(--border)',transition:'background 0.1s'}}
+                        onMouseEnter={e=>e.currentTarget.style.background='var(--card2)'}
+                        onMouseLeave={e=>e.currentTarget.style.background='transparent'}
+                      >
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
+                          <span style={{fontFamily:'monospace',fontWeight:700,fontSize:13,color:inv.docType==='CREDIT NOTE'?'var(--green)':'var(--gold)'}}>{oi.invNo}</span>
+                          <span style={{fontSize:11,color:'var(--text3)',flexShrink:0}}>{fmtDate(oi.date)||''}</span>
+                        </div>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:3}}>
+                          <span style={{fontSize:12,color:'var(--text2)',fontWeight:500}}>{oi.billTo?.name||'Unknown Customer'}</span>
+                          <span style={{fontSize:11,fontWeight:600,color:'var(--primary2)'}}>₹{Number(Math.abs(oi.grand||0)).toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {origMatched.length===0&&origInvQ.length>0&&<div style={{padding:'14px',textAlign:'center',color:'var(--text3)',fontSize:12}}>No invoices found for "{origInvQ}"</div>}
+                  </div>,
+                  document.body
+                )}
+              </div>
+              {/* ── Auto-filled Date ── */}
+              <div className="field" style={{marginBottom:0}}>
+                <label className="field-label">
+                  Original Invoice Date *
+                  {inv.origInvDate&&<span style={{marginLeft:6,fontSize:10,color:'var(--green)',fontWeight:600}}>✓ Auto-filled</span>}
+                </label>
+                <input type="date" className="field-input" value={inv.origInvDate||''} onChange={upF('origInvDate')}
+                  style={{borderColor: inv.origInvDate ? 'rgba(16,185,129,0.4)' : undefined,
+                    background: inv.origInvDate ? 'rgba(16,185,129,0.04)' : undefined}}
+                />
+                {!inv.origInvDate&&<div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>Auto-filled when you select an invoice above</div>}
+              </div>
+            </div>
+          </div>
+        )}
+        {/* B2C Inter/Intra toggle */}
+        {inv.isB2C&&(
+          <div style={{marginTop:10,display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:12,color:'var(--text2)',fontWeight:600}}>GST Type:</span>
+            {[['INTRA','Intra-State (CGST + SGST)','#1D4ED8','#DBEAFE'],['INTER','Inter-State (IGST)','#065F46','#D1FAE5']].map(([type,label,color,bg])=>(
+              <button key={type} onClick={()=>setInv(p=>({...p,gstType:type}))}
+                style={{padding:'5px 16px',borderRadius:7,fontSize:12,fontWeight:inv.gstType===type?700:500,cursor:'pointer',
+                  border:`2px solid ${inv.gstType===type?color:'var(--border2)'}`,
+                  background:inv.gstType===type?bg:'transparent',
+                  color:inv.gstType===type?color:'var(--text2)',transition:'all 0.2s'}}>
+                {label}
+              </button>
+            ))}
+            <span style={{fontSize:11,color:'var(--text3)'}}>
+              {inv.gstType==='INTRA'?'→ CGST + SGST applies':'→ IGST applies'}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="g4">
+        <div className="field">
+          <label className="field-label">Invoice Number</label>
+          <input className="field-input" value={inv.invNo} onChange={upF('invNo')} style={{fontFamily:'monospace',fontWeight:700,color:'var(--gold)'}}/>
+        </div>
+        <div className="field">
+          <label className="field-label">Invoice Date</label>
+          <input type="date" className="field-input" value={inv.date} onChange={upF('date')}/>
+        </div>
+        <div className="field">
+          <label className="field-label">Due Date</label>
+          <input type="date" className="field-input" value={inv.dueDate} onChange={upF('dueDate')}/>
+        </div>
+        <div className="field">
+          <label className="field-label">PO / Ref No.</label>
+          <input className="field-input" value={inv.poNo||''} onChange={upF('poNo')} placeholder="PO-001 (optional)"/>
+        </div>
+      </div>
+    </div>
+
+    {/* Customer */}
+    <div className="g2" style={{marginBottom:16}}>
+      <div className="card">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <div className="section-title" style={{marginBottom:0}}><span className="dot"></span>Bill To</div>
+          <div style={{display:'flex',gap:6}}>
+            <button className="btn btn-sm btn-outline-primary" onClick={()=>setShowCustModal(true)} title="Pick from Customer Database">
+              <Ic n="users" s={12}/>Customer DB
+            </button>
+            <button className="btn btn-sm btn-outline" onClick={saveCustomerFromBillTo} title="Save this customer to database">
+              <Ic n="save" s={12}/>Save Customer
+            </button>
+          </div>
+        </div>
+        {/* Customer name with autocomplete */}
+        <div className="field" style={{position:'relative'}}>
+          <label className="field-label">Customer Name *</label>
+          <input ref={custInputRef} className="field-input" value={inv.billTo.name}
+            onChange={e=>{upB('name')(e);setCustQ(e.target.value);setShowCustDrop(true);}}
+            onFocus={()=>{setCustQ(inv.billTo.name);setShowCustDrop(true);}}
+            placeholder="Type to search saved customers..."/>
+          {showCustDrop&&custMatched.length>0&&ReactDOM.createPortal(
+            <div ref={custDropRef} style={{position:'fixed',
+              top:(()=>{const r=custInputRef.current?.getBoundingClientRect();return r?r.bottom+4:0})(),
+              left:(()=>{const r=custInputRef.current?.getBoundingClientRect();return r?r.left:0})(),
+              width:380,background:'var(--card)',border:'1.5px solid var(--border2)',
+              borderRadius:10,boxShadow:'0 8px 40px rgba(0,0,0,0.4)',zIndex:99999,maxHeight:220,overflowY:'auto'}}>
+              <div style={{padding:'5px 12px',fontSize:10,color:'var(--text3)',borderBottom:'1px solid var(--border)',fontWeight:700,background:'var(--card2)',borderRadius:'10px 10px 0 0'}}>
+                👥 {custMatched.length} customer{custMatched.length!==1?'s':''} found
+              </div>
+              {custMatched.map((c,i)=>(
+                <div key={i} className="hsn-opt" onMouseDown={e=>{e.preventDefault();fillCustomer(c);}}>
+                  <div style={{display:'flex',justifyContent:'space-between'}}>
+                    <span style={{fontWeight:700,color:'var(--text)'}}>{c.name}</span>
+                    {c.gstin&&<span style={{fontSize:10,fontFamily:'monospace',color:'var(--gold)'}}>{c.gstin}</span>}
+                  </div>
+                  <div style={{fontSize:11,color:'var(--text3)'}}>{[c.city,c.state].filter(Boolean).join(', ')}</div>
+                </div>
+              ))}
+            </div>, document.body
+          )}
+        </div>
+        <div className="field"><label className="field-label">Address</label><textarea className="field-input" value={inv.billTo.address} onChange={upB('address')} rows={2} placeholder="Street, Area"/></div>
+        <div className="g3">
+          <div className="field"><label className="field-label">City</label><input className="field-input" value={inv.billTo.city} onChange={upB('city')} placeholder="City"/></div>
+          <div className="field"><label className="field-label">State</label><input className="field-input" value={inv.billTo.state} onChange={upB('state')} placeholder="State"/></div>
+          <div className="field"><label className="field-label">PIN</label><input className="field-input" value={inv.billTo.pin} onChange={upB('pin')} placeholder="560001" maxLength={6}/></div>
+        </div>
+        <div className="g2">
+          {inv.isB2C?(
+            <div className="field">
+              <label className="field-label">Customer State</label>
+              <input className="field-input" value={inv.billTo.state||''} onChange={upB('state')} placeholder="e.g. Karnataka"/>
+              <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>B2C — no GSTIN required. Use toggle above for GST type.</div>
+            </div>
+          ):(
+            <div className="field gstin-wrap">
+              <label className="field-label">Customer GSTIN</label>
+              <div style={{position:'relative'}}>
+                <input className="field-input" value={inv.billTo.gstin||''} onChange={e=>setInv(p=>({...p,billTo:{...p.billTo,gstin:e.target.value.toUpperCase()}}))} placeholder="29XXXXX0000X1Z5" maxLength={15} style={{textTransform:'uppercase',paddingRight:72}}/>
+                {inv.billTo.gstin&&<span className="gstin-badge" style={{color:buyerGSTINOK?'var(--green)':'var(--red)'}}>{buyerGSTINOK?'✓ Valid':'✗ Invalid'}</span>}
+              </div>
+            </div>
+          )}
+          <div className="field"><label className="field-label">Phone</label><input className="field-input" value={inv.billTo.phone||''} onChange={upB('phone')}/></div>
+        </div>
+        <div className="field"><label className="field-label">Email</label><input className="field-input" value={inv.billTo.email||''} onChange={upB('email')}/></div>
+      </div>
+
+      <div className="card">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+          <div className="section-title" style={{marginBottom:0}}><span className="dot"></span>Ship To</div>
+          <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:12,color:'var(--text2)'}}>
+            <input type="checkbox" checked={inv.sameAddress} onChange={e=>setInv(p=>({...p,sameAddress:e.target.checked}))} style={{accentColor:'var(--primary)'}}/>
+            Same as Bill To
+          </label>
+        </div>
+        {inv.sameAddress?(
+          <div style={{textAlign:'center',padding:'32px 0',color:'var(--text3)'}}>
+            <div style={{fontSize:36,marginBottom:8}}>📦</div>
+            <div style={{fontSize:13}}>Shipping address same as billing address</div>
+          </div>
+        ):(
+          <>
+            <div className="field"><label className="field-label">Recipient Name</label><input className="field-input" value={inv.shipTo.name||inv.billTo.name} onChange={upS('name')}/></div>
+            <div className="field"><label className="field-label">Address</label><textarea className="field-input" value={inv.shipTo.address} onChange={upS('address')} rows={2}/></div>
+            <div className="g3">
+              <div className="field"><label className="field-label">City</label><input className="field-input" value={inv.shipTo.city} onChange={upS('city')}/></div>
+              <div className="field"><label className="field-label">State</label><input className="field-input" value={inv.shipTo.state} onChange={upS('state')}/></div>
+              <div className="field"><label className="field-label">PIN</label><input className="field-input" value={inv.shipTo.pin} onChange={upS('pin')} maxLength={6}/></div>
+            </div>
+          </>
+        )}
+        {/* Status + Sent Panel */}
+        <div style={{marginTop:12,padding:'12px 14px',background:'var(--card2)',borderRadius:10,border:'1px solid var(--border)'}}>
+          <div style={{fontWeight:700,color:'var(--text2)',fontSize:11,textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:10}}>Invoice Status</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+            {Object.entries(STATUS_CFG).map(([st,cfg])=>(
+              <button key={st} onClick={()=>setInv(p=>({...p,status:st,paidDate:st==='Paid'?today():p.paidDate}))}
+                style={{padding:'4px 12px',borderRadius:20,fontSize:11,fontWeight:inv.status===st?700:500,cursor:'pointer',
+                  border:`2px solid ${inv.status===st?cfg.color:cfg.border}`,
+                  background:inv.status===st?cfg.bg:'transparent',
+                  color:inv.status===st?cfg.color:'var(--text3)',transition:'all 0.15s'}}>
+                {st==='Draft'?'📝':st==='Sent'?'📤':st==='Paid'?'✅':'⚠️'} {st}
+              </button>
+            ))}
+          </div>
+          {inv.status==='Paid'&&(
+            <div className="field" style={{marginBottom:8}}>
+              <label className="field-label">Payment Received Date</label>
+              <input type="date" className="field-input" value={inv.paidDate||''} onChange={upF('paidDate')}/>
+            </div>
+          )}
+          <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontSize:12}}>
+            <input type="checkbox" checked={!!inv.sentToCustomer}
+              onChange={e=>setInv(p=>({...p,sentToCustomer:e.target.checked,status:e.target.checked&&p.status==='Draft'?'Sent':p.status}))}
+              style={{accentColor:'var(--primary)',width:14,height:14}}/>
+            <span style={{color:'var(--text2)'}}>📤 Sent to customer</span>
+            {inv.sentToCustomer&&<span style={{fontSize:10,color:'#1D4ED8',background:'#EFF6FF',padding:'1px 7px',borderRadius:10,border:'1px solid #BFDBFE'}}>✓ Sent</span>}
+          </label>
+        </div>
+        {/* GST info */}
+        <div style={{marginTop:10,padding:'10px 14px',background:'var(--card2)',borderRadius:8,fontSize:12}}>
+          <div style={{fontWeight:700,color:'var(--text2)',marginBottom:4}}>GST Determination</div>
+          <div style={{color:'var(--text3)'}}>Seller: <span style={{color:'var(--text)'}}>{sellerSC?stateName(co.gstin):'Not configured'}</span></div>
+          {inv.billTo?.gstin&&<div style={{color:'var(--text3)'}}>Buyer: <span style={{color:'var(--text)'}}>{stateName(inv.billTo.gstin)}</span></div>}
+          <div style={{marginTop:6}}>
+            <span className={`badge ${gstType==='INTRA'?'badge-green':'badge-blue'}`}>{gstType==='INTRA'?'CGST + SGST (Intra)':'IGST (Inter-State)'}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {showCustModal&&<CustomerModal onClose={()=>setShowCustModal(false)} onSelect={fillCustomer}/>}
+
+    {/* Products Table */}
+    <div className="card" style={{marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+        <div className="section-title" style={{marginBottom:0}}><span className="dot"></span>Products / Services</div>
+        <button className="btn btn-outline-primary btn-sm" onClick={addItem}><Ic n="plus" s={13}/>Add Row</button>
+      </div>
+      <div className="table-wrap">
+        <table className="ptable">
+          <thead>
+            <tr>
+              <th style={{width:28}}>#</th>
+              <th>Description (auto-fills from HSN)</th>
+              <th>HSN / SAC Code</th>
+              <th>Unit</th>
+              <th className="r">Qty</th>
+              <th className="r">Rate (₹)</th>
+              <th className="r">Disc%</th>
+              <th>GST%</th>
+              <th className="r">Taxable</th>
+              <th>Tax Split</th>
+              <th className="r">Total</th>
+              <th style={{width:38}}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {inv.items.map((row,i)=>(
+              <ProductRow key={i} row={row} idx={i} onChange={updateItem} onDelete={deleteItem} hsnList={hsnList} gstType={gstType}/>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr><td colSpan={12} style={{padding:'8px 10px'}}>
+              <button className="btn btn-outline btn-sm" onClick={addItem}><Ic n="plus" s={12}/>Add Another Row</button>
+            </td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    {/* Bottom: Notes + Tax Summary */}
+    <div className="two-col" style={{marginBottom:16}}>
+      <div>
+        <div className="field"><label className="field-label">Notes / Remarks</label><textarea className="field-input" value={inv.notes||''} onChange={upF('notes')} rows={3} placeholder="Payment instructions, additional notes..."/></div>
+        <div className="card-sm">
+          <div style={{fontSize:11,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:8}}>Terms & Conditions</div>
+          {(terms||DEFAULT_TERMS).split('\n').filter(Boolean).map((t,i)=>(
+            <div key={i} style={{fontSize:12,color:'var(--text3)',lineHeight:1.8}}>{t}</div>
+          ))}
+        </div>
+        {(co.bankName||co.bankAccount)&&(
+          <div className="card-sm" style={{marginTop:12}}>
+            <div style={{fontSize:11,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:8,display:'flex',alignItems:'center',gap:6}}><Ic n="bank" s={12}/>Bank Details</div>
+            {[[co.bankName,'Bank'],[co.bankAccount,'A/c No.'],[co.bankIFSC,'IFSC'],[co.bankBranch,'Branch']].filter(([v])=>v).map(([val,lbl],i)=>(
+              <div key={i} style={{display:'flex',fontSize:13,padding:'4px 0',borderBottom:'1px solid var(--border)'}}><span style={{color:'var(--text3)',minWidth:90,fontSize:12}}>{lbl}</span><span style={{fontWeight:600,color:'var(--text)'}}>{val}</span></div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="tax-box" style={{marginBottom:10}}>
+          <div className="tax-row"><span className="tax-label">Sub Total (Taxable)</span><span className="tax-val">{fmt(inv.subtotal)}</span></div>
+          {Object.entries(inv.taxBreakdown||{}).filter(([,a])=>a>0).flatMap(([rate,amt])=>
+            gstType==='INTRA'?[
+              <div key={`c${rate}`} className="tax-row"><span className="tax-label">CGST @ {parseFloat(rate)/2}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt/2)}</span></div>,
+              <div key={`s${rate}`} className="tax-row"><span className="tax-label">SGST @ {parseFloat(rate)/2}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt/2)}</span></div>
+            ]:[
+              <div key={`i${rate}`} className="tax-row"><span className="tax-label">IGST @ {rate}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt)}</span></div>
+            ]
+          )}
+          <div className="tax-row"><span className="tax-label">Total Tax</span><span className="tax-val">{fmt(inv.totalGST)}</span></div>
+          {inv.roundOff!==0&&<div className="tax-row"><span className="tax-label">Round Off</span><span className="tax-val" style={{fontSize:12,color:'var(--text3)'}}>{inv.roundOff>0?'+':''}{fmt(Math.abs(inv.roundOff))}</span></div>}
+          <div className="tax-row total-row"><span className="tax-label">Grand Total</span><span className="tax-val">{fmt(inv.grand)}</span></div>
+        </div>
+        <div className="amt-words">{numberToWords(inv.grand)}</div>
+      </div>
+    </div>
+
+    {/* Actions */}
+    <div style={{display:'flex',gap:10,justifyContent:'space-between',alignItems:'center',padding:'16px 0',borderTop:'1px solid var(--border)',flexWrap:'wrap'}}>
+      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+        {/* Status badge */}
+        {inv.status&&(()=>{const cfg=STATUS_CFG[inv.status]||{};return(
+          <span style={{padding:'4px 12px',borderRadius:20,fontSize:11,fontWeight:700,
+            background:cfg.bg,color:cfg.color,border:`1.5px solid ${cfg.border}`}}>
+            {inv.status==='Draft'?'📝':inv.status==='Sent'?'📤':inv.status==='Paid'?'✅':'⚠️'} {inv.status}
+          </span>
+        );})()}
+        {inv.sentToCustomer&&<span style={{fontSize:11,color:'#1D4ED8',background:'#EFF6FF',padding:'4px 10px',borderRadius:20,border:'1px solid #BFDBFE'}}>📤 Sent to Customer</span>}
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <button className="btn btn-outline" onClick={()=>{if(window.confirm('Start new invoice?'))setInv(newInvoice(currentUser));}}><Ic n="new" s={14}/>New Invoice</button>
+        <button className="btn btn-outline-primary" onClick={()=>save(false)}><Ic n="save" s={14}/>Save</button>
+        <button className="btn btn-outline" style={{borderColor:'#1D4ED8',color:'#1D4ED8'}}
+          onClick={()=>setInv(p=>({...p,sentToCustomer:true,status:p.status==='Draft'?'Sent':p.status}))}>
+          📤 Mark Sent
+        </button>
+        <button className="btn btn-gold" onClick={()=>{save(true);makePDF(inv,co,terms);}}>
+          <Ic n="pdf" s={15}/>Download PDF + New
+        </button>
+      </div>
+    </div>
+  </div>;
+};
+
+/* ── APP ── */
+const App = ()=>{
+  const [user,setUser]=useState(null);
+  const [theme,setTheme]=useState('dark');
+  const [modal,setModal]=useState(null);
+  const [loadedInv,setLoadedInv]=useState(null);
+  const [formKey,setFormKey]=useState(0);
+  const [appReady,setAppReady]=useState(false);
+  const [loadMsg,setLoadMsg]=useState('Connecting to cloud...');
+
+  // Load Firebase cache before anything else
+  useEffect(()=>{
+    (async()=>{
+      setLoadMsg('Loading your data from cloud...');
+      await loadCache();
+      setLoadMsg('Almost ready...');
+      seedUsers();
+      const savedTheme = S.get(SK.THEME,'dark');
+      setTheme(savedTheme);
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      setAppReady(true);
+    })();
+  },[]);
+
+  useEffect(()=>{
+    if(appReady){
+      document.documentElement.setAttribute('data-theme',theme);
+      S.set(SK.THEME,theme);
+    }
+  },[theme]);
+
+  const login=u=>{setUser(u);toast.success(`Welcome, ${u.name}!`);};
+  const [menuOpen, setMenuOpen] = useState(false);
+  const openModal = (m) => { setModal(m); setMenuOpen(false); };
+
+  const logout=()=>{setUser(null);toast.info('Logged out');};
+  const loadInv=inv=>{setLoadedInv(inv);setFormKey(k=>k+1);};
+
+  // Loading screen
+  if(!appReady) return (
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#080C18',gap:24}}>
+      <div style={{fontFamily:'Sora,sans-serif',fontSize:32,fontWeight:800,color:'#60A5FA',letterSpacing:2}}>InvoicePro</div>
+      <div style={{fontSize:13,color:'#4A5A7A',letterSpacing:1}}>{loadMsg}</div>
+      <div style={{width:48,height:48,border:'4px solid #1A2238',borderTop:'4px solid #3B82F6',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{fontSize:11,color:'#2A3856',marginTop:8}}>Powered by Firebase Cloud 🔥</div>
+    </div>
+  );
+
+  if(!user) return <><Login onLogin={login}/><Toast/></>;
+
+  const invCount=(S.get(SK.INV,[])).length;
+  const isAdmin=user.role==='admin'||user.role==='superadmin';
+
+  return <div>
+    <Toast/>
+
+    {/* ── MOBILE DRAWER ── */}
+    {menuOpen&&<div className="mob-drawer" onClick={e=>{if(e.target===e.currentTarget)setMenuOpen(false)}}>
+      <div className="mob-drawer-backdrop" onClick={()=>setMenuOpen(false)}/>
+      <div className="mob-drawer-panel">
+        {/* User row */}
+        <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 16px 14px',borderBottom:'1px solid var(--border)',marginBottom:8}}>
+          <div className="user-avatar" style={{width:36,height:36,fontSize:14}}>{user.name[0]}</div>
+          <div>
+            <div style={{fontWeight:700,fontSize:14,color:'var(--text)'}}>{user.name}</div>
+            <div style={{fontSize:11,color:'var(--text3)'}}>{user.email}</div>
+          </div>
+          <div style={{marginLeft:'auto',cursor:'pointer',padding:'6px 12px',background:'var(--card2)',border:'1px solid var(--border)',borderRadius:8,fontSize:12,color:'var(--text2)'}}
+            onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
+            {theme==='dark'?'☀️ Light':'🌙 Dark'}
+          </div>
+        </div>
+
+        {/* Nav items */}
+        <div onClick={()=>openModal('history')} className="mob-nav-item">
+          <span style={{fontSize:18}}>📋</span>
+          <span>History</span>
+          {invCount>0&&<span style={{marginLeft:'auto',background:'var(--primary)',color:'#fff',borderRadius:20,padding:'1px 8px',fontSize:11,fontWeight:700}}>{invCount}</span>}
+        </div>
+        <div onClick={()=>openModal('expenses')} className="mob-nav-item">
+          <span style={{fontSize:18}}>🧾</span><span>Expenses / Purchases</span>
+        </div>
+        <div onClick={()=>openModal('customers')} className="mob-nav-item">
+          <span style={{fontSize:18}}>👥</span><span>Customer Database</span>
+        </div>
+        <div className="mob-nav-sep"/>
+        <div onClick={()=>openModal('company')} className="mob-nav-item blue">
+          <span style={{fontSize:18}}>🏢</span><span>Company Settings</span>
+        </div>
+        <div onClick={()=>openModal('hsn')} className="mob-nav-item gold">
+          <span style={{fontSize:18}}>🏷️</span><span>HSN Database</span>
+        </div>
+        <div onClick={()=>openModal('terms')} className="mob-nav-item">
+          <span style={{fontSize:18}}>📄</span><span>Terms & Conditions</span>
+        </div>
+        <div onClick={()=>{pickSaveFolder();setMenuOpen(false);}} className="mob-nav-item">
+          <span style={{fontSize:18}}>📁</span><span>Auto-Save PDF Folder</span>
+        </div>
+        {isAdmin&&<><div className="mob-nav-sep"/>
+        <div onClick={()=>openModal('admin')} className="mob-nav-item" style={{background:'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(245,158,11,0.04))',border:'1px solid rgba(245,158,11,0.2)'}}>
+          <span style={{fontSize:18}}>🛡️</span>
+          <span style={{color:'var(--gold)',fontWeight:700}}>{isSuperAdmin(user.email)?'👑 Super Admin Panel':'Admin Panel'}</span>
+        </div></>}
+        <div className="mob-nav-sep"/>
+        <div onClick={()=>{logout();setMenuOpen(false);}} className="mob-nav-item" style={{color:'var(--red)'}}>
+          <span style={{fontSize:18}}>🚪</span><span>Logout</span>
+        </div>
+      </div>
+    </div>}
+
+    {/* ── HEADER ── */}
+    <header className="app-header">
+      {/* Left: brand */}
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div>
+          <span className="app-brand">InvoicePro</span>
+          <span className="app-brand-sub"> · GST Invoice Manager</span>
+        </div>
+        {invCount>0&&<span className="mob-only" style={{display:'none',background:'var(--primary)',color:'#fff',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:700}}>{invCount}</span>}
+      </div>
+
+      {/* Desktop nav — hidden on mobile */}
+      <div className="header-right">
+        <div title="Toggle Theme" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:6,padding:'4px 10px',background:'var(--card2)',border:'1px solid var(--border)',borderRadius:20}} onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
+          {theme==='dark'?<Ic n="moon" s={14}/>:<Ic n="sun" s={14}/>}
+          <span style={{fontSize:12,color:'var(--text2)'}}>{theme==='dark'?'Dark':'Light'}</span>
+        </div>
+        <button className="btn btn-outline btn-sm" onClick={()=>setModal('terms')}><Ic n="pdf" s={13}/>Terms</button>
+        <button className="btn btn-outline btn-sm" onClick={()=>setModal('history')}>
+          <Ic n="history" s={13}/>History
+          {invCount>0&&<span style={{background:'var(--primary)',color:'#fff',borderRadius:'50%',width:18,height:18,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700}}>{invCount}</span>}
+        </button>
+        <button className="btn btn-outline btn-sm" onClick={()=>setModal('expenses')}>🧾 Expenses</button>
+        <button className="btn btn-outline btn-sm" onClick={()=>setModal('customers')}>👥 Customers</button>
+        <button className="btn btn-outline btn-sm" onClick={pickSaveFolder}>📁 Save Folder</button>
+        <button className="btn btn-outline-gold btn-sm" onClick={()=>setModal('hsn')}><Ic n="tag" s={13}/>HSN Database</button>
+        <button className="btn btn-outline-primary btn-sm" onClick={()=>setModal('company')}><Ic n="building" s={13}/>Company</button>
+        {isAdmin&&<button className="btn btn-gold btn-sm" onClick={()=>setModal('admin')}><Ic n="shield" s={13}/>{isSuperAdmin(user.email)?'👑 Super Admin':'Admin'}</button>}
+        <div className="user-pill">
+          <div className="user-avatar">{user.name[0]}</div>
+          <span>{user.name}</span>
+        </div>
+        <button className="btn btn-outline btn-icon" onClick={logout} title="Logout"><Ic n="logout" s={14}/></button>
+      </div>
+
+      {/* Mobile right: invoice count + hamburger */}
+      <div style={{display:'flex',alignItems:'center',gap:8,marginLeft:'auto'}}
+           className="mob-header-right">
+        <div style={{textAlign:'right',lineHeight:1.2}}>
+          <div style={{fontSize:11,color:'var(--text3)'}}>Welcome</div>
+          <div style={{fontSize:12,fontWeight:700,color:'var(--text)',maxWidth:90,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.name}</div>
+        </div>
+        <button onClick={()=>setMenuOpen(true)}
+          style={{background:'var(--card2)',border:'1px solid var(--border2)',borderRadius:10,width:40,height:40,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:5,cursor:'pointer',flexShrink:0}}>
+          <div style={{width:18,height:2,borderRadius:2,background:'var(--text2)'}}/>
+          <div style={{width:18,height:2,borderRadius:2,background:'var(--text2)'}}/>
+          <div style={{width:12,height:2,borderRadius:2,background:'var(--text2)'}}/>
+        </button>
+      </div>
+    </header>
+
+    <div className="app-body">
+      <InvoiceForm key={formKey} currentUser={user} initial={loadedInv} onSave={()=>{}}/>
+    </div>
+
+    {modal==='company'&&<CompanyModal onClose={()=>setModal(null)}/>}
+    {modal==='hsn'&&<HSNModal onClose={()=>setModal(null)}/>}
+    {modal==='terms'&&<TermsModal onClose={()=>setModal(null)}/>}
+    {modal==='customers'&&<CustomerModal onClose={()=>setModal(null)}/>}
+    {modal==='expenses'&&<ExpenseModal onClose={()=>setModal(null)} currentUser={user}/>}
+    {modal==='history'&&<HistoryModal onClose={()=>setModal(null)} onLoad={loadInv} currentUser={user}/>}
+    {modal==='admin'&&isAdmin&&<AdminPanel currentUser={user} onClose={()=>setModal(null)}/>}
+  </div>;
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
