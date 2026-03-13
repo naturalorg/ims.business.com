@@ -11,8 +11,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 [data-theme="dark"]{
@@ -344,13 +344,13 @@ const STATE_CODES = {'01':'Jammu & Kashmir','02':'Himachal Pradesh','03':'Punjab
    4. Scroll to "Your apps" → Web app → copy the firebaseConfig object
    ══════════════════════════════════════════════════════════════ */
 const FIREBASE_CONFIG = {
-  apiKey:            "PASTE_API_KEY_HERE",
-  authDomain:        "PASTE_PROJECT_ID.firebaseapp.com",
-  databaseURL:       "https://PASTE_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId:         "PASTE_PROJECT_ID",
-  storageBucket:     "PASTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId:             "PASTE_APP_ID"
+  apiKey:            "AIzaSyB6a4B5lOoJaQc4fqcH2cv027KZ3jTC3e4",
+  authDomain:        "invoice-pro-5edc4.firebaseapp.com",
+  databaseURL:       "https://invoice-pro-5edc4-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "invoice-pro-5edc4",
+  storageBucket:     "invoice-pro-5edc4.firebasestorage.app",
+  messagingSenderId: "265453721196",
+  appId:             "1:265453721196:web:fa63e685abcf61ce3eea49"
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -378,8 +378,12 @@ const _cache = {};
 // Load ALL keys from Firebase into local cache on startup (one read, fast)
 const loadCache = async () => {
   try {
-    const snap = await getDb().ref('invoicepro').once('value');
-    const data = snap.val();
+    // Race between Firebase load and 8-second timeout
+    const result = await Promise.race([
+      getDb().ref('invoicepro').once('value'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase timeout after 8s')), 8000))
+    ]);
+    const data = result.val();
     if(data) Object.entries(data).forEach(([k,v]) => { _cache[k] = v; });
     console.log('✅ Firebase loaded', Object.keys(_cache).length, 'keys');
   } catch(e) {
