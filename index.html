@@ -123,53 +123,80 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
 @media(max-width:1024px){
-  /* Switch to hamburger menu on tablets and below */
   .header-right{display:none!important}
   .mob-header-right{display:flex!important}
   .app-header{padding:0 16px;height:56px}
   .app-brand-sub{display:none}
 }
 @media(max-width:768px){
-  /* Grids — g4 becomes 2×2, g3 becomes 1+2 fallback, g2 stays 2col */
+  /* Grids */
   .g3,.g4{grid-template-columns:1fr 1fr}
-  /* Only collapse to single column when explicitly needed */
   .g3.stack,.g4.stack,.g2.stack{grid-template-columns:1fr}
-  /* Header */
+  /* App shell */
   .app-header{padding:0 14px;height:52px}
   .app-brand{font-size:17px}
-  /* Body */
-  .app-body{padding:12px 10px}
-  .card{padding:14px 12px}
-  /* Invoice header - prevent wrapping */
+  .app-body{padding:10px 8px}
+  .card{padding:12px 10px}
+  /* Invoice header */
   .inv-header-left{min-width:0;flex:1;overflow:hidden}
-  .inv-title{font-size:20px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .inv-title{font-size:19px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .inv-co-row{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px!important}
-  .inv-no-badge{white-space:nowrap;font-size:11px!important;padding:5px 8px!important;max-width:140px;text-align:center}
+  .inv-no-badge{white-space:nowrap;font-size:11px!important;padding:5px 8px!important;max-width:130px;text-align:center}
+  /* Bill To / Ship To stacks on mobile */
+  .bill-ship-grid{grid-template-columns:1fr!important}
+  /* Item table card — remove side padding so table scrolls edge to edge */
+  .item-table-card{padding:10px 0!important}
+  .item-table-card .section-title{padding:0 10px}
+  .item-table-card .add-row-btn{padding:0 10px}
+  .item-table-card tfoot td{padding:8px 10px!important}
+  /* Notes + Tax summary stack */
+  .two-col{grid-template-columns:1fr!important}
   /* Modals */
-  .modal{border-radius:12px;margin:8px;max-height:96vh}
-  .modal-hdr{padding:12px 16px}
-  .modal-body{padding:12px 14px}
-  .modal-ftr{padding:10px 14px}
-  /* Modal inner grids — keep g2 as 2 cols, collapse g3/g4 to 2 cols */
+  .overlay{padding:6px}
+  .modal{border-radius:12px;margin:0;max-height:98vh}
+  .modal-hdr{padding:12px 14px}
+  .modal-body{padding:12px 10px}
+  .modal-ftr{padding:10px 12px}
+  /* Modal grids */
   .modal .g3,.modal .g4{grid-template-columns:1fr 1fr}
   .modal .g2{grid-template-columns:1fr 1fr}
-  /* But full-width collapse for very small content */
-  .modal .g3.full,.modal .g4.full,.modal .g2.full{grid-template-columns:1fr}
-  /* History / tables */
-  .hist-row{flex-wrap:wrap;gap:6px}
-  .table-wrap{overflow-x:auto}
+  .modal .g3.full,.modal .g4.full,.modal .g2.full,.modal .g2.stack,.modal .g3.stack,.modal .g4.stack{grid-template-columns:1fr}
+  /* Modal header — wrap on very small screens */
+  .modal-hdr{flex-wrap:wrap;gap:8px}
+  .modal-hdr .modal-title{font-size:16px!important}
+  /* History modal header buttons — smaller on mobile */
+  .modal-hdr .btn-sm{font-size:10px!important;padding:4px 8px!important}
+  /* History table — scroll on mobile */
+  .hist-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--border)}
+  .hist-table-wrap table{min-width:640px;width:100%}
+  .hist-row{flex-wrap:wrap;gap:6px;padding:10px!important}
+  .hist-row-actions{flex-wrap:wrap;gap:4px}
+  .hist-header{display:none!important}
+  /* Tables */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .ptable{min-width:700px}
-  .two-col{grid-template-columns:1fr}
+  .dt-wrap{overflow-x:auto}
+  .dt{min-width:540px}
   /* Misc */
   .tax-box{font-size:12px}
   .btn-sm{padding:5px 10px;font-size:11px}
-  .stat-card{padding:12px 10px}
-  .stat-val{font-size:18px}
+  .stat-card{padding:10px 8px}
+  .stat-val{font-size:16px}
   .admin-tabs{flex-wrap:wrap;gap:4px}
   .admin-tab{font-size:11px;padding:6px 10px}
-  .dt-wrap{overflow-x:auto}
-  .dt{min-width:560px}
-  /* Overlay drawer shows */
+  /* Section titles */
+  .section-title{font-size:12px}
+  /* Action buttons at bottom — wrap on mobile */
+  .inv-actions{flex-direction:column;gap:8px!important}
+  .inv-actions-left,.inv-actions-right{width:100%;justify-content:center}
+  /* Toast — bottom center on mobile */
+  .toast-wrap{right:10px;left:10px;bottom:16px;align-items:center}
+  .toast{max-width:100%}
+  /* Customer list grid — stack on mobile */
+  .cust-grid-hdr,.cust-grid-row{grid-template-columns:1fr auto!important}
+  .cust-grid-hdr span:nth-child(2),.cust-grid-hdr span:nth-child(3),.cust-grid-hdr span:nth-child(4),
+  .cust-grid-row>div:nth-child(2),.cust-grid-row>div:nth-child(3),.cust-grid-row>div:nth-child(4){display:none}
+  /* Drawer */
   .mob-drawer{display:flex!important}
 }
 /* Mobile drawer — hidden on desktop */
@@ -184,8 +211,8 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 .mob-nav-sep{height:1px;background:var(--border);margin:6px 0}
 
 /* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s}
-.modal{background:var(--card);border:1px solid var(--border2);border-radius:16px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow);animation:slideUp 0.3s}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:10px;animation:fadeIn 0.2s}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:16px;width:100%;max-height:96vh;overflow-y:auto;box-shadow:var(--shadow);animation:slideUp 0.3s}
 .modal::-webkit-scrollbar{width:4px}
 .modal::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 .modal-hdr{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:2}
@@ -323,7 +350,7 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ── CONSTANTS ── */
-const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses' };
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po' };
 const UNITS = ['Nos','Pcs','Kg','Gm','Ltr','Ml','Mtr','Cm','Sqft','Box','Set','Pair','Roll','Pack','Bag','Bottle','Can','Sheet','Hour','Month'];
 const TAX_RATES = ['0','0.1','0.25','1','1.5','3','5','6','7.5','9','12','14','18','28'];
 const DEFAULT_TERMS = `1. Payment is due within 30 days from the date of invoice.
@@ -1177,7 +1204,7 @@ const CompanyModal = ({onClose})=>{
   const save=()=>{if(!d.name){toast.error('Company name required');return;}S.set(SK.CO,d);toast.success('Company saved!');onClose();};
   const handleLogo=e=>{const f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){toast.error('Max 2MB');return;}const r=new FileReader();r.onload=ev=>{const b=ev.target.result;setD(p=>({...p,logo:b}));setPrev(b);};r.readAsDataURL(f);};
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:700}}>
+    <div className="modal" style={{maxWidth:860,width:"95vw"}}>
       <div className="modal-hdr"><span className="modal-title">🏢 Company Details</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
       <div className="modal-body">
         <div style={{display:'flex',gap:16,alignItems:'flex-start',marginBottom:18}}>
@@ -1242,7 +1269,7 @@ const HSNModal = ({onClose})=>{
   const del=i=>{const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.HSN,u);toast.info('Deleted');};
   const editE=i=>{setForm({...list[i]});setEditing(i);};
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:900}}>
+    <div className="modal" style={{maxWidth:1060,width:"96vw"}}>
       <div className="modal-hdr"><span className="modal-title">🏷️ HSN / SAC Database</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
       <div className="modal-body">
         <div className="card" style={{marginBottom:18}}>
@@ -1279,7 +1306,7 @@ const TermsModal = ({onClose})=>{
   const [t,setT]=useState(S.get(SK.TERMS,DEFAULT_TERMS));
   const save=()=>{S.set(SK.TERMS,t);toast.success('Terms saved!');onClose();};
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:600}}>
+    <div className="modal" style={{maxWidth:760,width:"95vw"}}>
       <div className="modal-hdr"><span className="modal-title">📋 Terms & Conditions</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
       <div className="modal-body">
         <p style={{color:'var(--text2)',fontSize:13,marginBottom:14}}>These appear at the bottom of each PDF invoice. Edit as needed.</p>
@@ -1573,7 +1600,7 @@ const CustomerModal = ({onClose, onSelect})=>{
   const filtered=list.filter(c=>!q||c.name.toLowerCase().includes(q.toLowerCase())||c.gstin?.includes(q)||c.city?.toLowerCase().includes(q.toLowerCase()));
 
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:860}}>
+    <div className="modal" style={{maxWidth:1060,width:"96vw"}}>
       <div className="modal-hdr">
         <span className="modal-title">👥 Customer Database</span>
         <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
@@ -1596,11 +1623,11 @@ const CustomerModal = ({onClose, onSelect})=>{
             <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 Search by name, GSTIN, city..." style={{marginBottom:12}}/>
             {filtered.length>0?(
               <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'50vh',overflowY:'auto'}}>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 130px 110px 120px auto',gap:0,padding:'8px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>
+                <div className="cust-grid-hdr" style={{display:'grid',gridTemplateColumns:'1fr 130px 110px 120px auto',gap:0,padding:'8px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>
                   <span>Name</span><span>GSTIN</span><span>City</span><span>Phone</span><span>Actions</span>
                 </div>
                 {filtered.map((c,i)=>(
-                  <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 130px 110px 120px auto',gap:0,padding:'10px 14px',borderBottom:'1px solid var(--border)',alignItems:'center'}}>
+                  <div key={i} className="cust-grid-row" style={{display:'grid',gridTemplateColumns:'1fr 130px 110px 120px auto',gap:0,padding:'10px 14px',borderBottom:'1px solid var(--border)',alignItems:'center'}}>
                     <div>
                       <div style={{fontWeight:700,color:'var(--text)',fontSize:13}}>{c.name}</div>
                       {c.email&&<div style={{fontSize:11,color:'var(--text3)'}}>{c.email}</div>}
@@ -1688,6 +1715,7 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
           {isAdmin&&<><button className="btn btn-outline-primary btn-sm" onClick={()=>makeGSTR1(invs)}><Ic n="xlsx" s={13}/>GSTR-1</button>
           <button className="btn btn-success btn-sm" onClick={()=>makeExcel(invs)}><Ic n="xlsx" s={13}/>Sales Register</button></>}
           {!isAdmin&&<span style={{fontSize:11,color:'#B45309',background:'#FEF3C7',padding:'3px 10px',borderRadius:20,border:'1px solid #FDE68A'}}>🔒 Reports: Admin only</span>}
+          <button className="btn btn-outline btn-sm" onClick={pickSaveFolder} title="Set folder for auto-saving PDFs">📁 Save Folder</button>
           <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
         </div>
       </div>
@@ -1702,45 +1730,73 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
           placeholder="🔍 Search by invoice no., customer name, type (B2B / B2C / Debit / Credit)..."
           style={{marginBottom:12,fontSize:13}}/>
         {sorted.length>0?(
-          <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'55vh',overflowY:'auto'}}>
-            {/* Table header */}
-            <div style={{display:'flex',gap:8,padding:'8px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',position:'sticky',top:0,zIndex:2}}>
-              <span style={{minWidth:44}}>Type</span>
-              <span style={{minWidth:150}}>Invoice No.</span>
-              <span style={{flex:1}}>Customer</span>
-              <span style={{minWidth:90}}>Date</span>
-              <span style={{minWidth:80}}>Status</span>
-              <span style={{minWidth:40,textAlign:'center'}}>Sent</span>
-              <span style={{minWidth:120,textAlign:'right'}}>Amount</span>
-              <span style={{minWidth:isAdmin?170:120,textAlign:'center'}}>Actions</span>
-            </div>
-            {sorted.map((inv,i)=>{
-              const b=docBadge(inv.docType,inv.isB2C);
-              const isCN=inv.docType==='CREDIT NOTE';
-              const stCfg={Draft:{bg:'#F1F5F9',color:'#475569'},Sent:{bg:'#EFF6FF',color:'#1D4ED8'},Paid:{bg:'#F0FDF4',color:'#166534'},Overdue:{bg:'#FEF2F2',color:'#DC2626'}}[inv.status||'Draft']||{bg:'#F1F5F9',color:'#475569'};
-              return(
-              <div key={i} className="hist-row" style={{padding:'10px 14px'}}>
-                <span style={{background:b.bg,color:b.color,borderRadius:5,padding:'3px 8px',fontSize:10,fontWeight:700,minWidth:44,textAlign:'center',display:'inline-block'}}>{b.label}</span>
-                <div style={{fontFamily:'monospace',fontWeight:700,color:'var(--gold)',minWidth:150,fontSize:13}}>{inv.invNo}</div>
-                <div style={{flex:1,color:'var(--text)',fontSize:13}}>{inv.billTo?.name||'Unknown'}</div>
-                <div style={{color:'var(--text3)',fontSize:12,minWidth:90}}>{fmtDate(inv.date)}</div>
-                <span style={{minWidth:80,padding:'2px 8px',borderRadius:12,fontSize:10,fontWeight:700,background:stCfg.bg,color:stCfg.color,textAlign:'center'}}>
-                  {(inv.status||'Draft')==='Draft'?'📝 Draft':(inv.status)==='Sent'?'📤 Sent':(inv.status)==='Paid'?'✅ Paid':'⚠️ Overdue'}
-                </span>
-                <div style={{minWidth:40,textAlign:'center',fontSize:14}}>
-                  {inv.sentToCustomer?<span title="Sent to customer">📤</span>:<span style={{color:'var(--text3)',fontSize:11}}>—</span>}
-                </div>
-                <div style={{fontWeight:700,color:isCN?'var(--red)':'var(--text)',minWidth:120,textAlign:'right',fontSize:13}}>
-                  {isCN&&<span style={{color:'var(--red)'}}>− </span>}{fmt(Math.abs(inv.grand))}
-                </div>
-                <div style={{display:'flex',gap:6,minWidth:isAdmin?170:120,justifyContent:'flex-end'}}>
-                  <button className="btn btn-sm btn-outline-primary" onClick={()=>{onLoad(inv);onClose();}}>Load</button>
-                  <button className="btn btn-sm btn-outline btn-icon" title="Download PDF" onClick={()=>{makePDF(inv,co,S.get(SK.TERMS,DEFAULT_TERMS));}}><Ic n="pdf" s={12}/></button>
-                  {isAdmin&&(
-                    <button className="btn btn-sm btn-danger btn-icon" title="Delete (Admin only)" onClick={()=>del(inv.invNo)}><Ic n="trash" s={12}/></button>
-                  )}
-                </div>
-              </div>);})}
+          <div className="hist-table-wrap" style={{maxHeight:'58vh',overflowY:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse',tableLayout:'fixed'}}>
+              <colgroup>
+                <col style={{width:50}}/> {/* Type */}
+                <col style={{width:145}}/> {/* Invoice No */}
+                <col/> {/* Customer — flex */}
+                <col style={{width:92}}/> {/* Date */}
+                <col style={{width:88}}/> {/* Status */}
+                <col style={{width:38}}/> {/* Sent */}
+                <col style={{width:115}}/> {/* Amount */}
+                <col style={{width:isAdmin?156:106}}/> {/* Actions */}
+              </colgroup>
+              <thead>
+                <tr style={{background:'var(--card2)',borderBottom:'2px solid var(--border2)',position:'sticky',top:0,zIndex:2}}>
+                  {['Type','Invoice No.','Customer','Date','Status','📤','Amount','Actions'].map((h,i)=>(
+                    <th key={i} style={{padding:'9px 10px',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',textAlign:i>=6?'right':i===5?'center':'left',whiteSpace:'nowrap'}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((inv,i)=>{
+                  const b=docBadge(inv.docType,inv.isB2C);
+                  const isCN=inv.docType==='CREDIT NOTE';
+                  const stCfg={
+                    Draft:{bg:'rgba(71,85,105,0.12)',color:'#475569'},
+                    Sent:{bg:'rgba(29,78,216,0.1)',color:'#1D4ED8'},
+                    Paid:{bg:'rgba(22,101,52,0.1)',color:'#166534'},
+                    Overdue:{bg:'rgba(220,38,38,0.1)',color:'#DC2626'}
+                  }[inv.status||'Draft']||{bg:'rgba(71,85,105,0.12)',color:'#475569'};
+                  return(
+                  <tr key={i} style={{borderBottom:'1px solid var(--border)',transition:'background 0.15s'}}
+                    onMouseEnter={e=>e.currentTarget.style.background='var(--primary-bg)'}
+                    onMouseLeave={e=>e.currentTarget.style.background=''}>
+                    <td style={{padding:'10px 10px'}}>
+                      <span style={{background:b.bg,color:b.color,borderRadius:5,padding:'3px 6px',fontSize:10,fontWeight:700,display:'inline-block',whiteSpace:'nowrap'}}>{b.label}</span>
+                    </td>
+                    <td style={{padding:'10px 10px',fontFamily:'monospace',fontWeight:700,color:'var(--gold)',fontSize:12,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                      {inv.invNo}
+                    </td>
+                    <td style={{padding:'10px 10px',color:'var(--text)',fontSize:13,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      {inv.billTo?.name||'Unknown'}
+                    </td>
+                    <td style={{padding:'10px 10px',color:'var(--text3)',fontSize:12,whiteSpace:'nowrap'}}>
+                      {fmtDate(inv.date)}
+                    </td>
+                    <td style={{padding:'10px 6px'}}>
+                      <span style={{padding:'3px 8px',borderRadius:20,fontSize:10,fontWeight:700,background:stCfg.bg,color:stCfg.color,whiteSpace:'nowrap',display:'inline-block'}}>
+                        {inv.status==='Draft'?'📝 Draft':inv.status==='Sent'?'📤 Sent':inv.status==='Paid'?'✅ Paid':'⚠️ Overdue'}
+                      </span>
+                    </td>
+                    <td style={{padding:'10px 6px',textAlign:'center',fontSize:14}}>
+                      {inv.sentToCustomer?'📤':'—'}
+                    </td>
+                    <td style={{padding:'10px 10px',textAlign:'right',fontWeight:700,color:isCN?'var(--red)':'var(--text)',fontSize:13,whiteSpace:'nowrap'}}>
+                      {isCN&&<span style={{color:'var(--red)'}}>−</span>}{fmt(Math.abs(inv.grand||0))}
+                    </td>
+                    <td style={{padding:'8px 8px'}}>
+                      <div style={{display:'flex',gap:4,justifyContent:'flex-end',alignItems:'center'}}>
+                        <button className="btn btn-sm btn-outline-primary" style={{padding:'4px 10px',fontSize:11}} onClick={()=>{onLoad(inv);onClose();}}>Load</button>
+                        <button className="btn btn-sm btn-outline btn-icon" title="Download PDF" onClick={()=>makePDF(inv,co,S.get(SK.TERMS,DEFAULT_TERMS))}><Ic n="pdf" s={12}/></button>
+                        {isAdmin&&<button className="btn btn-sm btn-danger btn-icon" title="Delete" onClick={()=>del(inv.invNo)}><Ic n="trash" s={12}/></button>}
+                      </div>
+                    </td>
+                  </tr>);
+                })}
+              </tbody>
+            </table>
           </div>
         ):<div style={{textAlign:'center',padding:'60px',color:'var(--text3)'}}>
             <div style={{fontSize:40,marginBottom:12}}>📭</div>
@@ -1757,54 +1813,63 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
   </div>;
 };
 
-/* ── PRODUCT ROW ── */
-const ProductRow = ({row,idx,onChange,onDelete,hsnList,gstType})=>{
-  const [showDrop,setShowDrop]=useState(false);
-  const [hsnQ,setHsnQ]=useState(row.hsnCode||'');
-  const [dropPos,setDropPos]=useState({top:0,left:0,width:0});
-  const inputRef=useRef();
-  const dropRef=useRef();
+/* ── SHARED ITEM ROW — used by both Invoice and PO ── */
+const ItemRow = ({row, idx, onChange, onDelete, hsnList, gstType, descOnly=false})=>{
+  const [showHsnDrop,  setShowHsnDrop]  = useState(false);
+  const [showDescDrop, setShowDescDrop] = useState(false);
+  const [hsnQ,  setHsnQ]  = useState(row.hsnCode||'');
+  const [descQ, setDescQ] = useState(row.desc||'');
+  const [hsnPos,  setHsnPos]  = useState({top:0,left:0,width:380});
+  const [descPos, setDescPos] = useState({top:0,left:0,width:380});
+  const hsnRef  = useRef(); const descRef = useRef();
+  const hsnDropRef = useRef(); const descDropRef = useRef();
 
-  // Close on outside click
+  useEffect(()=>{ setHsnQ(row.hsnCode||''); },[row.hsnCode]);
+  useEffect(()=>{ setDescQ(row.desc||''); },[row.desc]);
+
   useEffect(()=>{
     const h=e=>{
-      if(inputRef.current&&!inputRef.current.contains(e.target)&&
-         dropRef.current&&!dropRef.current.contains(e.target))
-        setShowDrop(false);
+      if(hsnRef.current&&!hsnRef.current.contains(e.target)&&
+         hsnDropRef.current&&!hsnDropRef.current.contains(e.target))
+        setShowHsnDrop(false);
+      if(descRef.current&&!descRef.current.contains(e.target)&&
+         descDropRef.current&&!descDropRef.current.contains(e.target))
+        setShowDescDrop(false);
     };
     document.addEventListener('mousedown',h);
     return()=>document.removeEventListener('mousedown',h);
   },[]);
 
-  // Recalculate position every time dropdown opens or on scroll/resize
-  const updatePos=()=>{
-    if(inputRef.current){
-      const r=inputRef.current.getBoundingClientRect();
-      // Use fixed positioning — coordinates are always relative to viewport, no scroll offset needed
-      setDropPos({top:r.bottom+4, left:r.left, width:Math.max(r.width,380)});
+  const updatePos=(ref,setter)=>{
+    if(ref.current){
+      const r=ref.current.getBoundingClientRect();
+      setter({top:r.bottom+4, left:Math.min(r.left, window.innerWidth-390), width:Math.max(r.width,370)});
     }
   };
-
   useEffect(()=>{
-    if(showDrop){
-      updatePos();
-      window.addEventListener('scroll',updatePos,true);
-      window.addEventListener('resize',updatePos);
-      return()=>{
-        window.removeEventListener('scroll',updatePos,true);
-        window.removeEventListener('resize',updatePos);
-      };
+    if(showHsnDrop){
+      updatePos(hsnRef,setHsnPos);
+      const fn=()=>updatePos(hsnRef,setHsnPos);
+      window.addEventListener('scroll',fn,true); window.addEventListener('resize',fn);
+      return()=>{ window.removeEventListener('scroll',fn,true); window.removeEventListener('resize',fn); };
     }
-  },[showDrop]);
+  },[showHsnDrop]);
+  useEffect(()=>{
+    if(showDescDrop){
+      updatePos(descRef,setDescPos);
+      const fn=()=>updatePos(descRef,setDescPos);
+      window.addEventListener('scroll',fn,true); window.addEventListener('resize',fn);
+      return()=>{ window.removeEventListener('scroll',fn,true); window.removeEventListener('resize',fn); };
+    }
+  },[showDescDrop]);
 
-  // Show ALL matches
-  const matched=hsnQ.length>0
-    ?hsnList.filter(h=>
-        h.code.startsWith(hsnQ)||
-        h.code.includes(hsnQ)||
-        h.desc.toLowerCase().includes(hsnQ.toLowerCase())
-      ).slice(0,15)
-    :[];
+  const hsnMatched = hsnQ.length>0
+    ? hsnList.filter(h=>h.code.startsWith(hsnQ)||h.code.includes(hsnQ)||h.desc.toLowerCase().includes(hsnQ.toLowerCase())).slice(0,15)
+    : [];
+  const descMatched = descQ.length>1
+    ? hsnList.filter(h=>h.desc.toLowerCase().includes(descQ.toLowerCase())||h.code.startsWith(descQ)).slice(0,12)
+    : [];
+
   const calc=updated=>{
     const qty=parseFloat(updated.qty)||0, rate=parseFloat(updated.rate)||0;
     const disc=parseFloat(updated.discount)||0, tax=parseFloat(updated.taxRate)||0;
@@ -1814,52 +1879,61 @@ const ProductRow = ({row,idx,onChange,onDelete,hsnList,gstType})=>{
     updated.total=(taxable*(1+tax/100)).toFixed(2);
     return updated;
   };
-  const up=k=>e=>{const updated=calc({...row,[k]:e.target.value});onChange(idx,updated);};
+  const up=k=>e=>{ onChange(idx, calc({...row,[k]:e.target.value})); };
+
   const selectHSN=h=>{
-    const updated=calc({...row,hsnCode:h.code,taxRate:h.taxRate,unit:h.unit,desc:row.desc||h.desc});
-    // Auto fill description ONLY if empty
-    if(!row.desc) updated.desc=h.desc;
-    onChange(idx,updated);
-    setHsnQ(h.code);
-    setShowDrop(false);
+    const updated=calc({...row, hsnCode:h.code, taxRate:h.taxRate, unit:h.unit});
+    if(!row.desc){ updated.desc=h.desc; setDescQ(h.desc); }
+    onChange(idx,updated); setHsnQ(h.code); setShowHsnDrop(false);
   };
-  const taxLabel=gstType==='INTRA'?`CGST${parseFloat(row.taxRate||0)/2}%+SGST${parseFloat(row.taxRate||0)/2}%`:`IGST ${row.taxRate||0}%`;
+  const selectDesc=h=>{
+    const updated=calc({...row, desc:h.desc, hsnCode:h.code, taxRate:h.taxRate, unit:h.unit});
+    onChange(idx,updated); setDescQ(h.desc); setHsnQ(h.code); setShowDescDrop(false);
+  };
+
+  const taxLabel=gstType==='INTRA'
+    ?`CGST ${parseFloat(row.taxRate||0)/2}%+SGST ${parseFloat(row.taxRate||0)/2}%`
+    :`IGST ${row.taxRate||0}%`;
+
+  const Dropdown=({dRef,pos,items,onSel,label})=>ReactDOM.createPortal(
+    <div ref={dRef} style={{position:'fixed',top:pos.top,left:pos.left,width:pos.width,
+      background:'var(--card)',border:'1.5px solid var(--border2)',borderRadius:10,
+      boxShadow:'0 8px 40px rgba(0,0,0,0.45)',zIndex:99999,maxHeight:300,overflowY:'auto'}}>
+      <div style={{padding:'6px 12px',fontSize:10,color:'var(--text3)',borderBottom:'1px solid var(--border)',
+        fontWeight:600,background:'var(--card2)',borderRadius:'10px 10px 0 0'}}>
+        🔍 {items.length} match{items.length!==1?'es':''} — {label}
+      </div>
+      {items.map((h,j)=>(
+        <div key={j} className="hsn-opt" onMouseDown={e=>{e.preventDefault();onSel(h);}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
+            <span className="hsn-code">{h.code}</span>
+            <span className="badge badge-green" style={{fontSize:10}}>{h.taxRate}%</span>
+          </div>
+          <div className="hsn-desc">{h.desc}</div>
+          {h.category&&<div style={{fontSize:10,color:'var(--text3)',marginTop:1}}>{h.category}</div>}
+        </div>
+      ))}
+    </div>, document.body
+  );
+
   return <tr>
     <td className="p-sno">{idx+1}</td>
-    <td style={{minWidth:220}}>
-      <input className="p-input" value={row.desc||''} onChange={up('desc')} placeholder="Enter product/service description..."/>
+    <td style={{minWidth:220,position:'relative'}}>
+      <input ref={descRef} className="p-input" value={descQ}
+        onChange={e=>{setDescQ(e.target.value);up('desc')(e);setShowDescDrop(e.target.value.length>1);}}
+        onFocus={()=>{if(descQ.length>1)setShowDescDrop(true);}}
+        placeholder="Type description or search HSN..."/>
+      {showDescDrop&&descMatched.length>0&&
+        <Dropdown dRef={descDropRef} pos={descPos} items={descMatched} onSel={selectDesc} label="click to auto-fill HSN"/>}
     </td>
     <td style={{minWidth:130}}>
       <div className="hsn-wrap">
-        <input ref={inputRef} className="p-input gold" value={hsnQ}
-          onChange={e=>{setHsnQ(e.target.value);up('hsnCode')(e);setShowDrop(true);}}
-          onFocus={()=>setShowDrop(true)}
+        <input ref={hsnRef} className="p-input gold" value={hsnQ}
+          onChange={e=>{setHsnQ(e.target.value);up('hsnCode')(e);setShowHsnDrop(true);}}
+          onFocus={()=>setShowHsnDrop(true)}
           placeholder="HSN/SAC" style={{maxWidth:110}}/>
-        {showDrop&&matched.length>0&&ReactDOM.createPortal(
-          <div ref={dropRef} style={{
-            position:'fixed',
-            top:dropPos.top, left:dropPos.left,
-            width:380, background:'var(--card)',
-            border:'1.5px solid var(--border2)',
-            borderRadius:10, boxShadow:'0 8px 40px rgba(0,0,0,0.4)',
-            zIndex:99999, maxHeight:300, overflowY:'auto'
-          }}>
-            <div style={{padding:'6px 12px',fontSize:10,color:'var(--text3)',borderBottom:'1px solid var(--border)',fontWeight:600,background:'var(--card2)',borderRadius:'10px 10px 0 0'}}>
-              🔍 {matched.length} result{matched.length!==1?'s':''} found
-            </div>
-            {matched.map((h,j)=>(
-              <div key={j} className="hsn-opt" onMouseDown={(e)=>{e.preventDefault();selectHSN(h);}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span className="hsn-code">{h.code}</span>
-                  <span className="badge badge-green" style={{fontSize:10}}>{h.taxRate}%</span>
-                </div>
-                <div className="hsn-desc">{h.desc}</div>
-                {h.category&&<div style={{fontSize:10,color:'var(--text3)',marginTop:1}}>{h.category}</div>}
-              </div>
-            ))}
-          </div>,
-          document.body
-        )}
+        {showHsnDrop&&hsnMatched.length>0&&
+          <Dropdown dRef={hsnDropRef} pos={hsnPos} items={hsnMatched} onSel={selectHSN} label="click to auto-fill"/>}
       </div>
     </td>
     <td style={{minWidth:90}}>
@@ -1869,20 +1943,30 @@ const ProductRow = ({row,idx,onChange,onDelete,hsnList,gstType})=>{
     </td>
     <td style={{minWidth:70}}><input type="number" className="p-input r" value={row.qty||''} onChange={up('qty')} placeholder="1" min="0"/></td>
     <td style={{minWidth:90}}><input type="number" className="p-input r" value={row.rate||''} onChange={up('rate')} placeholder="0.00" min="0"/></td>
-    <td style={{minWidth:60}}><input type="number" className="p-input r" value={row.discount||''} onChange={up('discount')} placeholder="0" min="0" max="100"/></td>
-    <td style={{minWidth:80}}>
-      <select value={row.taxRate||'18'} onChange={up('taxRate')} className="p-input" style={{maxWidth:72}}>
-        {TAX_RATES.map(r=><option key={r} value={r}>{r}%</option>)}
-      </select>
-    </td>
-    <td className="p-num" style={{minWidth:100}}>{fmt(row.taxable||0)}</td>
-    <td style={{minWidth:130,fontSize:10,color:'var(--text3)',textAlign:'center',whiteSpace:'nowrap'}}>{taxLabel}</td>
-    <td className="p-total" style={{minWidth:100}}>{fmt(row.total||0)}</td>
+    {!descOnly&&<>
+      <td style={{minWidth:60}}><input type="number" className="p-input r" value={row.discount||''} onChange={up('discount')} placeholder="0" min="0" max="100"/></td>
+      <td style={{minWidth:80}}>
+        <select value={row.taxRate||'18'} onChange={up('taxRate')} className="p-input" style={{maxWidth:72}}>
+          {TAX_RATES.map(r=><option key={r} value={r}>{r}%</option>)}
+        </select>
+      </td>
+      <td className="p-num" style={{minWidth:100}}>{fmt(row.taxable||0)}</td>
+      <td style={{minWidth:130,fontSize:10,color:'var(--text3)',textAlign:'center',whiteSpace:'nowrap'}}>{taxLabel}</td>
+      <td className="p-total" style={{minWidth:100}}>{fmt(row.total||0)}</td>
+    </>}
+    {descOnly&&
+      <td className="p-total" style={{minWidth:110}}>
+        ₹{((row.qty||0)*(parseFloat(row.rate)||0)).toLocaleString('en-IN',{minimumFractionDigits:2})}
+      </td>
+    }
     <td style={{width:38}}>
       <button className="btn btn-icon btn-danger btn-sm" onClick={()=>onDelete(idx)}><Ic n="trash" s={13}/></button>
     </td>
   </tr>;
 };
+/* ── PRODUCT ROW — alias ── */
+const ProductRow=(props)=><ItemRow {...props} descOnly={false}/>;
+
 
 /* ── ADMIN PANEL ── */
 const AdminPanel = ({currentUser,onClose})=>{
@@ -1957,7 +2041,7 @@ const AdminPanel = ({currentUser,onClose})=>{
   const roleBadge=r=>r==='superadmin'?{cls:'badge-gold',label:'Super Admin'}:r==='admin'?{cls:'badge-primary',label:'Admin'}:{cls:'badge-green',label:'User'};
 
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:980}}>
+    <div className="modal" style={{maxWidth:1100,width:"96vw"}}>
       <div className="modal-hdr">
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <span style={{fontSize:22}}>{isSuper?'👑':'🛡️'}</span>
@@ -2123,25 +2207,43 @@ const AdminPanel = ({currentUser,onClose})=>{
 
         {tab==='export'&&(
           <div>
-            <div className="alert alert-info" style={{marginBottom:20}}><Ic n="xlsx" s={16}/><div><strong>Sales Register</strong> — All invoices with line-wise item details including GST breakup, timestamps, and created-by user info.</div></div>
+            <div className="alert alert-info" style={{marginBottom:20}}><Ic n="xlsx" s={16}/><div><strong>Export your data</strong> — Sales Register, GSTR-1, Purchase Register and Purchase Orders in Excel format.</div></div>
             <div className="g2">
-              <div className="card" style={{textAlign:'center',padding:30}}>
-                <div style={{fontSize:48,marginBottom:12}}>📊</div>
-                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:8}}>Sales Register</div>
-                <div style={{color:'var(--text2)',fontSize:13,marginBottom:18}}>Line-wise export of all invoices with HSN, tax breakup, timestamps, customer details.</div>
-                <button className="btn btn-success" onClick={()=>makeExcel(invs)}><Ic n="xlsx"/>Download Excel ({invs.length} invoices)</button>
+              <div className="card" style={{textAlign:'center',padding:24}}>
+                <div style={{fontSize:40,marginBottom:10}}>📊</div>
+                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:6}}>Sales Register</div>
+                <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>Line-wise export of all invoices with HSN, tax breakup, customer details.</div>
+                <button className="btn btn-success" onClick={()=>makeExcel(invs)}><Ic n="xlsx"/>Download ({invs.length} invoices)</button>
               </div>
-              <div className="card" style={{textAlign:'center',padding:30}}>
-                <div style={{fontSize:48,marginBottom:12}}>📋</div>
-                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:8}}>Data Backup</div>
-                <div style={{color:'var(--text2)',fontSize:13,marginBottom:18}}>Export all app data as JSON for backup or transfer to another computer.</div>
-                <button className="btn btn-outline-primary" onClick={()=>{
-                  const data={company:S.get(SK.CO,{}),hsn:S.get(SK.HSN,[]),invoices:S.get(SK.INV,[]),terms:S.get(SK.TERMS,'')};
+              <div className="card" style={{textAlign:'center',padding:24}}>
+                <div style={{fontSize:40,marginBottom:10}}>🏛️</div>
+                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:6}}>GSTR-1 Report</div>
+                <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>GST-compliant export with B2B, B2C, HSN Summary and CDNR sheets.</div>
+                <button className="btn btn-outline-primary" onClick={()=>makeGSTR1(invs)}><Ic n="xlsx"/>Download GSTR-1</button>
+              </div>
+              <div className="card" style={{textAlign:'center',padding:24}}>
+                <div style={{fontSize:40,marginBottom:10}}>🧾</div>
+                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:6}}>Purchase Register</div>
+                <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>All expenses and purchase bills with category and monthly summary sheets.</div>
+                <button className="btn btn-outline" onClick={()=>makePurchaseExcel(S.get(SK.EXP,[]))}><Ic n="xlsx"/>Download ({S.get(SK.EXP,[]).length} records)</button>
+              </div>
+              <div className="card" style={{textAlign:'center',padding:24}}>
+                <div style={{fontSize:40,marginBottom:10}}>🛒</div>
+                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:6}}>PO Register</div>
+                <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>All Purchase Orders with vendor details, items, delivery dates and status.</div>
+                <button className="btn btn-outline-primary" onClick={()=>makePOExcel(S.get(SK.PO,[]))}><Ic n="xlsx"/>Download ({S.get(SK.PO,[]).length} POs)</button>
+              </div>
+              <div className="card" style={{textAlign:'center',padding:24}}>
+                <div style={{fontSize:40,marginBottom:10}}>💾</div>
+                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:8}}>Full Data Backup</div>
+                <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>Export everything as JSON for backup or migration.</div>
+                <button className="btn btn-outline" onClick={()=>{
+                  const data={company:S.get(SK.CO,{}),hsn:S.get(SK.HSN,[]),invoices:S.get(SK.INV,[]),terms:S.get(SK.TERMS,''),expenses:S.get(SK.EXP,[]),purchaseOrders:S.get(SK.PO,[])};
                   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-                  const url=URL.createObjectURL(blob);
-                  const a=document.createElement('a');a.href=url;a.download='InvoicePro_Backup.json';a.click();
-                  toast.success('Backup downloaded!');
-                }}><Ic n="save"/>Download Backup (JSON)</button>
+                  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+                  a.href=url;a.download='InvoicePro_Backup.json';a.click();
+                  toast.success('Full backup downloaded!');
+                }}><Ic n="save"/>Download JSON Backup</button>
               </div>
             </div>
           </div>
@@ -2524,7 +2626,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     </div>
 
     {/* Customer */}
-    <div className="g2" style={{marginBottom:16}}>
+    <div className="g2 bill-ship-grid" style={{marginBottom:16}}>
       <div className="card">
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div className="section-title" style={{marginBottom:0}}><span className="dot"></span>Bill To</div>
@@ -2658,7 +2760,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     {showCustModal&&<CustomerModal onClose={()=>setShowCustModal(false)} onSelect={fillCustomer}/>}
 
     {/* Products Table */}
-    <div className="card" style={{marginBottom:16}}>
+    <div className="card item-table-card" style={{marginBottom:16}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
         <div className="section-title" style={{marginBottom:0}}><span className="dot"></span>Products / Services</div>
         <button className="btn btn-outline-primary btn-sm" onClick={addItem}><Ic n="plus" s={13}/>Add Row</button>
@@ -2735,8 +2837,8 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     </div>
 
     {/* Actions */}
-    <div style={{display:'flex',gap:10,justifyContent:'space-between',alignItems:'center',padding:'16px 0',borderTop:'1px solid var(--border)',flexWrap:'wrap'}}>
-      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+    <div className="inv-actions" style={{display:'flex',gap:10,justifyContent:'space-between',alignItems:'center',padding:'16px 0',borderTop:'1px solid var(--border)',flexWrap:'wrap'}}>
+      <div className="inv-actions-left" style={{display:'flex',gap:8,alignItems:'center'}}>
         {/* Status badge */}
         {inv.status&&(()=>{const cfg=STATUS_CFG[inv.status]||{};return(
           <span style={{padding:'4px 12px',borderRadius:20,fontSize:11,fontWeight:700,
@@ -2761,13 +2863,508 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
   </div>;
 };
 
+/* ════════════════════════════════════════════════════
+   🛒 PURCHASE ORDER (PO) SYSTEM
+   ════════════════════════════════════════════════════ */
+
+// ── PO PDF Generator ──
+const makePOPDF = (po, co) => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const PW=210, PH=297, ML=14, MR=14, CW=PW-ML-MR;
+  const WHITE=[255,255,255], BG=[247,248,252];
+  const BLUE=[30,85,135], LBLUE=[212,226,242];
+  const DARK=[22,22,22], MED=[95,95,95], LGRAY=[165,165,165], XGRAY=[218,218,222];
+  const ALTROW=[244,247,252];
+
+  // ── Page frame (identical to invoice PDF) ──
+  doc.setFillColor(...BG); doc.rect(0,0,PW,PH,'F');
+  doc.setFillColor(...WHITE); doc.rect(11,11,PW-22,PH-22,'F');
+  doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5);
+  doc.line(11,11,11,PH-11); doc.line(PW-11,11,PW-11,PH-11);
+  doc.line(11,11,PW-11,11); doc.line(11,PH-11,PW-11,PH-11);
+  [[11,11],[PW-11,11],[11,PH-11],[PW-11,PH-11]].forEach(([x,y])=>{
+    doc.setFillColor(...XGRAY); doc.circle(x,y,3.5,'F');
+    doc.setFillColor(...WHITE); doc.circle(x,y,2,'F');
+  });
+
+  let Y=15;
+
+  // ── Company name + details (LEFT) / Logo (RIGHT) — identical to invoice ──
+  const logoAreaX=PW-MR-34;
+  if(co.logo){
+    try{
+      const mime=co.logo.substring(5,co.logo.indexOf(';'));
+      const ext=mime.split('/')[1].toUpperCase();
+      doc.addImage(co.logo,ext==='JPG'?'JPEG':ext,logoAreaX,Y,32,32);
+    }catch(e){}
+  }
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...DARK);
+  doc.text(co.name||'Your Company',ML+2,Y+7);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MED);
+  const addrStr=[co.address,co.city,co.state,co.pin].filter(Boolean).join(', ');
+  let coY=Y+12;
+  if(addrStr){doc.splitTextToSize(addrStr,logoAreaX-ML-8).slice(0,2).forEach(l=>{doc.text(l,ML+2,coY);coY+=3.8;});}
+  if(co.gstin) {doc.text('GSTIN: '+co.gstin,ML+2,coY);coY+=3.8;}
+  if(co.email) {doc.text('Email: '+co.email,ML+2,coY);coY+=3.8;}
+  if(co.phone) {doc.text('Phone: '+co.phone,ML+2,coY);coY+=3.8;}
+  if(co.website){doc.text(co.website,ML+2,coY);}
+
+  Y=Math.max(coY+5,Y+36);
+  doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5); doc.line(ML,Y,PW-MR,Y); Y+=5;
+
+  // ── Vendor / Deliver To (identical style to Bill To / Ship To) ──
+  const colW=(CW/2)-3, col2X=ML+colW+6;
+  doc.setFillColor(...LBLUE); doc.rect(ML,Y,colW,7,'F');
+  doc.setFillColor(...LBLUE); doc.rect(col2X,Y,colW,7,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...BLUE);
+  doc.text('VENDOR / SUPPLIER',ML+4,Y+5.2);
+  doc.text('DELIVER TO',col2X+4,Y+5.2);
+  Y+=9;
+
+  const drawParty=(cx,d,maxW)=>{
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...DARK);
+    doc.text(d.name||'—',cx+2,Y+5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MED);
+    const ls=[];
+    if(d.address)ls.push(d.address);
+    const cc=[d.city,d.state,d.pin].filter(Boolean).join(', ');
+    if(cc)ls.push(cc);
+    if(d.gstin)ls.push('GSTIN: '+d.gstin);
+    if(d.phone)ls.push('Ph: '+d.phone);
+    let ly=Y+10; ls.slice(0,5).forEach(l=>{doc.splitTextToSize(l,maxW-4).forEach(s=>{doc.text(s,cx+2,ly);ly+=3.8;});});
+    return ly;
+  };
+  const vBot=drawParty(ML, po.vendorTo||{name:'Vendor Name'}, colW);
+  const dBot=drawParty(col2X, po.deliverTo||{}, colW);
+  Y=Math.max(vBot,dBot)+6;
+
+  doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5); doc.line(ML,Y,PW-MR,Y); Y+=5;
+
+  // ── PO Title + Meta (identical style to invoice title row) ──
+  const mRows=[
+    ['Number:', po.poNo||'—'],
+    ['Date:', fmtDate(po.date)||'—'],
+    ['Delivery By:', po.deliveryDate?fmtDate(po.deliveryDate):'—'],
+    ...(po.refNo?[['Ref No:',po.refNo]]:[]),
+  ];
+  const sectionH=Math.max(mRows.length*5.5+5,22);
+  doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...BLUE);
+  doc.text('PURCHASE ORDER', ML+2, Y+10);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...LGRAY);
+  doc.text(po.status||'Draft', ML+2, Y+16);
+  let iy=Y+3;
+  mRows.forEach(([l,v])=>{
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...MED);
+    doc.text(l, PW-MR-44, iy);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...DARK);
+    doc.text(v, PW-MR-2, iy, {align:'right'}); iy+=5.5;
+  });
+  Y+=sectionH; doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5); doc.line(ML,Y,PW-MR,Y); Y+=3;
+
+  // ── Items table ──
+  const bS={fontSize:8,cellPadding:{top:4,bottom:4,left:3,right:3},textColor:DARK,lineColor:XGRAY,lineWidth:0,overflow:'linebreak',fillColor:WHITE};
+  const hS={fillColor:BLUE,textColor:WHITE,fontStyle:'bold',fontSize:7.5,halign:'center',cellPadding:{top:4,bottom:4,left:2,right:2},lineColor:BLUE,lineWidth:0};
+  const tH=[['DESCRIPTION','HSN/SAC','QTY','UNIT','RATE (Rs.)','AMOUNT (Rs.)']];
+  const tB=(po.items||[]).filter(r=>r.desc).map(r=>[
+    r.desc, r.hsnCode||'—', String(r.qty||0), r.unit||'Nos',
+    Number(r.rate||0).toFixed(2),
+    Number((r.qty||0)*(r.rate||0)).toFixed(2)
+  ]);
+  if(!tB.length) tB.push(['No items','','','','','0.00']);
+  doc.autoTable({
+    head:tH, body:tB, startY:Y, margin:{left:ML,right:MR}, theme:'grid',
+    headStyles:hS, bodyStyles:bS, alternateRowStyles:{fillColor:ALTROW},
+    columnStyles:{0:{cellWidth:64},1:{cellWidth:22},2:{cellWidth:18,halign:'right'},3:{cellWidth:18},4:{cellWidth:28,halign:'right'},5:{cellWidth:32,halign:'right'}},
+  });
+  Y=doc.lastAutoTable.finalY+6;
+
+  // ── Totals (identical style to invoice tax summary) ──
+  const subTotal=(po.items||[]).reduce((s,r)=>s+(r.qty||0)*(parseFloat(r.rate)||0),0);
+  const grandTotal=subTotal+Number(po.taxes||0);
+  const totLines=[
+    ['Sub Total (before tax):', subTotal.toFixed(2)],
+    ['Taxes / Freight / Other:', Number(po.taxes||0).toFixed(2)],
+    ['GRAND TOTAL:', grandTotal.toFixed(2)],
+  ];
+  const totX=PW-MR-85;
+  totLines.forEach(([l,v],i)=>{
+    const isLast=i===totLines.length-1;
+    if(isLast){
+      doc.setFillColor(...LBLUE); doc.rect(totX,Y,85,8,'F');
+      doc.setDrawColor(...BLUE); doc.setLineWidth(0.4); doc.line(totX,Y,totX+85,Y);
+    }
+    doc.setFont('helvetica',isLast?'bold':'normal'); doc.setFontSize(isLast?9:8);
+    doc.setTextColor(...(isLast?BLUE:MED));
+    doc.text(l, totX+3, Y+5.5);
+    doc.setFont('helvetica','bold');
+    doc.text('Rs. '+Number(v).toLocaleString('en-IN',{minimumFractionDigits:2}), totX+83, Y+5.5, {align:'right'});
+    Y+=isLast?10:7;
+  });
+
+  // Amount in words
+  Y+=3;
+  doc.setFillColor(255,251,230); doc.rect(ML,Y,CW,7,'F');
+  doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(...MED);
+  doc.text('Amount in words: '+numberToWords(grandTotal), ML+3, Y+5);
+  Y+=10;
+
+  // ── Terms ──
+  if(po.terms){
+    doc.setDrawColor(...XGRAY); doc.setLineWidth(0.3); doc.line(ML,Y,PW-MR,Y); Y+=5;
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...BLUE);
+    doc.text('Terms & Conditions', ML, Y); Y+=5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...LGRAY);
+    po.terms.split('\n').filter(Boolean).slice(0,6).forEach(t=>{
+      doc.splitTextToSize(t,CW).forEach(s=>{if(Y<PH-25){doc.text(s,ML,Y);Y+=3.8;}});
+    });
+  }
+
+  // ── Authorised Signatory ──
+  const sigY=Math.max(Y+10, PH-35);
+  doc.setDrawColor(...XGRAY); doc.setLineWidth(0.3);
+  doc.line(PW-MR-55,sigY,PW-MR,sigY);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MED);
+  doc.text('For '+( co.name||''), PW-MR-27, sigY-5, {align:'center'});
+  doc.text('Authorised Signatory', PW-MR-27, sigY+4, {align:'center'});
+
+  doc.save(`${po.poNo||'PO'}_${po.vendorTo?.name||'Vendor'}.pdf`);
+  toast.success('PO PDF downloaded!');
+};
+
+// ── PO Excel Export ──
+const makePOExcel = (orders) => {
+  const wb = window.XLSX.utils.book_new();
+  const headers=['Sl.No','PO Number','PO Date','Delivery By','Vendor Name','Vendor GSTIN',
+    'Vendor Address','Deliver To','Description','HSN/SAC','Qty','Unit','Rate (Rs.)','Amount (Rs.)',
+    'Sub Total','Taxes','Grand Total','Status','Ref No','Terms','Created By'];
+  const rows=[headers]; let sl=1;
+  orders.forEach(po=>{
+    const items=(po.items||[]).filter(r=>r.desc);
+    const grand=(po.items||[]).reduce((s,r)=>s+(r.qty||0)*(r.rate||0),0)+Number(po.taxes||0);
+    (items.length?items:[{desc:'',hsnCode:'',qty:'',unit:'',rate:''}]).forEach((it,idx)=>{
+      rows.push([
+        idx===0?sl:'', idx===0?po.poNo:'', idx===0?po.date:'', idx===0?po.deliveryDate:'',
+        idx===0?(po.vendorTo?.name||''):'', idx===0?(po.vendorTo?.gstin||''):'',
+        idx===0?([po.vendorTo?.address,po.vendorTo?.city,po.vendorTo?.state].filter(Boolean).join(', ')):'',
+        idx===0?([po.deliverTo?.name,po.deliverTo?.city].filter(Boolean).join(', ')):'',
+        it.desc, it.hsnCode||'', it.qty||'', it.unit||'', it.rate||'',
+        ((it.qty||0)*(it.rate||0)).toFixed(2),
+        idx===0?(po.items||[]).reduce((s,r)=>s+(r.qty||0)*(r.rate||0),0).toFixed(2):'',
+        idx===0?Number(po.taxes||0).toFixed(2):'',
+        idx===0?grand.toFixed(2):'',
+        idx===0?(po.status||'Draft'):'', idx===0?(po.refNo||''):'',
+        idx===0?(po.terms||''):'', idx===0?(po.createdBy||''):'',
+      ]);
+    });
+    sl++;
+  });
+  const ws=window.XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:5},{wch:16},{wch:12},{wch:12},{wch:24},{wch:18},{wch:30},{wch:24},
+    {wch:30},{wch:12},{wch:8},{wch:8},{wch:14},{wch:14},{wch:14},{wch:12},{wch:14},{wch:10},{wch:12},{wch:30},{wch:20}];
+  window.XLSX.utils.book_append_sheet(wb, ws, 'PO Register');
+  window.XLSX.writeFile(wb, `PO_Register_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast.success('PO Register downloaded!');
+};
+
+// ── PO Form Component ──
+const POForm = ({currentUser, initial, onSave})=>{
+  const newPO=()=>({
+    poNo: (()=>{const fy=getFY();const k='ip_ctr_PO_'+fy;let c=S.get(k,1);const n=`PO-${fy}-${String(c).padStart(4,'0')}`;S.set(k,c+1);return n;})(),
+    date: today(), deliveryDate:'', refNo:'', status:'Draft', taxes:0, terms:'',
+    vendorTo:{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:''},
+    deliverTo:{name:'',address:'',city:'',state:'',pin:''},
+    items:[{desc:'',hsnCode:'',qty:1,unit:'Nos',rate:''}],
+    notes:'', createdBy: currentUser?.email||'', time: nowTime()
+  });
+  const [po,setPo]=useState(()=>initial?{...initial}:newPO());
+  const [showVendorDrop,setShowVendorDrop]=useState(false);
+  const [vendorQ,setVendorQ]=useState('');
+  const vendorInputRef=useRef();
+  const co=S.get(SK.CO,{});
+  const hsnList=S.get(SK.HSN,[]);
+
+  useEffect(()=>{if(initial)setPo({...initial});},[initial]);
+
+  const upV=k=>e=>setPo(p=>({...p,vendorTo:{...p.vendorTo,[k]:e.target.value}}));
+  const upD=k=>e=>setPo(p=>({...p,deliverTo:{...p.deliverTo,[k]:e.target.value}}));
+  const upF=k=>e=>setPo(p=>({...p,[k]:e.target.value}));
+
+  const customers=S.get(SK.CUST,[]);
+  const vendorMatched=vendorQ.length>1?customers.filter(c=>
+    c.name?.toLowerCase().includes(vendorQ.toLowerCase())||
+    c.gstin?.toLowerCase().includes(vendorQ.toLowerCase())):[];
+
+  const addItem=()=>setPo(p=>({...p,items:[...p.items,{desc:'',hsnCode:'',qty:1,unit:'Nos',rate:'',taxRate:'18',taxable:0,gstAmt:0,total:0}]}));
+  const delItem=i=>setPo(p=>({...p,items:p.items.filter((_,j)=>j!==i)}));
+  const updateItem=(i,updated)=>setPo(p=>({...p,items:p.items.map((it,j)=>j===i?updated:it)}));
+
+  const subTotal=(po.items||[]).reduce((s,r)=>s+(r.qty||0)*(parseFloat(r.rate)||0),0);
+  const grandTotal=subTotal+Number(po.taxes||0);
+
+  const save=()=>{
+    if(!po.vendorTo?.name){toast.error('Vendor name required');return;}
+    const pos=S.get(SK.PO,[]);
+    const ex=pos.findIndex(p=>p.poNo===po.poNo);
+    let updated;
+    if(ex>=0){updated=[...pos];updated[ex]={...po};}
+    else{updated=[...pos,{...po}];}
+    S.set(SK.PO,updated);
+    logAudit(ex>=0?'PO_EDITED':'PO_CREATED',`${po.poNo} — ${po.vendorTo?.name}`,currentUser);
+    toast.success(`${po.poNo} saved!`);
+    if(onSave)onSave(po);
+  };
+
+  return <div>
+    {/* PO Header */}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:18,gap:10}}>
+      <div className="inv-header-left">
+        <div className="inv-title" style={{fontFamily:'Sora,sans-serif',fontSize:26,fontWeight:800,color:'var(--text)'}}>Purchase Order</div>
+        <div className="inv-co-row" style={{color:'var(--text3)',fontSize:13,marginTop:3,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+          {co.name&&<span style={{color:'var(--text2)',fontWeight:600}}>{co.name}</span>}
+          {co.gstin&&<span style={{fontFamily:'monospace',fontSize:11}}>{co.gstin}</span>}
+        </div>
+      </div>
+      <div className="inv-no-badge" style={{flexShrink:0}}>{po.poNo}</div>
+    </div>
+
+    {/* PO Meta */}
+    <div className="card" style={{marginBottom:16}}>
+      <div className="g4">
+        <div className="field"><label className="field-label">PO Number</label>
+          <input className="field-input" value={po.poNo} onChange={upF('poNo')} style={{fontFamily:'monospace',fontWeight:700,color:'var(--gold)'}}/>
+        </div>
+        <div className="field"><label className="field-label">PO Date</label>
+          <input type="date" className="field-input" value={po.date} onChange={upF('date')}/>
+        </div>
+        <div className="field"><label className="field-label">Delivery By</label>
+          <input type="date" className="field-input" value={po.deliveryDate||''} onChange={upF('deliveryDate')}/>
+        </div>
+        <div className="field"><label className="field-label">Ref / Invoice No.</label>
+          <input className="field-input" value={po.refNo||''} onChange={upF('refNo')} placeholder="Ref-001 (optional)"/>
+        </div>
+      </div>
+      <div className="g2" style={{marginTop:4}}>
+        <div className="field">
+          <label className="field-label">Status</label>
+          <select className="field-input" value={po.status||'Draft'} onChange={upF('status')}>
+            {['Draft','Sent','Approved','Partially Received','Received','Cancelled'].map(s=><option key={s}>{s}</option>)}
+          </select>
+        </div>
+        <div className="field"><label className="field-label">Taxes / Freight / Other Charges (₹)</label>
+          <input type="number" className="field-input" value={po.taxes||''} onChange={upF('taxes')} placeholder="0"/>
+        </div>
+      </div>
+    </div>
+
+    {/* Vendor + Deliver To */}
+    <div className="g2 bill-ship-grid" style={{marginBottom:16}}>
+      {/* Vendor */}
+      <div className="card">
+        <div className="section-title" style={{marginBottom:12}}><span className="dot"></span>Vendor / Supplier</div>
+        <div className="field" style={{position:'relative'}}>
+          <label className="field-label">Vendor Name *</label>
+          <input ref={vendorInputRef} className="field-input" value={po.vendorTo.name}
+            onChange={e=>{upV('name')(e);setVendorQ(e.target.value);setShowVendorDrop(true);}}
+            onFocus={()=>{setVendorQ(po.vendorTo.name);setShowVendorDrop(true);}}
+            onBlur={()=>setTimeout(()=>setShowVendorDrop(false),150)}
+            placeholder="Type vendor name..."/>
+          {showVendorDrop&&vendorMatched.length>0&&(
+            <div style={{position:'absolute',top:'100%',left:0,right:0,background:'var(--card)',border:'1.5px solid var(--border2)',
+              borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.3)',zIndex:9999,maxHeight:200,overflowY:'auto'}}>
+              {vendorMatched.map((c,i)=>(
+                <div key={i} className="hsn-opt" onMouseDown={e=>{e.preventDefault();
+                  setPo(p=>({...p,vendorTo:{name:c.name,address:c.address||'',city:c.city||'',state:c.state||'',pin:c.pin||'',gstin:c.gstin||'',phone:c.phone||'',email:c.email||''}}));
+                  setVendorQ(c.name);setShowVendorDrop(false);}}>
+                  <div style={{fontWeight:700,color:'var(--text)'}}>{c.name}</div>
+                  {c.gstin&&<div style={{fontSize:11,color:'var(--gold)',fontFamily:'monospace'}}>{c.gstin}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="g2">
+          <div className="field"><label className="field-label">GSTIN</label><input className="field-input" value={po.vendorTo.gstin||''} onChange={upV('gstin')} placeholder="29XXXXX..." style={{textTransform:'uppercase'}}/></div>
+          <div className="field"><label className="field-label">Phone</label><input className="field-input" value={po.vendorTo.phone||''} onChange={upV('phone')}/></div>
+        </div>
+        <div className="field"><label className="field-label">Address</label><input className="field-input" value={po.vendorTo.address||''} onChange={upV('address')} placeholder="Street, Area"/></div>
+        <div className="g3">
+          <div className="field"><label className="field-label">City</label><input className="field-input" value={po.vendorTo.city||''} onChange={upV('city')}/></div>
+          <div className="field"><label className="field-label">State</label><input className="field-input" value={po.vendorTo.state||''} onChange={upV('state')}/></div>
+          <div className="field"><label className="field-label">PIN</label><input className="field-input" value={po.vendorTo.pin||''} onChange={upV('pin')}/></div>
+        </div>
+      </div>
+
+      {/* Deliver To */}
+      <div className="card">
+        <div className="section-title" style={{marginBottom:12}}><span className="dot"></span>Deliver To</div>
+        <div style={{fontSize:11,color:'var(--text3)',marginBottom:10,background:'var(--card2)',padding:'6px 10px',borderRadius:6}}>
+          📍 Where goods should be delivered (usually your company address)
+        </div>
+        <div className="field"><label className="field-label">Company / Name</label>
+          <input className="field-input" value={po.deliverTo.name||co.name||''} onChange={upD('name')} placeholder={co.name||'Your company name'}/>
+        </div>
+        <div className="field"><label className="field-label">Address</label>
+          <input className="field-input" value={po.deliverTo.address||co.address||''} onChange={upD('address')} placeholder={co.address||'Delivery address'}/>
+        </div>
+        <div className="g3">
+          <div className="field"><label className="field-label">City</label><input className="field-input" value={po.deliverTo.city||co.city||''} onChange={upD('city')}/></div>
+          <div className="field"><label className="field-label">State</label><input className="field-input" value={po.deliverTo.state||''} onChange={upD('state')}/></div>
+          <div className="field"><label className="field-label">PIN</label><input className="field-input" value={po.deliverTo.pin||co.pin||''} onChange={upD('pin')}/></div>
+        </div>
+        <div className="field" style={{marginTop:4}}><label className="field-label">Notes</label>
+          <textarea className="field-input" value={po.notes||''} onChange={upF('notes')} rows={2} placeholder="Special delivery instructions..."/>
+        </div>
+      </div>
+    </div>
+
+    {/* Items Table */}
+    <div className="card item-table-card" style={{marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,padding:'0 2px'}}>
+        <div className="section-title" style={{marginBottom:0}}><span className="dot"></span>Items / Products</div>
+        <button className="btn btn-outline-primary btn-sm" onClick={addItem}><Ic n="plus" s={13}/>Add Row</button>
+      </div>
+      <div className="table-wrap">
+        <table className="ptable">
+          <thead><tr>
+            <th style={{width:28}}>#</th>
+            <th>Description (type to search HSN)</th>
+            <th>HSN / SAC Code</th>
+            <th>Unit</th>
+            <th className="r">Qty</th>
+            <th className="r">Rate (₹)</th>
+            <th className="r">Amount (₹)</th>
+            <th style={{width:38}}></th>
+          </tr></thead>
+          <tbody>
+            {po.items.map((row,i)=>(
+              <ItemRow key={i} row={row} idx={i} onChange={updateItem} onDelete={delItem}
+                hsnList={hsnList} gstType="INTRA" descOnly={true}/>
+            ))}
+          </tbody>
+          <tfoot><tr><td colSpan={8} style={{padding:'8px 10px'}}>
+            <button className="btn btn-outline btn-sm" onClick={addItem}><Ic n="plus" s={12}/>Add Row</button>
+          </td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+
+    {/* Bottom: Terms + Totals */}
+    <div className="two-col" style={{marginBottom:16}}>
+      <div>
+        <div className="field"><label className="field-label">Terms & Conditions</label>
+          <textarea className="field-input" value={po.terms||''} onChange={upF('terms')} rows={5}
+            placeholder={`1. Goods must be delivered within the agreed delivery date.\n2. Invoice must accompany each delivery.\n3. Price once confirmed cannot be changed.\n4. Partial deliveries must be pre-informed.`}/>
+        </div>
+      </div>
+      <div>
+        <div className="tax-box">
+          <div className="tax-row"><span className="tax-label">Sub Total</span><span className="tax-val">₹{subTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</span></div>
+          <div className="tax-row"><span className="tax-label">Taxes / Freight</span><span className="tax-val">₹{Number(po.taxes||0).toLocaleString('en-IN',{minimumFractionDigits:2})}</span></div>
+          <div className="tax-row total-row"><span className="tax-label">Grand Total</span><span className="tax-val">₹{grandTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</span></div>
+        </div>
+        <div className="amt-words" style={{marginTop:8}}>{numberToWords(grandTotal)}</div>
+      </div>
+    </div>
+
+    {/* Actions */}
+    <div className="inv-actions" style={{display:'flex',gap:10,justifyContent:'space-between',alignItems:'center',padding:'16px 0',borderTop:'1px solid var(--border)',flexWrap:'wrap'}}>
+      <div className="inv-actions-left" style={{display:'flex',gap:8,alignItems:'center'}}>
+        <span style={{fontSize:12,color:'var(--text3)'}}>PO will be saved to <strong style={{color:'var(--text)'}}>PO Register</strong></span>
+      </div>
+      <div className="inv-actions-right" style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        <button className="btn btn-outline" onClick={()=>{if(window.confirm('Start new PO?'))setPo(newPO());}}><Ic n="new" s={14}/>New PO</button>
+        <button className="btn btn-outline-primary" onClick={save}><Ic n="save" s={14}/>Save PO</button>
+        <button className="btn btn-gold" onClick={()=>{save();makePOPDF(po,co);}}>
+          <Ic n="pdf" s={15}/>Download PDF
+        </button>
+      </div>
+    </div>
+  </div>;
+};
+
+// ── PO History Modal ──
+const POHistoryModal = ({onClose, onLoad, currentUser, onNewPO})=>{
+  const [orders,setOrders]=useState(S.get(SK.PO,[]));
+  const [q,setQ]=useState('');
+  const isAdmin=currentUser?.role==='admin'||currentUser?.role==='superadmin';
+  const filtered=[...orders].reverse().filter(p=>!q||
+    p.poNo?.toLowerCase().includes(q.toLowerCase())||
+    p.vendorTo?.name?.toLowerCase().includes(q.toLowerCase())||
+    p.refNo?.toLowerCase().includes(q.toLowerCase()));
+  const delPO=poNo=>{
+    if(!window.confirm('Delete this PO?'))return;
+    const updated=orders.filter(p=>p.poNo!==poNo);
+    setOrders(updated);S.set(SK.PO,updated);
+    logAudit('PO_DELETED',`PO ${poNo} deleted`,currentUser);
+    toast.info('PO deleted');
+  };
+  const STATUS_COLOR={'Draft':'#6B7280','Sent':'#1D4ED8','Approved':'#065F46','Partially Received':'#B45309','Received':'#15803D','Cancelled':'#991B1B'};
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal" style={{maxWidth:1060,width:"96vw"}}>
+      <div className="modal-hdr">
+        <span className="modal-title">🛒 Purchase Orders ({orders.length})</span>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <button className="btn btn-sm btn-outline-primary" onClick={()=>{onClose();onNewPO&&onNewPO();}}>
+            ➕ New PO
+          </button>
+          {isAdmin&&orders.length>0&&<button className="btn btn-sm btn-outline" onClick={()=>makePOExcel(orders)}>
+            📊 Excel
+          </button>}
+          <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
+        </div>
+      </div>
+      <div className="modal-body">
+        <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
+          placeholder="🔍 Search by PO number, vendor, ref no..." style={{marginBottom:14}}/>
+        {filtered.length===0?<div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>
+          <div style={{fontSize:36,marginBottom:8}}>🛒</div>
+          <div>No purchase orders yet</div>
+        </div>:(
+          <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden'}}>
+            {filtered.map((p,i)=>{
+              const grand=(p.items||[]).reduce((s,r)=>s+(r.qty||0)*(parseFloat(r.rate)||0),0)+Number(p.taxes||0);
+              const sc=STATUS_COLOR[p.status]||'#6B7280';
+              return(<div key={i} className="hist-row" style={{cursor:'default'}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                    <span style={{fontFamily:'monospace',fontWeight:700,fontSize:13,color:'var(--gold)'}}>{p.poNo}</span>
+                    <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:10,background:sc+'22',color:sc,border:`1px solid ${sc}44`}}>{p.status||'Draft'}</span>
+                    {p.refNo&&<span style={{fontSize:11,color:'var(--text3)'}}>Ref: {p.refNo}</span>}
+                  </div>
+                  <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginTop:2}}>{p.vendorTo?.name||'—'}</div>
+                  <div style={{fontSize:11,color:'var(--text3)',marginTop:1}}>
+                    {fmtDate(p.date)} {p.deliveryDate&&`→ Deliver by: ${fmtDate(p.deliveryDate)}`}
+                  </div>
+                </div>
+                <div style={{textAlign:'right',flexShrink:0}}>
+                  <div style={{fontWeight:700,fontSize:14,color:'var(--primary2)'}}>{fmt(grand)}</div>
+                  <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{(p.items||[]).filter(r=>r.desc).length} items</div>
+                </div>
+                <div style={{display:'flex',gap:5,flexShrink:0,flexWrap:'wrap'}}>
+                  <button className="btn btn-sm btn-outline-primary" onClick={()=>{onLoad(p);onClose();}}>✏️ Edit</button>
+                  <button className="btn btn-sm btn-outline" onClick={()=>makePOPDF(p,S.get(SK.CO,{}))}>PDF</button>
+                  <button className="btn btn-sm btn-danger btn-icon" onClick={()=>delPO(p.poNo)}><Ic n="trash" s={11}/></button>
+                </div>
+              </div>);
+            })}
+          </div>
+        )}
+      </div>
+      <div className="modal-ftr"><button className="btn btn-primary" onClick={onClose}>Close</button></div>
+    </div>
+  </div>;
+};
+
 /* ── APP ── */
 const App = ()=>{
   const [user,setUser]=useState(null);
   const [theme,setTheme]=useState('dark');
   const [modal,setModal]=useState(null);
   const [loadedInv,setLoadedInv]=useState(null);
+  const [loadedPO,setLoadedPO]=useState(null);
   const [formKey,setFormKey]=useState(0);
+  const [poKey,setPoKey]=useState(0);
   const [appReady,setAppReady]=useState(false);
   const [loadMsg,setLoadMsg]=useState('Connecting to cloud...');
 
@@ -2798,6 +3395,8 @@ const App = ()=>{
 
   const logout=()=>{setUser(null);toast.info('Logged out');};
   const loadInv=inv=>{setLoadedInv(inv);setFormKey(k=>k+1);};
+  const loadPO=po=>{setLoadedPO(po);setPoKey(k=>k+1);setModal('po');};
+  const newPOModal=()=>{setLoadedPO(null);setPoKey(k=>k+1);setModal('po');};
 
   // Loading screen
   if(!appReady) return (
@@ -2838,8 +3437,12 @@ const App = ()=>{
         {/* Nav items */}
         <div onClick={()=>openModal('history')} className="mob-nav-item">
           <span style={{fontSize:18}}>📋</span>
-          <span>History</span>
+          <span>Invoice History</span>
           {invCount>0&&<span style={{marginLeft:'auto',background:'var(--primary)',color:'#fff',borderRadius:20,padding:'1px 8px',fontSize:11,fontWeight:700}}>{invCount}</span>}
+        </div>
+        <div onClick={()=>openModal('pohistory')} className="mob-nav-item">
+          <span style={{fontSize:18}}>🛒</span><span>Purchase Orders</span>
+          {(S.get(SK.PO,[])).length>0&&<span style={{marginLeft:'auto',background:'var(--gold)',color:'#fff',borderRadius:20,padding:'1px 8px',fontSize:11,fontWeight:700}}>{(S.get(SK.PO,[])).length}</span>}
         </div>
         <div onClick={()=>openModal('expenses')} className="mob-nav-item">
           <span style={{fontSize:18}}>🧾</span><span>Expenses / Purchases</span>
@@ -2856,9 +3459,6 @@ const App = ()=>{
         </div>
         <div onClick={()=>openModal('terms')} className="mob-nav-item">
           <span style={{fontSize:18}}>📄</span><span>Terms & Conditions</span>
-        </div>
-        <div onClick={()=>{pickSaveFolder();setMenuOpen(false);}} className="mob-nav-item">
-          <span style={{fontSize:18}}>📁</span><span>Auto-Save PDF Folder</span>
         </div>
         {isAdmin&&<><div className="mob-nav-sep"/>
         <div onClick={()=>openModal('admin')} className="mob-nav-item" style={{background:'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(245,158,11,0.04))',border:'1px solid rgba(245,158,11,0.2)'}}>
@@ -2894,10 +3494,10 @@ const App = ()=>{
           <Ic n="history" s={13}/>History
           {invCount>0&&<span style={{background:'var(--primary)',color:'#fff',borderRadius:'50%',width:18,height:18,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700}}>{invCount}</span>}
         </button>
+        <button className="btn btn-outline btn-sm" onClick={()=>setModal('pohistory')}>🛒 POs</button>
         <button className="btn btn-outline btn-sm" onClick={()=>setModal('expenses')}>🧾 Expenses</button>
         <button className="btn btn-outline btn-sm" onClick={()=>setModal('customers')}>👥 Customers</button>
-        <button className="btn btn-outline btn-sm" onClick={pickSaveFolder}>📁 Save Folder</button>
-        <button className="btn btn-outline-gold btn-sm" onClick={()=>setModal('hsn')}><Ic n="tag" s={13}/>HSN Database</button>
+        <button className="btn btn-outline-gold btn-sm" onClick={()=>setModal('hsn')}><Ic n="tag" s={13}/>HSN</button>
         <button className="btn btn-outline-primary btn-sm" onClick={()=>setModal('company')}><Ic n="building" s={13}/>Company</button>
         {isAdmin&&<button className="btn btn-gold btn-sm" onClick={()=>setModal('admin')}><Ic n="shield" s={13}/>{isSuperAdmin(user.email)?'👑 Super Admin':'Admin'}</button>}
         <div className="user-pill">
@@ -2927,12 +3527,25 @@ const App = ()=>{
       <InvoiceForm key={formKey} currentUser={user} initial={loadedInv} onSave={()=>{}}/>
     </div>
 
+    {modal==='po'&&<div className="overlay" onClick={e=>e.target===e.currentTarget&&setModal(null)}>
+      <div className="modal" style={{maxWidth:1100,width:'97vw'}}>
+        <div className="modal-hdr">
+          <span className="modal-title">🛒 New Purchase Order</span>
+          <button className="close-btn" onClick={()=>setModal(null)}><Ic n="x"/></button>
+        </div>
+        <div className="modal-body">
+          <POForm key={poKey} currentUser={user} initial={loadedPO} onSave={()=>{setModal(null);setLoadedPO(null);}}/>
+        </div>
+      </div>
+    </div>}
+
     {modal==='company'&&<CompanyModal onClose={()=>setModal(null)}/>}
     {modal==='hsn'&&<HSNModal onClose={()=>setModal(null)}/>}
     {modal==='terms'&&<TermsModal onClose={()=>setModal(null)}/>}
     {modal==='customers'&&<CustomerModal onClose={()=>setModal(null)}/>}
     {modal==='expenses'&&<ExpenseModal onClose={()=>setModal(null)} currentUser={user}/>}
     {modal==='history'&&<HistoryModal onClose={()=>setModal(null)} onLoad={loadInv} currentUser={user}/>}
+    {modal==='pohistory'&&<POHistoryModal onClose={()=>setModal(null)} onLoad={loadPO} currentUser={user} onNewPO={newPOModal}/>}
     {modal==='admin'&&isAdmin&&<AdminPanel currentUser={user} onClose={()=>setModal(null)}/>}
   </div>;
 };
