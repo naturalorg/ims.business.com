@@ -16,25 +16,29 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 [data-theme="dark"]{
-  --bg:#070B17;--surface:#0C1120;--card:#111827;--card2:#161F34;--card3:#1C2740;
-  --border:#1E2A42;--border2:#263350;--border3:#2E3E62;
-  --primary:#3B82F6;--primary2:#60A5FA;--primary-dark:#1D4ED8;--primary-bg:rgba(59,130,246,0.12);
-  --gold:#F59E0B;--gold2:#FCD34D;--gold-bg:rgba(245,158,11,0.1);--gold-bg2:rgba(245,158,11,0.18);
-  --text:#E8EEFF;--text2:#7A8EB8;--text3:#3E5070;
-  --green:#10B981;--red:#EF4444;--blue:#3B82F6;--cyan:#06B6D4;
-  --shadow:0 10px 48px rgba(0,0,0,0.7);--shadow2:0 4px 24px rgba(0,0,0,0.5);
-  --glass:rgba(12,17,32,0.85);
-  --glow-blue:0 0 24px rgba(59,130,246,0.15);--glow-gold:0 0 24px rgba(245,158,11,0.12);
+  --bg:#04080F;--surface:#080D1A;--card:#0D1424;--card2:#111B30;--card3:#172038;
+  --border:#1A2540;--border2:#223060;--border3:#2A3A78;
+  --primary:#4F8EF7;--primary2:#7AB0FF;--primary-dark:#1E4ED8;--primary-bg:rgba(79,142,247,0.1);
+  --gold:#F5A623;--gold2:#FFD166;--gold-bg:rgba(245,166,35,0.1);--gold-bg2:rgba(245,166,35,0.18);
+  --text:#E6EDFF;--text2:#8299C8;--text3:#394F78;
+  --green:#0FD98A;--red:#FF4D6A;--blue:#4F8EF7;--cyan:#00D4FF;--purple:#A78BFA;
+  --shadow:0 16px 56px rgba(0,0,0,0.8);--shadow2:0 4px 24px rgba(0,0,0,0.6);
+  --glass:rgba(8,13,26,0.9);
+  --glow-blue:0 0 28px rgba(79,142,247,0.18);--glow-gold:0 0 28px rgba(245,166,35,0.14);
+  --accent-grad:linear-gradient(135deg,#4F8EF7,#A78BFA);
+  --card-grad:linear-gradient(160deg,#0D1424,#111B30);
 }
 [data-theme="light"]{
-  --bg:#EEF2FF;--surface:#FFFFFF;--card:#FFFFFF;--card2:#F8FAFF;--card3:#F1F5FF;
-  --border:#E2E8F4;--border2:#D1D9F0;--border3:#C4CFEA;
-  --primary:#2563EB;--primary2:#3B82F6;--primary-dark:#1D4ED8;--primary-bg:rgba(37,99,235,0.08);
-  --gold:#D97706;--gold2:#F59E0B;--gold-bg:rgba(217,119,6,0.08);--gold-bg2:rgba(217,119,6,0.15);
-  --text:#0F172A;--text2:#475569;--text3:#94A3B8;
-  --green:#059669;--red:#DC2626;--blue:#2563EB;--cyan:#0891B2;
-  --shadow:0 4px 24px rgba(30,50,120,0.12);--shadow2:0 2px 12px rgba(30,50,120,0.08);
-  --glass:rgba(255,255,255,0.9);
+  --bg:#F0F4FF;--surface:#FFFFFF;--card:#FFFFFF;--card2:#F5F7FF;--card3:#ECF0FD;
+  --border:#DDE3F8;--border2:#C8D2F0;--border3:#B5C2E8;
+  --primary:#2563EB;--primary2:#3B82F6;--primary-dark:#1D4ED8;--primary-bg:rgba(37,99,235,0.07);
+  --gold:#D97706;--gold2:#F59E0B;--gold-bg:rgba(217,119,6,0.07);--gold-bg2:rgba(217,119,6,0.14);
+  --text:#0A0F24;--text2:#3D4F7C;--text3:#8A9BBF;
+  --green:#059669;--red:#DC2626;--blue:#2563EB;--cyan:#0891B2;--purple:#7C3AED;
+  --shadow:0 4px 32px rgba(20,40,120,0.13);--shadow2:0 2px 14px rgba(20,40,120,0.09);
+  --glass:rgba(255,255,255,0.95);
+  --accent-grad:linear-gradient(135deg,#2563EB,#7C3AED);
+  --card-grad:linear-gradient(160deg,#FFFFFF,#F5F7FF);
 }
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;overflow-x:hidden;transition:background 0.3s,color 0.3s}
@@ -45,46 +49,48 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 
 /* LOGIN */
 .login-bg{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden;background:var(--bg)}
-[data-theme="dark"] .login-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(59,130,246,0.15) 0%,transparent 70%)}
-[data-theme="dark"] .login-bg::after{content:'';position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(245,158,11,0.08),transparent);bottom:-100px;right:-100px;border-radius:50%}
-[data-theme="light"] .login-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(37,99,235,0.1) 0%,transparent 70%)}
-.login-card{background:var(--card);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:420px;padding:40px;box-shadow:var(--shadow);position:relative;z-index:1;animation:slideUp 0.4s ease}
-.login-logo{font-family:'Sora',serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
+[data-theme="dark"] .login-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(79,142,247,0.2) 0%,transparent 65%),radial-gradient(ellipse 50% 40% at 80% 100%,rgba(167,139,250,0.12) 0%,transparent 60%)}
+[data-theme="dark"] .login-bg::after{content:'';position:absolute;width:500px;height:500px;background:radial-gradient(circle,rgba(245,166,35,0.06),transparent);bottom:-150px;right:-100px;border-radius:50%}
+[data-theme="light"] .login-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(37,99,235,0.12) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 100%,rgba(124,58,237,0.08) 0%,transparent 60%)}
+.login-card{background:var(--card);border:1px solid var(--border2);border-radius:24px;width:100%;max-width:420px;padding:40px;box-shadow:var(--shadow);position:relative;z-index:1;animation:slideUp 0.4s ease}
+[data-theme="dark"] .login-card{background:linear-gradient(160deg,#0D1424,#0A1020);border-color:rgba(79,142,247,0.15);box-shadow:0 0 0 1px rgba(79,142,247,0.08),0 24px 64px rgba(0,0,0,0.8)}
+.login-logo{font-family:'Sora',serif;font-size:28px;font-weight:800;background:var(--accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
 .login-sub{color:var(--text3);font-size:13px;margin-bottom:32px}
 .login-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
 .login-desc{font-size:13px;color:var(--text2);margin-bottom:24px}
 
 /* HEADER */
 .app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow2)}
-[data-theme="dark"] .app-header{background:linear-gradient(180deg,rgba(12,17,32,0.98),rgba(10,15,28,0.95));border-bottom-color:#1E2A42;box-shadow:0 1px 0 rgba(59,130,246,0.08),0 4px 24px rgba(0,0,0,0.5)}
-.app-brand{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+[data-theme="dark"] .app-header{background:linear-gradient(180deg,rgba(8,13,26,0.98),rgba(6,10,20,0.96));border-bottom-color:rgba(79,142,247,0.1);box-shadow:0 1px 0 rgba(79,142,247,0.1),0 4px 32px rgba(0,0,0,0.6)}
+.app-brand{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;background:var(--accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .app-brand-sub{font-size:11px;color:var(--text3);font-weight:400;font-family:'Plus Jakarta Sans',sans-serif;margin-left:8px;letter-spacing:0}
 .header-right{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
-.mob-header-right{display:none!important} /* hidden on desktop — shown only on mobile via media query */
+.mob-header-right{display:none!important}
 .user-pill{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--card2);border:1px solid var(--border);border-radius:50px;font-size:12px;color:var(--text2)}
-.user-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent-grad);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;box-shadow:0 2px 8px rgba(79,142,247,0.4)}
 
 /* LAYOUT */
 .app-body{padding:24px;max-width:1440px;margin:0 auto}
+[data-theme="dark"] .app-body{background:radial-gradient(ellipse 70% 40% at 50% 0%,rgba(79,142,247,0.04) 0%,transparent 60%)}
 .two-col{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
 @media(max-width:1100px){.two-col{grid-template-columns:1fr}}
 
 /* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;white-space:nowrap;letter-spacing:0.2px}
-.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 4px 14px rgba(59,130,246,0.35)}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,0.45)}
-.btn-gold{background:linear-gradient(135deg,var(--gold),#D97706);color:#fff;box-shadow:0 4px 14px rgba(245,158,11,0.3)}
-.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,158,11,0.4)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;white-space:nowrap;letter-spacing:0.2px}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 4px 16px rgba(79,142,247,0.35)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(79,142,247,0.5)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#C47A00);color:#fff;box-shadow:0 4px 14px rgba(245,166,35,0.35)}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,0.5)}
 .btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2)}
 .btn-outline:hover{background:var(--card2);color:var(--text);border-color:var(--border3)}
-.btn-outline-primary{background:var(--primary-bg);color:var(--primary2);border:1px solid rgba(59,130,246,0.25)}
-.btn-outline-primary:hover{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.4)}
-.btn-outline-gold{background:var(--gold-bg);color:var(--gold);border:1px solid rgba(245,158,11,0.25)}
+.btn-outline-primary{background:var(--primary-bg);color:var(--primary2);border:1px solid rgba(79,142,247,0.22)}
+.btn-outline-primary:hover{background:rgba(79,142,247,0.15);border-color:rgba(79,142,247,0.4)}
+.btn-outline-gold{background:var(--gold-bg);color:var(--gold);border:1px solid rgba(245,166,35,0.22)}
 .btn-outline-gold:hover{background:var(--gold-bg2)}
-.btn-danger{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.25)}
-.btn-danger:hover{background:rgba(239,68,68,0.2)}
-.btn-success{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.25)}
-.btn-success:hover{background:rgba(16,185,129,0.2)}
+.btn-danger{background:rgba(255,77,106,0.08);color:var(--red);border:1px solid rgba(255,77,106,0.22)}
+.btn-danger:hover{background:rgba(255,77,106,0.18)}
+.btn-success{background:rgba(15,217,138,0.08);color:var(--green);border:1px solid rgba(15,217,138,0.22)}
+.btn-success:hover{background:rgba(15,217,138,0.16)}
 .btn-sm{padding:6px 12px;font-size:12px}
 .btn-xs{padding:5px 10px;font-size:11px}
 .btn-icon{padding:8px;width:34px;height:34px;justify-content:center;border-radius:8px}
@@ -97,22 +103,22 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 [data-theme="light"] .theme-toggle-knob{left:25px;background:var(--gold)}
 
 /* CARDS */
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color 0.2s}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:border-color 0.2s,box-shadow 0.2s}
 .card:hover{border-color:var(--border2)}
-[data-theme="dark"] .card{box-shadow:0 2px 12px rgba(0,0,0,0.3)}
-[data-theme="dark"] .card:hover{border-color:var(--border3);box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+[data-theme="dark"] .card{background:var(--card-grad);box-shadow:0 2px 16px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)}
+[data-theme="dark"] .card:hover{border-color:rgba(79,142,247,0.2);box-shadow:0 4px 24px rgba(0,0,0,0.5),0 0 0 1px rgba(79,142,247,0.08)}
 .card-sm{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px}
 
 /* SECTION TITLE */
 .section-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.section-title .dot{width:6px;height:6px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gold));flex-shrink:0}
+.section-title .dot{width:7px;height:7px;border-radius:50%;background:var(--accent-grad);flex-shrink:0;box-shadow:0 0 8px rgba(79,142,247,0.5)}
 
 /* INPUTS */
 .field{margin-bottom:14px}
 .field-label{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px}
-.field-input{width:100%;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;outline:none;transition:all 0.2s;font-size:13px}
+.field-input{width:100%;background:var(--card2);border:1.5px solid var(--border);border-radius:9px;color:var(--text);padding:9px 12px;outline:none;transition:all 0.2s;font-size:13px}
 .field-input:focus{border-color:var(--primary);background:var(--surface);box-shadow:0 0 0 3px var(--primary-bg)}
-[data-theme="dark"] .field-input{background:#0F172A;border-color:#1E2A42}
+[data-theme="dark"] .field-input{background:#080D1A;border-color:#1A2540}
 [data-theme="dark"] .field-input:focus{background:#111827;box-shadow:0 0 0 3px rgba(59,130,246,0.18)}
 .field-input::placeholder{color:var(--text3)}
 textarea.field-input{resize:vertical;min-height:72px}
@@ -224,20 +230,22 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 
 /* BADGES */
 .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;letter-spacing:0.4px}
-.badge-primary{background:var(--primary-bg);color:var(--primary2)}
-.badge-gold{background:var(--gold-bg2);color:var(--gold)}
-.badge-green{background:rgba(16,185,129,0.1);color:var(--green)}
-.badge-red{background:rgba(239,68,68,0.1);color:var(--red)}
-.badge-blue{background:rgba(96,165,250,0.1);color:#60A5FA}
+.badge-primary{background:var(--primary-bg);color:var(--primary2);border:1px solid rgba(79,142,247,0.15)}
+.badge-gold{background:var(--gold-bg2);color:var(--gold);border:1px solid rgba(245,166,35,0.18)}
+.badge-green{background:rgba(15,217,138,0.1);color:var(--green);border:1px solid rgba(15,217,138,0.18)}
+.badge-red{background:rgba(255,77,106,0.1);color:var(--red);border:1px solid rgba(255,77,106,0.18)}
+.badge-blue{background:rgba(79,142,247,0.1);color:var(--blue);border:1px solid rgba(79,142,247,0.18)}
 
 /* PRODUCT TABLE */
-.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
+[data-theme="dark"] .table-wrap{border-color:rgba(79,142,247,0.1)}
 .ptable{width:100%;border-collapse:collapse;min-width:900px}
 .ptable th{background:var(--card2);border-bottom:2px solid var(--border2);padding:10px 8px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px;white-space:nowrap}
+[data-theme="dark"] .ptable th{background:linear-gradient(135deg,#111B30,#0D1424);color:var(--primary2)}
 .ptable th.r{text-align:right}
 .ptable td{border-bottom:1px solid var(--border);padding:5px 6px;vertical-align:middle}
 .ptable tr:last-child td{border-bottom:none}
-.ptable tr:hover td{background:rgba(59,130,246,0.03)}
+.ptable tr:hover td{background:rgba(79,142,247,0.04)}
 .p-input{width:100%;background:transparent;border:none;color:var(--text);padding:4px 6px;outline:none;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif}
 .p-input:focus{background:var(--card2);border-radius:5px}
 .p-input::placeholder{color:var(--text3)}
@@ -249,7 +257,7 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 
 /* HSN DROPDOWN */
 .hsn-wrap{position:relative}
-.hsn-drop{position:absolute;width:380px;background:var(--card);border:1.5px solid var(--border2);border-radius:10px;box-shadow:var(--shadow);z-index:99999;max-height:300px;overflow-y:auto}
+.hsn-drop{position:absolute;width:380px;background:var(--card);border:1.5px solid var(--border2);border-radius:12px;box-shadow:var(--shadow);z-index:99999;max-height:300px;overflow-y:auto}
 .hsn-drop::-webkit-scrollbar{width:4px}
 .hsn-drop::-webkit-scrollbar-thumb{background:var(--border2)}
 .hsn-opt{padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s}
@@ -259,48 +267,53 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 .hsn-desc{color:var(--text2);font-size:11px;margin-top:2px}
 
 /* TAX SUMMARY */
-.tax-box{background:var(--card2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tax-box{background:var(--card2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+[data-theme="dark"] .tax-box{background:linear-gradient(160deg,#0A1020,#0D1424);border-color:rgba(79,142,247,0.1)}
 .tax-row{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid var(--border);font-size:13px}
 .tax-row:last-child{border-bottom:none}
 .tax-row.total-row{background:linear-gradient(135deg,var(--primary-bg),var(--gold-bg));border-top:2px solid var(--border2)}
 .tax-label{color:var(--text2)}
 .tax-val{font-weight:700;color:var(--text)}
 .tax-row.total-row .tax-label{color:var(--text);font-weight:700}
-.tax-row.total-row .tax-val{color:var(--primary2);font-size:16px}
+.tax-row.total-row .tax-val{color:var(--primary2);font-size:14px}
 
 /* STAT CARDS */
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px}
-[data-theme="dark"] .stat-card{box-shadow:0 2px 12px rgba(0,0,0,0.3)}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px}
+[data-theme="dark"] .stat-card{background:var(--card-grad);box-shadow:0 2px 16px rgba(0,0,0,0.4);border-color:rgba(79,142,247,0.08)}
 .stat-val{font-family:'Sora',sans-serif;font-size:24px;font-weight:800;color:var(--text)}
 .stat-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:3px}
 .stat-change{font-size:11px;color:var(--green);margin-top:4px;font-weight:600}
 
 /* ADMIN PANEL */
-.admin-tabs{display:flex;gap:4px;padding:6px;background:var(--card2);border-radius:10px;margin-bottom:20px}
-.admin-tab{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all 0.2s}
+.admin-tabs{display:flex;gap:4px;padding:5px;background:var(--card2);border-radius:12px;margin-bottom:20px;border:1px solid var(--border)}
+.admin-tab{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all 0.2s}
 .admin-tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow2)}
+[data-theme="dark"] .admin-tab.active{background:linear-gradient(135deg,#111B30,#0D1424);border:1px solid rgba(79,142,247,0.18);color:var(--primary2)}
 
 /* DATA TABLE */
 .dt{width:100%;border-collapse:collapse}
-.dt th{background:var(--surface);border-bottom:2px solid var(--border2);padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px}
+.dt th{background:var(--card2);border-bottom:2px solid var(--border2);padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px}
+[data-theme="dark"] .dt th{background:linear-gradient(135deg,#111B30,#0D1424);color:var(--primary2)}
 .dt td{border-bottom:1px solid var(--border);padding:10px 12px;font-size:13px}
 .dt tr:hover td{background:var(--primary-bg)}
-.dt-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:420px;overflow-y:auto}
+.dt-wrap{border:1px solid var(--border);border-radius:12px;overflow:hidden;max-height:420px;overflow-y:auto}
+[data-theme="dark"] .dt-wrap{border-color:rgba(79,142,247,0.1)}
 .dt-wrap::-webkit-scrollbar{width:4px}
 .dt-wrap::-webkit-scrollbar-thumb{background:var(--border2)}
 
 /* ALERT */
-.alert{border-radius:8px;padding:12px 16px;font-size:13px;display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
-.alert-warn{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);color:var(--gold)}
-.alert-info{background:var(--primary-bg);border:1px solid rgba(59,130,246,0.2);color:var(--primary2)}
+.alert{border-radius:10px;padding:12px 16px;font-size:13px;display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
+.alert-warn{background:rgba(245,166,35,0.07);border:1px solid rgba(245,166,35,0.18);color:var(--gold)}
+.alert-info{background:var(--primary-bg);border:1px solid rgba(79,142,247,0.18);color:var(--primary2)}
 
 /* LOGO PREVIEW */
-.logo-box{width:88px;height:88px;border:2px dashed var(--border2);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--card2);cursor:pointer;transition:all 0.2s}
+.logo-box{width:88px;height:88px;border:2px dashed var(--border2);border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--card2);cursor:pointer;transition:all 0.2s}
 .logo-box:hover{border-color:var(--primary);background:var(--primary-bg)}
 .logo-box img{width:100%;height:100%;object-fit:contain}
 
 /* AMOUNT IN WORDS */
-.amt-words{background:var(--gold-bg);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--gold2);font-style:italic;margin-top:8px}
+.amt-words{background:linear-gradient(135deg,var(--gold-bg),rgba(245,166,35,0.03));border:1px solid rgba(245,166,35,0.18);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--gold2);font-style:italic;margin-top:8px}
+[data-theme="dark"] .amt-words{background:linear-gradient(135deg,rgba(245,166,35,0.07),rgba(245,166,35,0.02))}
 
 /* GSTIN VALID */
 .gstin-wrap{position:relative}
@@ -313,7 +326,8 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 
 /* TOAST */
 .toast-wrap{position:fixed;bottom:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px}
-.toast{background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:11px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);animation:slideInRight 0.3s;font-size:13px;max-width:320px}
+.toast{background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:11px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);animation:slideInRight 0.3s;font-size:13px;max-width:320px}
+[data-theme="dark"] .toast{background:linear-gradient(135deg,#111B30,#0D1424);border-color:rgba(79,142,247,0.15)}
 .toast-success{border-left:3px solid var(--green)}
 .toast-error{border-left:3px solid var(--red)}
 .toast-info{border-left:3px solid var(--primary)}
@@ -350,7 +364,7 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ── CONSTANTS ── */
-const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po' };
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', TDS:'ip_tds' };
 const UNITS = ['Nos','Pcs','Kg','Gm','Ltr','Ml','Mtr','Cm','Sqft','Box','Set','Pair','Roll','Pack','Bag','Bottle','Can','Sheet','Hour','Month'];
 const TAX_RATES = ['0','0.1','0.25','1','1.5','3','5','6','7.5','9','12','14','18','28'];
 const DEFAULT_TERMS = `1. Payment is due within 30 days from the date of invoice.
@@ -359,6 +373,28 @@ const DEFAULT_TERMS = `1. Payment is due within 30 days from the date of invoice
 4. Subject to local jurisdiction. All disputes shall be settled amicably.
 5. E. & O.E. (Errors and Omissions Excepted).
 6. This is a computer-generated invoice and does not require a physical signature.`;
+const DEFAULT_PO_TERMS = `1. Prices quoted are firm and not subject to any escalation.
+2. Delivery must be made strictly as per the schedule mentioned in this PO.
+3. Each delivery must be accompanied by a delivery challan and tax invoice.
+4. Goods not conforming to specifications will be rejected and returned at supplier's cost.
+5. Payment will be made within 30 days of receipt of goods and correct invoice.
+6. This PO is subject to local jurisdiction only.`;
+
+const DEFAULT_TDS_SECTIONS = [
+  {section:'192',  desc:'Salary',                            rate:'As per slab'},
+  {section:'194A', desc:'Interest other than Securities',    rate:'10'},
+  {section:'194C', desc:'Contractors (Individual / HUF)',    rate:'1'},
+  {section:'194C', desc:'Contractors (Others)',              rate:'2'},
+  {section:'194D', desc:'Insurance Commission',              rate:'5'},
+  {section:'194H', desc:'Commission or Brokerage',          rate:'5'},
+  {section:'194I', desc:'Rent (Plant, Machinery, Equipment)',rate:'2'},
+  {section:'194I', desc:'Rent (Land, Building, Furniture)',  rate:'10'},
+  {section:'194IA',desc:'Immovable Property Transfer',       rate:'1'},
+  {section:'194IB',desc:'Rent by Individual / HUF',         rate:'5'},
+  {section:'194J', desc:'Professional / Technical Services', rate:'10'},
+  {section:'194J', desc:'Royalty / Director Fees',           rate:'10'},
+  {section:'194Q', desc:'Purchase of Goods',                 rate:'0.1'},
+];
 const STATE_CODES = {'01':'Jammu & Kashmir','02':'Himachal Pradesh','03':'Punjab','04':'Chandigarh','05':'Uttarakhand','06':'Haryana','07':'Delhi','08':'Rajasthan','09':'Uttar Pradesh','10':'Bihar','11':'Sikkim','12':'Arunachal Pradesh','13':'Nagaland','14':'Manipur','15':'Mizoram','16':'Tripura','17':'Meghalaya','18':'Assam','19':'West Bengal','20':'Jharkhand','21':'Odisha','22':'Chhattisgarh','23':'Madhya Pradesh','24':'Gujarat','27':'Maharashtra','29':'Karnataka','30':'Goa','32':'Kerala','33':'Tamil Nadu','36':'Telangana','37':'Andhra Pradesh'};
 
 /* ══════════════════════════════════════════════════════════════
@@ -692,10 +728,9 @@ const makePDF = (inv, co, terms) => {
 
   Y+=sectionH; doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5); doc.line(ML,Y,PW-MR,Y); Y+=3;
 
-  // PRODUCTS TABLE — wide columns, never wraps headers
-  const bS={fontSize:8,cellPadding:{top:4,bottom:4,left:3,right:3},textColor:DARK,lineColor:XGRAY,lineWidth:0,overflow:'linebreak',fillColor:WHITE};
-  // Reduce header cell padding to keep row compact
-  const hS={fillColor:BLUE,textColor:WHITE,fontStyle:'bold',fontSize:7.5,halign:'center',cellPadding:{top:4,bottom:4,left:2,right:2},lineColor:BLUE,lineWidth:0};
+  // PRODUCTS TABLE — compact padding to save vertical space
+  const bS={fontSize:7.5,cellPadding:{top:3,bottom:3,left:3,right:3},textColor:DARK,lineColor:XGRAY,lineWidth:0,overflow:'linebreak',fillColor:WHITE};
+  const hS={fillColor:BLUE,textColor:WHITE,fontStyle:'bold',fontSize:7,halign:'center',cellPadding:{top:3,bottom:3,left:2,right:2},lineColor:BLUE,lineWidth:0};
   const aS={fillColor:ALTROW};
 
   let tH,tB,cS;
@@ -756,81 +791,131 @@ const makePDF = (inv, co, terms) => {
   if(tgst>0)sRows.push(['TOTAL TAX','Rs. '+fmtN(tgst)]);
   if(roff!==0)sRows.push(['ROUND OFF',(roff>0?'+ ':'- ')+'Rs. '+fmtN(Math.abs(roff))]);
 
-  const totW=96,totX=PW-MR-totW,rowH=7,grandH=9;
-  const totBlock=sRows.length*rowH+grandH;
+  // TDS row
+  const hasTDS = inv.tdsEnabled && inv.tdsAmount > 0;
+  const tdsAmt = hasTDS ? parseFloat(inv.tdsAmount)||0 : 0;
+  const netPayable = grand - tdsAmt;
+
+  const totW=96,totX=PW-MR-totW,rowH=6.2,grandH=7.5;
+  const totBlock=sRows.length*rowH+grandH+(hasTDS?rowH*2:0);
   if(Y+totBlock+8>PH-32){doc.addPage();drawPageFrame(false);Y=32;}
   else Y+=4;
 
   sRows.forEach(([lbl,val],i)=>{
-    const ry=Y+i*rowH, isBold=lbl.startsWith('TOTAL')||lbl.startsWith('SUB')||lbl.startsWith('GRAND');
+    const ry=Y+i*rowH;
     if(i===0){doc.setDrawColor(...XGRAY);doc.setLineWidth(0.3);doc.line(totX,ry,PW-MR,ry);}
     doc.setDrawColor(...XGRAY);doc.setLineWidth(0.2);doc.line(totX,ry+rowH,PW-MR,ry+rowH);
-    doc.setFont('helvetica',isBold?'bold':'normal');doc.setFontSize(8.5);
+    const isBold=lbl.startsWith('TOTAL')||lbl.startsWith('SUB');
+    doc.setFont('helvetica',isBold?'bold':'normal');doc.setFontSize(7.5);
     doc.setTextColor(isBold?DARK[0]:MED[0],isBold?DARK[1]:MED[1],isBold?DARK[2]:MED[2]);
-    doc.text(lbl,totX+4,ry+5);
+    doc.text(lbl,totX+4,ry+4.5);
     doc.setFont('helvetica',isBold?'bold':'normal');doc.setTextColor(...DARK);
-    doc.text(val,PW-MR-2,ry+5,{align:'right'});
+    doc.text(val,PW-MR-2,ry+4.5,{align:'right'});
   });
 
   // Grand Total — blue row
   const gY=Y+sRows.length*rowH;
   doc.setFillColor(...BLUE); doc.rect(totX,gY,totW,grandH,'F');
-  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...WHITE);
-  doc.text('GRAND TOTAL',totX+4,gY+6.2);
-  doc.text('Rs. '+fmtN(grand),PW-MR-2,gY+6.2,{align:'right'});
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...WHITE);
+  doc.text('GRAND TOTAL',totX+4,gY+5);
+  doc.text('Rs. '+fmtN(grand),PW-MR-2,gY+5,{align:'right'});
 
-  Y=gY+grandH+8;
+  // TDS & Net Payable rows
+  let afterGrandY = gY+grandH;
+  if(hasTDS){
+    const tdsY=afterGrandY;
+    doc.setDrawColor(220,50,50);doc.setLineWidth(0.3);doc.line(totX,tdsY,PW-MR,tdsY);
+    doc.rect(totX,tdsY,totW,rowH,'S');
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(180,30,30);
+    doc.text(`TDS u/s ${inv.tdsSection||''} @ ${inv.tdsRate||0}%`,totX+4,tdsY+4.5);
+    doc.setFont('helvetica','bold');
+    doc.text('- Rs. '+fmtN(tdsAmt),PW-MR-2,tdsY+4.5,{align:'right'});
+
+    const npY=tdsY+rowH;
+    doc.setFillColor(232,248,240);doc.rect(totX,npY,totW,grandH,'F');
+    doc.setDrawColor(22,163,74);doc.setLineWidth(0.4);doc.line(totX,npY,PW-MR,npY);
+    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(22,101,52);
+    doc.text('NET PAYABLE',totX+4,npY+5);
+    doc.text('Rs. '+fmtN(netPayable),PW-MR-2,npY+5,{align:'right'});
+    afterGrandY=npY+grandH;
+  }
+
+  Y=afterGrandY+8;
 
   // Amount in words (left of totals block)
   if(sub>0){
-    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...MED);
-    doc.text('Amount in Words:',ML+2,gY-sRows.length*rowH+6);
-    doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(...MED);
-    doc.splitTextToSize(numberToWords(grand),totX-ML-6).slice(0,3).forEach((l,i)=>doc.text(l,ML+2,gY-sRows.length*rowH+12+i*4.8));
+    const amtForWords = hasTDS ? netPayable : grand;
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...MED);
+    doc.text('Amount in Words:',ML+2,gY-sRows.length*rowH+5);
+    doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(...MED);
+    const wordsY = hasTDS ? gY-sRows.length*rowH+10 : gY-sRows.length*rowH+11;
+    doc.splitTextToSize(numberToWords(amtForWords),totX-ML-6).slice(0,3).forEach((l,i)=>doc.text(l,ML+2,wordsY+i*4.5));
+    if(hasTDS){
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(180,30,30);
+      doc.text(`(After TDS deduction of Rs. ${fmtN(tdsAmt)} u/s ${inv.tdsSection||''})`,ML+2,wordsY+14);
+    }
   }
 
-  doc.setDrawColor(...XGRAY);doc.setLineWidth(0.5);doc.line(ML,Y,PW-MR,Y);Y+=6;
-  if(Y+52>PH-22){doc.addPage();drawPageFrame(false);Y=32;}
+  doc.setDrawColor(...XGRAY);doc.setLineWidth(0.5);doc.line(ML,Y,PW-MR,Y);Y+=5;
+  if(Y+46>PH-22){doc.addPage();drawPageFrame(false);Y=32;}
 
-  // BANK DETAILS + SIGNATURE
-  const pmW=CW*0.52,sigX=ML+pmW+10,sigW=CW-pmW-10;
-  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...DARK);
-  doc.text('BANK DETAILS',ML+2,Y+6);
-  doc.setDrawColor(...DARK);doc.setLineWidth(0.5);doc.line(ML+2,Y+8,ML+38,Y+8);
+  // BOTTOM ROW: TERMS & CONDITIONS (left 50%) | Signature (centre 25%) | BANK DETAILS (right 25%)
+  const tW=CW*0.50;
+  const sigW2=CW*0.25;
+  const bW=CW-tW-sigW2-8;
+  const sigX2=ML+tW+4;
+  const bankX=sigX2+sigW2+4;
+  const rowTop=Y;
 
+  // ── LEFT: TERMS & CONDITIONS ──
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
+  doc.text('TERMS & CONDITIONS',ML+2,rowTop+5);
+  doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(ML+2,rowTop+6.5,ML+38,rowTop+6.5);
+  const tLines=(terms||DEFAULT_TERMS).split('\n').filter(Boolean);
+  let ty=rowTop+12;
+  doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MED);
+  tLines.slice(0,7).forEach(t=>{
+    if(ty>rowTop+43)return;
+    const clean=t.replace(/^\d+\.\s*/,'');
+    doc.text('• '+clean,ML+2,ty,{maxWidth:tW-2});
+    ty+=4.2;
+  });
+
+  // ── CENTRE: SIGNATURE ──
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...BLUE);
+  doc.text('For '+(co.name||''),sigX2+sigW2/2,rowTop+5,{align:'center'});
+  const sigLineY=rowTop+28;
+  doc.setDrawColor(...DARK);doc.setLineWidth(0.4);
+  doc.line(sigX2+6,sigLineY,sigX2+sigW2-6,sigLineY);
+  doc.setFont('helvetica','italic');doc.setFontSize(8.5);doc.setTextColor(...DARK);
+  doc.text('Signature',sigX2+sigW2/2,sigLineY-3.5,{align:'center'});
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...DARK);
+  doc.text('Authorized Signatory',sigX2+sigW2/2,sigLineY+5,{align:'center'});
+  if(co.signatory){
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MED);
+    doc.text(co.signatory,sigX2+sigW2/2,sigLineY+11,{align:'center'});
+  }
+
+  // ── RIGHT: BANK DETAILS ──
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
+  doc.text('BANK DETAILS',bankX,rowTop+5);
+  doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(bankX,rowTop+6.5,bankX+26,rowTop+6.5);
   if(co.bankName||co.bankAccount){
-    let by=Y+13;
-    [['Bank Name',co.bankName],['Account Holder',co.name],['Account Number',co.bankAccount],['IFSC Code',co.bankIFSC],['Branch',co.bankBranch]].filter(([,v])=>v).forEach(([l,v])=>{
-      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...MED);doc.text(l,ML+2,by);
-      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...DARK);doc.text(': '+(v||''),ML+37,by);by+=5.2;
+    let by=rowTop+12;
+    const bankRows=[['Bank',co.bankName],['A/c No.',co.bankAccount],['IFSC',co.bankIFSC],['Branch',co.bankBranch],['Name',co.name]];
+    bankRows.filter(([,v])=>v).forEach(([lbl,val])=>{
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MED);
+      doc.text(lbl+':',bankX,by);
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...DARK);
+      doc.text(String(val||''),bankX+15,by);
+      by+=4.6;
     });
   } else {
-    doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(...LGRAY);doc.text('No bank details configured.',ML+2,Y+16);
+    doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);
+    doc.text('No bank details configured.',bankX,rowTop+13);
   }
 
-  const sigMid=sigX+sigW/2,sigLY=Y+22;
-  doc.setDrawColor(...DARK);doc.setLineWidth(0.5);doc.line(sigX+6,sigLY,sigX+sigW-6,sigLY);
-  doc.setFont('helvetica','italic');doc.setFontSize(10.5);doc.setTextColor(...DARK);
-  doc.text('Signature',sigMid,sigLY-3,{align:'center'});
-  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...DARK);
-  doc.text('Authorized Signatory',sigMid,sigLY+6,{align:'center'});
-  if(co.signatory){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...MED);doc.text(co.signatory,sigMid,sigLY+12,{align:'center'});}
-
-  Y+=44;doc.setDrawColor(...XGRAY);doc.setLineWidth(0.5);doc.line(ML,Y,PW-MR,Y);Y+=5;
-
-  // TERMS & CONDITIONS
-  const tLines=(terms||DEFAULT_TERMS).split('\n').filter(Boolean);
-  const tH2=Math.min(tLines.length*5+14,48);
-  if(Y+tH2<PH-18){
-    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...DARK);
-    doc.text('TERMS & CONDITIONS',ML+2,Y+6);
-    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MED);
-    let ty=Y+12;
-    tLines.slice(0,7).forEach(t=>{
-      doc.setFillColor(...MED);doc.circle(ML+4,ty-1.5,0.9,'F');
-      doc.splitTextToSize(t,CW-9).forEach(s=>{if(ty<Y+tH2){doc.text(s,ML+7,ty);ty+=4.6;}});
-    });
-  }
+  Y+=46;
 
   // FOOTER all pages
   const tp=doc.internal.getNumberOfPages();
@@ -1252,6 +1337,8 @@ const CompanyModal = ({onClose})=>{
 };
 
 const HSNModal = ({onClose})=>{
+  const [activeTab,setActiveTab]=useState('hsn');
+  // ── HSN/SAC tab state ──
   const [list,setList]=useState(S.get(SK.HSN,[]));
   const [form,setForm]=useState({code:'',desc:'',taxRate:'18',unit:'Nos',type:'HSN',category:''});
   const [editing,setEditing]=useState(null);
@@ -1268,34 +1355,109 @@ const HSNModal = ({onClose})=>{
   };
   const del=i=>{const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.HSN,u);toast.info('Deleted');};
   const editE=i=>{setForm({...list[i]});setEditing(i);};
+
+  // ── TDS tab state ──
+  const [tdsList,setTdsList]=useState(()=>{const d=S.get(SK.TDS,null);return d||DEFAULT_TDS_SECTIONS.map((t,i)=>({...t,id:i+1}));});
+  const [tdsForm,setTdsForm]=useState({section:'',desc:'',rate:''});
+  const [tdsEditing,setTdsEditing]=useState(null);
+  const [tdsQ,setTdsQ]=useState('');
+  const upT=k=>e=>setTdsForm(p=>({...p,[k]:e.target.value}));
+  const tdsFiltered=tdsList.filter(t=>!tdsQ||t.section.toLowerCase().includes(tdsQ.toLowerCase())||t.desc.toLowerCase().includes(tdsQ.toLowerCase()));
+  const saveTDS=()=>{
+    if(!tdsForm.section||!tdsForm.desc||!tdsForm.rate){toast.error('Section, description & rate required');return;}
+    let u;
+    if(tdsEditing!==null){u=tdsList.map((t,i)=>i===tdsEditing?{...tdsForm}:t);}
+    else{u=[...tdsList,{...tdsForm}];}
+    setTdsList(u);S.set(SK.TDS,u);setTdsForm({section:'',desc:'',rate:''});setTdsEditing(null);
+    toast.success(tdsEditing!==null?'TDS entry updated!':'TDS entry added!');
+  };
+  const delTDS=i=>{const u=tdsList.filter((_,j)=>j!==i);setTdsList(u);S.set(SK.TDS,u);toast.info('Deleted');};
+  const editTDS=i=>{setTdsForm({...tdsList[i]});setTdsEditing(i);};
+
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal" style={{maxWidth:1060,width:"96vw"}}>
-      <div className="modal-hdr"><span className="modal-title">🏷️ HSN / SAC Database</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
+      <div className="modal-hdr">
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <span className="modal-title">{activeTab==='hsn'?'🏷️ HSN / SAC Database':'📋 TDS Section Database'}</span>
+        </div>
+        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+          <div style={{display:'flex',background:'var(--card2)',border:'1px solid var(--border)',borderRadius:8,padding:3,gap:3}}>
+            {[['hsn','🏷️ HSN/SAC'],['tds','📋 TDS']].map(([k,l])=>(
+              <button key={k} onClick={()=>{setActiveTab(k);setEditing(null);setTdsEditing(null);}}
+                style={{padding:'5px 14px',borderRadius:6,fontSize:12,fontWeight:activeTab===k?700:500,cursor:'pointer',
+                  border:'none',background:activeTab===k?'var(--primary)':'transparent',
+                  color:activeTab===k?'#fff':'var(--text2)',transition:'all 0.2s'}}>{l}</button>
+            ))}
+          </div>
+          <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
+        </div>
+      </div>
       <div className="modal-body">
-        <div className="card" style={{marginBottom:18}}>
-          <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editing!==null?'✏️ Edit Entry':'➕ Add HSN/SAC Code'}</div>
-          <div className="g4">
-            <div className="field"><label className="field-label">Type</label><select className="field-input" value={form.type} onChange={up('type')}><option value="HSN">HSN (Goods)</option><option value="SAC">SAC (Services)</option></select></div>
-            <div className="field"><label className="field-label">Code *</label><input className="field-input" value={form.code} onChange={up('code')} placeholder="e.g. 8471" maxLength={8}/></div>
-            <div className="field"><label className="field-label">GST Rate %</label><select className="field-input" value={form.taxRate} onChange={up('taxRate')}>{TAX_RATES.map(r=><option key={r} value={r}>{r}%</option>)}</select></div>
-            <div className="field"><label className="field-label">Default Unit</label><select className="field-input" value={form.unit} onChange={up('unit')}>{UNITS.map(u=><option key={u}>{u}</option>)}</select></div>
+        {activeTab==='hsn'&&<>
+          <div className="card" style={{marginBottom:18}}>
+            <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editing!==null?'✏️ Edit Entry':'➕ Add HSN/SAC Code'}</div>
+            <div className="g4">
+              <div className="field"><label className="field-label">Type</label><select className="field-input" value={form.type} onChange={up('type')}><option value="HSN">HSN (Goods)</option><option value="SAC">SAC (Services)</option></select></div>
+              <div className="field"><label className="field-label">Code *</label><input className="field-input" value={form.code} onChange={up('code')} placeholder="e.g. 8471" maxLength={8}/></div>
+              <div className="field"><label className="field-label">GST Rate %</label><select className="field-input" value={form.taxRate} onChange={up('taxRate')}>{TAX_RATES.map(r=><option key={r} value={r}>{r}%</option>)}</select></div>
+              <div className="field"><label className="field-label">Default Unit</label><select className="field-input" value={form.unit} onChange={up('unit')}>{UNITS.map(u=><option key={u}>{u}</option>)}</select></div>
+            </div>
+            <div className="g2">
+              <div className="field"><label className="field-label">Description *</label><input className="field-input" value={form.desc} onChange={up('desc')} placeholder="Detailed description of goods/services"/></div>
+              <div className="field"><label className="field-label">Category (optional)</label><input className="field-input" value={form.category} onChange={up('category')} placeholder="e.g. Electronics, IT Products"/></div>
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button className="btn btn-primary" onClick={save}>{editing!==null?'Update':'Add Entry'}</button>
+              {editing!==null&&<button className="btn btn-outline" onClick={()=>{setForm({code:'',desc:'',taxRate:'18',unit:'Nos',type:'HSN',category:''});setEditing(null);}}>Cancel</button>}
+            </div>
           </div>
-          <div className="g2">
-            <div className="field"><label className="field-label">Description *</label><input className="field-input" value={form.desc} onChange={up('desc')} placeholder="Detailed description of goods/services"/></div>
-            <div className="field"><label className="field-label">Category (optional)</label><input className="field-input" value={form.category} onChange={up('category')} placeholder="e.g. Electronics, IT Products"/></div>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <span style={{color:'var(--text2)',fontSize:13}}>{list.length} entries</span>
+            <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 Search..." style={{maxWidth:260}}/>
           </div>
-          <div style={{display:'flex',gap:10}}>
-            <button className="btn btn-primary" onClick={save}>{editing!==null?'Update':'Add Entry'}</button>
-            {editing!==null&&<button className="btn btn-outline" onClick={()=>{setForm({code:'',desc:'',taxRate:'18',unit:'Nos',type:'HSN',category:''});setEditing(null);}}>Cancel</button>}
+          {filtered.length>0?(<div className="dt-wrap"><table className="dt" style={{width:'100%'}}><thead><tr><th>Type</th><th>Code</th><th>Description</th><th>Category</th><th>Rate</th><th>Unit</th><th style={{width:80}}>Actions</th></tr></thead>
+          <tbody>{filtered.map((h,i)=>{const idx=list.indexOf(h);return(<tr key={i}><td><span className={`badge ${h.type==='SAC'?'badge-blue':'badge-gold'}`}>{h.type}</span></td><td style={{fontWeight:700,color:'var(--gold)',fontFamily:'monospace'}}>{h.code}</td><td style={{maxWidth:250}}>{h.desc}</td><td style={{color:'var(--text3)',fontSize:12}}>{h.category||'—'}</td><td><span className="badge badge-green">{h.taxRate}%</span></td><td style={{color:'var(--text2)'}}>{h.unit}</td><td><div style={{display:'flex',gap:5}}><button className="btn btn-sm btn-outline btn-icon" onClick={()=>editE(idx)}><Ic n="edit" s={12}/></button><button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(idx)}><Ic n="trash" s={12}/></button></div></td></tr>);})}</tbody>
+          </table></div>):<div style={{textAlign:'center',padding:'32px',color:'var(--text3)'}}>{q?'No matches.':'No entries yet.'}</div>}
+        </>}
+
+        {activeTab==='tds'&&<>
+          <div className="card" style={{marginBottom:18}}>
+            <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{tdsEditing!==null?'✏️ Edit TDS Section':'➕ Add TDS Section'}</div>
+            <div className="g3">
+              <div className="field"><label className="field-label">Section *</label><input className="field-input" value={tdsForm.section} onChange={upT('section')} placeholder="e.g. 194J" style={{textTransform:'uppercase'}}/></div>
+              <div className="field"><label className="field-label">Rate % *</label><input className="field-input" value={tdsForm.rate} onChange={upT('rate')} placeholder="e.g. 10 or 'As per slab'"/></div>
+              <div className="field"><label className="field-label">Description *</label><input className="field-input" value={tdsForm.desc} onChange={upT('desc')} placeholder="Professional / Technical Services"/></div>
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button className="btn btn-primary" onClick={saveTDS}>{tdsEditing!==null?'Update':'Add TDS Section'}</button>
+              {tdsEditing!==null&&<button className="btn btn-outline" onClick={()=>{setTdsForm({section:'',desc:'',rate:''});setTdsEditing(null);}}>Cancel</button>}
+              {tdsList.length===0&&<button className="btn btn-outline" onClick={()=>{const d=DEFAULT_TDS_SECTIONS;setTdsList(d);S.set(SK.TDS,d);toast.success('Default TDS sections loaded!');}}>Load Defaults</button>}
+            </div>
           </div>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-          <span style={{color:'var(--text2)',fontSize:13}}>{list.length} entries</span>
-          <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 Search..." style={{maxWidth:260}}/>
-        </div>
-        {filtered.length>0?(<div className="dt-wrap"><table className="dt" style={{width:'100%'}}><thead><tr><th>Type</th><th>Code</th><th>Description</th><th>Category</th><th>Rate</th><th>Unit</th><th style={{width:80}}>Actions</th></tr></thead>
-        <tbody>{filtered.map((h,i)=>{const idx=list.indexOf(h);return(<tr key={i}><td><span className={`badge ${h.type==='SAC'?'badge-blue':'badge-gold'}`}>{h.type}</span></td><td style={{fontWeight:700,color:'var(--gold)',fontFamily:'monospace'}}>{h.code}</td><td style={{maxWidth:250}}>{h.desc}</td><td style={{color:'var(--text3)',fontSize:12}}>{h.category||'—'}</td><td><span className="badge badge-green">{h.taxRate}%</span></td><td style={{color:'var(--text2)'}}>{h.unit}</td><td><div style={{display:'flex',gap:5}}><button className="btn btn-sm btn-outline btn-icon" onClick={()=>editE(idx)}><Ic n="edit" s={12}/></button><button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(idx)}><Ic n="trash" s={12}/></button></div></td></tr>);})}</tbody>
-        </table></div>):<div style={{textAlign:'center',padding:'32px',color:'var(--text3)'}}>{q?'No matches.':'No entries yet.'}</div>}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <span style={{color:'var(--text2)',fontSize:13}}>{tdsList.length} sections</span>
+            <input className="field-input" value={tdsQ} onChange={e=>setTdsQ(e.target.value)} placeholder="🔍 Search section..." style={{maxWidth:260}}/>
+          </div>
+          <div className="dt-wrap">
+            <table className="dt" style={{width:'100%'}}>
+              <thead><tr><th>Section</th><th>Description</th><th>Rate %</th><th style={{width:80}}>Actions</th></tr></thead>
+              <tbody>
+                {tdsFiltered.map((t,i)=>{const idx=tdsList.indexOf(t);return(
+                  <tr key={i}>
+                    <td><span className="badge badge-gold" style={{fontFamily:'monospace',letterSpacing:1}}>{t.section}</span></td>
+                    <td style={{color:'var(--text)'}}>{t.desc}</td>
+                    <td><span className="badge badge-green">{t.rate}{t.rate!=='As per slab'?'%':''}</span></td>
+                    <td><div style={{display:'flex',gap:5}}>
+                      <button className="btn btn-sm btn-outline btn-icon" onClick={()=>editTDS(idx)}><Ic n="edit" s={12}/></button>
+                      <button className="btn btn-sm btn-danger btn-icon" onClick={()=>delTDS(idx)}><Ic n="trash" s={12}/></button>
+                    </div></td>
+                  </tr>
+                );})}
+                {tdsFiltered.length===0&&<tr><td colSpan={4} style={{textAlign:'center',padding:24,color:'var(--text3)'}}>{tdsQ?'No matches.':'No entries yet.'}</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </>}
       </div>
       <div className="modal-ftr"><button className="btn btn-primary" onClick={onClose}>Done</button></div>
     </div>
@@ -1303,17 +1465,45 @@ const HSNModal = ({onClose})=>{
 };
 
 const TermsModal = ({onClose})=>{
+  const [tab,setTab]=useState('invoice');
   const [t,setT]=useState(S.get(SK.TERMS,DEFAULT_TERMS));
-  const save=()=>{S.set(SK.TERMS,t);toast.success('Terms saved!');onClose();};
+  const [pt,setPt]=useState(S.get(SK.PO_TERMS,DEFAULT_PO_TERMS));
+  const save=()=>{
+    S.set(SK.TERMS,t);
+    S.set(SK.PO_TERMS,pt);
+    toast.success('Terms saved!');
+    onClose();
+  };
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal" style={{maxWidth:760,width:"95vw"}}>
-      <div className="modal-hdr"><span className="modal-title">📋 Terms & Conditions</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
-      <div className="modal-body">
-        <p style={{color:'var(--text2)',fontSize:13,marginBottom:14}}>These appear at the bottom of each PDF invoice. Edit as needed.</p>
-        <textarea className="field-input" value={t} onChange={e=>setT(e.target.value)} rows={12} style={{fontFamily:'monospace',fontSize:12.5}}/>
-        <button className="btn btn-outline btn-sm" style={{marginTop:10}} onClick={()=>setT(DEFAULT_TERMS)}>Reset to Default</button>
+      <div className="modal-hdr">
+        <span className="modal-title">📋 Terms & Conditions</span>
+        <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
       </div>
-      <div className="modal-ftr"><button className="btn btn-outline" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={save}><Ic n="save"/>Save</button></div>
+      <div className="modal-body">
+        <div style={{display:'flex',background:'var(--card2)',border:'1px solid var(--border)',borderRadius:8,padding:3,gap:3,marginBottom:16}}>
+          {[['invoice','📄 Invoice T&C'],['po','🛒 PO T&C']].map(([k,l])=>(
+            <button key={k} onClick={()=>setTab(k)}
+              style={{flex:1,padding:'7px 0',borderRadius:6,fontSize:12,fontWeight:tab===k?700:500,cursor:'pointer',
+                border:'none',background:tab===k?'var(--primary)':'transparent',
+                color:tab===k?'#fff':'var(--text2)',transition:'all 0.2s'}}>{l}</button>
+          ))}
+        </div>
+        {tab==='invoice'&&<>
+          <p style={{color:'var(--text2)',fontSize:13,marginBottom:10}}>These appear at the bottom of each <strong>Tax Invoice PDF</strong>.</p>
+          <textarea className="field-input" value={t} onChange={e=>setT(e.target.value)} rows={11} style={{fontFamily:'monospace',fontSize:12.5}}/>
+          <button className="btn btn-outline btn-sm" style={{marginTop:10}} onClick={()=>setT(DEFAULT_TERMS)}>Reset to Default</button>
+        </>}
+        {tab==='po'&&<>
+          <p style={{color:'var(--text2)',fontSize:13,marginBottom:10}}>These appear at the bottom of each <strong>Purchase Order PDF</strong> automatically.</p>
+          <textarea className="field-input" value={pt} onChange={e=>setPt(e.target.value)} rows={11} style={{fontFamily:'monospace',fontSize:12.5}}/>
+          <button className="btn btn-outline btn-sm" style={{marginTop:10}} onClick={()=>setPt(DEFAULT_PO_TERMS)}>Reset to Default</button>
+        </>}
+      </div>
+      <div className="modal-ftr">
+        <button className="btn btn-outline" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary" onClick={save}><Ic n="save"/>Save Both</button>
+      </div>
     </div>
   </div>;
 };
@@ -2325,6 +2515,7 @@ const newInvoice = (user,docType)=>({invNo:genInvNo(docType||'TAX INVOICE'),date
   sameAddress:true,items:[newItem()],notes:'',gstType:'INTRA',docType:docType||'TAX INVOICE',isB2C:false,
   status:'Draft',sentToCustomer:false,paidDate:'',
   origInvNo:'',origInvDate:'',
+  tdsEnabled:false,tdsSection:'',tdsDesc:'',tdsRate:0,tdsAmount:0,
   subtotal:0,taxBreakdown:{},totalGST:0,roundOff:0,grand:0,
   createdBy:user?.email||'',time:nowTime()
 });
@@ -2818,6 +3009,72 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
       </div>
 
       <div>
+        {/* TDS Toggle */}
+        <div style={{marginBottom:10,background:'var(--card2)',border:'1px solid var(--border)',borderRadius:10,padding:'10px 14px'}}>
+          <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',userSelect:'none'}}>
+            <input type="checkbox" checked={!!inv.tdsEnabled}
+              onChange={e=>{
+                const enabled=e.target.checked;
+                setInv(p=>({...p,tdsEnabled:enabled,tdsSection:enabled?p.tdsSection:'',tdsDesc:enabled?p.tdsDesc:'',tdsRate:enabled?p.tdsRate:0,tdsAmount:0}));
+              }}
+              style={{accentColor:'var(--primary)',width:15,height:15}}/>
+            <span style={{fontWeight:700,fontSize:13,color:'var(--text)'}}>Apply TDS Deduction</span>
+            {inv.tdsEnabled&&<span style={{fontSize:10,background:'#FEF3C7',color:'#B45309',padding:'2px 8px',borderRadius:8,border:'1px solid #FDE68A',fontWeight:700}}>TDS ON</span>}
+          </label>
+          {inv.tdsEnabled&&(()=>{
+            const tdsList=S.get(SK.TDS,DEFAULT_TDS_SECTIONS);
+            const sub=parseFloat(inv.subtotal)||0;
+            // Derive TDS amount from current rate — never call setInv during render
+            const tdsAmt=sub*(parseFloat(inv.tdsRate)||0)/100;
+            // Build stable key for select value: section|desc
+            const selectVal=inv.tdsSection&&inv.tdsDesc
+              ? inv.tdsSection+'|'+inv.tdsDesc
+              : inv.tdsSection
+              ? (tdsList.find(t=>t.section===inv.tdsSection)?.section+'|'+tdsList.find(t=>t.section===inv.tdsSection)?.desc)||''
+              : '';
+            return(
+            <div style={{marginTop:10}}>
+              <div className="g2" style={{gap:10,marginBottom:8}}>
+                <div className="field" style={{marginBottom:0}}>
+                  <label className="field-label">TDS Section</label>
+                  <select className="field-input" value={selectVal}
+                    onChange={e=>{
+                      const val=e.target.value;
+                      if(!val){setInv(p=>({...p,tdsSection:'',tdsDesc:'',tdsRate:0,tdsAmount:0}));return;}
+                      const found=tdsList.find(t=>t.section+'|'+t.desc===val);
+                      const [sec,desc]=val.split('|');
+                      const rate=found?(found.rate==='As per slab'?0:parseFloat(found.rate)||0):0;
+                      const newAmt=(parseFloat(inv.subtotal)||0)*rate/100;
+                      setInv(p=>({...p,tdsSection:sec||'',tdsDesc:desc||'',tdsRate:rate,tdsAmount:newAmt}));
+                    }}>
+                    <option value="">— Select TDS Section —</option>
+                    {tdsList.map((t,i)=>(
+                      <option key={i} value={t.section+'|'+t.desc}>
+                        {t.section} — {t.desc} ({t.rate}{t.rate!=='As per slab'?'%':''})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field" style={{marginBottom:0}}>
+                  <label className="field-label">TDS Rate %</label>
+                  <input type="number" className="field-input"
+                    value={inv.tdsRate||''}
+                    min="0" max="100" step="0.1"
+                    onChange={e=>{
+                      const r=parseFloat(e.target.value)||0;
+                      const newAmt=(parseFloat(inv.subtotal)||0)*r/100;
+                      setInv(p=>({...p,tdsRate:r,tdsAmount:newAmt}));
+                    }}
+                    placeholder="e.g. 10"/>
+                </div>
+              </div>
+              {(inv.tdsRate>0||tdsAmt>0)&&<div style={{fontSize:12,color:'var(--text3)',background:'var(--card)',padding:'6px 10px',borderRadius:6,border:'1px solid var(--border)'}}>
+                TDS = {inv.tdsRate||0}% of ₹{Number(sub).toLocaleString('en-IN',{minimumFractionDigits:2})} = <strong style={{color:'var(--red)'}}>{fmt(tdsAmt)}</strong>
+              </div>}
+            </div>
+          );})()}
+        </div>
+
         <div className="tax-box" style={{marginBottom:10}}>
           <div className="tax-row"><span className="tax-label">Sub Total (Taxable)</span><span className="tax-val">{fmt(inv.subtotal)}</span></div>
           {Object.entries(inv.taxBreakdown||{}).filter(([,a])=>a>0).flatMap(([rate,amt])=>
@@ -2830,9 +3087,26 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
           )}
           <div className="tax-row"><span className="tax-label">Total Tax</span><span className="tax-val">{fmt(inv.totalGST)}</span></div>
           {inv.roundOff!==0&&<div className="tax-row"><span className="tax-label">Round Off</span><span className="tax-val" style={{fontSize:12,color:'var(--text3)'}}>{inv.roundOff>0?'+':''}{fmt(Math.abs(inv.roundOff))}</span></div>}
-          <div className="tax-row total-row"><span className="tax-label">Grand Total</span><span className="tax-val">{fmt(inv.grand)}</span></div>
+          <div className="tax-row total-row" style={{padding:'7px 16px'}}>
+            <span className="tax-label">Grand Total</span>
+            <span className="tax-val">{fmt(inv.grand)}</span>
+          </div>
+          {inv.tdsEnabled&&(parseFloat(inv.tdsRate)||0)>0&&(()=>{
+            const liveTds=(parseFloat(inv.subtotal)||0)*(parseFloat(inv.tdsRate)||0)/100;
+            const netPay=(parseFloat(inv.grand)||0)-liveTds;
+            return(<>
+              <div className="tax-row" style={{borderTop:'1px dashed var(--border2)',padding:'7px 16px'}}>
+                <span className="tax-label" style={{color:'var(--red)',fontSize:12}}>TDS Deducted (u/s {inv.tdsSection})</span>
+                <span className="tax-val" style={{color:'var(--red)',fontSize:13}}>− {fmt(liveTds)}</span>
+              </div>
+              <div className="tax-row" style={{background:'linear-gradient(135deg,rgba(15,217,138,0.08),rgba(15,217,138,0.04))',borderTop:'2px solid var(--green)',padding:'7px 16px'}}>
+                <span className="tax-label" style={{color:'var(--green)',fontWeight:700}}>Net Payable</span>
+                <span className="tax-val" style={{color:'var(--green)',fontSize:15}}>{fmt(netPay)}</span>
+              </div>
+            </>);
+          })()}
         </div>
-        <div className="amt-words">{numberToWords(inv.grand)}</div>
+        <div className="amt-words">{numberToWords(inv.tdsEnabled&&(parseFloat(inv.tdsRate)||0)>0?Math.max(0,(parseFloat(inv.grand)||0)-(parseFloat(inv.subtotal)||0)*(parseFloat(inv.tdsRate)||0)/100):inv.grand)}</div>
       </div>
     </div>
 
@@ -3071,7 +3345,7 @@ const makePOExcel = (orders) => {
 const POForm = ({currentUser, initial, onSave})=>{
   const newPO=()=>({
     poNo: (()=>{const fy=getFY();const k='ip_ctr_PO_'+fy;let c=S.get(k,1);const n=`PO-${fy}-${String(c).padStart(4,'0')}`;S.set(k,c+1);return n;})(),
-    date: today(), deliveryDate:'', refNo:'', status:'Draft', taxes:0, terms:'',
+    date: today(), deliveryDate:'', refNo:'', status:'Draft', taxes:0, terms:S.get(SK.PO_TERMS,DEFAULT_PO_TERMS),
     vendorTo:{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:''},
     deliverTo:{name:'',address:'',city:'',state:'',pin:''},
     items:[{desc:'',hsnCode:'',qty:1,unit:'Nos',rate:''}],
@@ -3342,7 +3616,7 @@ const POHistoryModal = ({onClose, onLoad, currentUser, onNewPO})=>{
                   <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{(p.items||[]).filter(r=>r.desc).length} items</div>
                 </div>
                 <div style={{display:'flex',gap:5,flexShrink:0,flexWrap:'wrap'}}>
-                  <button className="btn btn-sm btn-outline-primary" onClick={()=>{onLoad(p);onClose();}}>✏️ Edit</button>
+                  <button className="btn btn-sm btn-outline-primary" onClick={()=>{onLoad(p);}}>✏️ Edit</button>
                   <button className="btn btn-sm btn-outline" onClick={()=>makePOPDF(p,S.get(SK.CO,{}))}>PDF</button>
                   <button className="btn btn-sm btn-danger btn-icon" onClick={()=>delPO(p.poNo)}><Ic n="trash" s={11}/></button>
                 </div>
