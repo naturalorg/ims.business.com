@@ -60,14 +60,15 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 .login-desc{font-size:13px;color:var(--text2);margin-bottom:24px}
 
 /* HEADER */
-.app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow2)}
+.app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow2);gap:12px}
 [data-theme="dark"] .app-header{background:linear-gradient(180deg,rgba(8,13,26,0.98),rgba(6,10,20,0.96));border-bottom-color:rgba(79,142,247,0.1);box-shadow:0 1px 0 rgba(79,142,247,0.1),0 4px 32px rgba(0,0,0,0.6)}
-.app-brand{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;background:var(--accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.app-brand-sub{font-size:11px;color:var(--text3);font-weight:400;font-family:'Plus Jakarta Sans',sans-serif;margin-left:8px;letter-spacing:0}
-.header-right{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+.app-brand{font-family:'Sora',sans-serif;font-size:20px;font-weight:800;background:var(--accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap;flex-shrink:0}
+.app-brand-sub{font-size:10px;color:var(--text3);font-weight:400;font-family:'Plus Jakarta Sans',sans-serif;margin-left:6px;letter-spacing:0;white-space:nowrap}
+.header-right{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;flex-shrink:1;min-width:0;overflow:hidden}
 .mob-header-right{display:none!important}
-.user-pill{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--card2);border:1px solid var(--border);border-radius:50px;font-size:12px;color:var(--text2)}
-.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent-grad);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;box-shadow:0 2px 8px rgba(79,142,247,0.4)}
+.user-pill{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--card2);border:1px solid var(--border);border-radius:50px;font-size:12px;color:var(--text2);white-space:nowrap;flex-shrink:0;max-width:140px;overflow:hidden}
+.user-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent-grad);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;box-shadow:0 2px 8px rgba(79,142,247,0.4);flex-shrink:0}
 
 /* LAYOUT */
 .app-body{padding:24px;max-width:1440px;margin:0 auto}
@@ -131,8 +132,9 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 @media(max-width:1024px){
   .header-right{display:none!important}
   .mob-header-right{display:flex!important}
-  .app-header{padding:0 16px;height:56px}
+  .app-header{padding:0 16px;height:52px}
   .app-brand-sub{display:none}
+  .app-brand{font-size:18px}
 }
 @media(max-width:768px){
   /* Grids */
@@ -364,7 +366,7 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ── CONSTANTS ── */
-const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', TDS:'ip_tds' };
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa' };
 const UNITS = ['Nos','Pcs','Kg','Gm','Ltr','Ml','Mtr','Cm','Sqft','Box','Set','Pair','Roll','Pack','Bag','Bottle','Can','Sheet','Hour','Month'];
 const TAX_RATES = ['0','0.1','0.25','1','1.5','3','5','6','7.5','9','12','14','18','28'];
 const DEFAULT_TERMS = `1. Payment is due within 30 days from the date of invoice.
@@ -380,21 +382,6 @@ const DEFAULT_PO_TERMS = `1. Prices quoted are firm and not subject to any escal
 5. Payment will be made within 30 days of receipt of goods and correct invoice.
 6. This PO is subject to local jurisdiction only.`;
 
-const DEFAULT_TDS_SECTIONS = [
-  {section:'192',  desc:'Salary',                            rate:'As per slab'},
-  {section:'194A', desc:'Interest other than Securities',    rate:'10'},
-  {section:'194C', desc:'Contractors (Individual / HUF)',    rate:'1'},
-  {section:'194C', desc:'Contractors (Others)',              rate:'2'},
-  {section:'194D', desc:'Insurance Commission',              rate:'5'},
-  {section:'194H', desc:'Commission or Brokerage',          rate:'5'},
-  {section:'194I', desc:'Rent (Plant, Machinery, Equipment)',rate:'2'},
-  {section:'194I', desc:'Rent (Land, Building, Furniture)',  rate:'10'},
-  {section:'194IA',desc:'Immovable Property Transfer',       rate:'1'},
-  {section:'194IB',desc:'Rent by Individual / HUF',         rate:'5'},
-  {section:'194J', desc:'Professional / Technical Services', rate:'10'},
-  {section:'194J', desc:'Royalty / Director Fees',           rate:'10'},
-  {section:'194Q', desc:'Purchase of Goods',                 rate:'0.1'},
-];
 const STATE_CODES = {'01':'Jammu & Kashmir','02':'Himachal Pradesh','03':'Punjab','04':'Chandigarh','05':'Uttarakhand','06':'Haryana','07':'Delhi','08':'Rajasthan','09':'Uttar Pradesh','10':'Bihar','11':'Sikkim','12':'Arunachal Pradesh','13':'Nagaland','14':'Manipur','15':'Mizoram','16':'Tripura','17':'Meghalaya','18':'Assam','19':'West Bengal','20':'Jharkhand','21':'Odisha','22':'Chhattisgarh','23':'Madhya Pradesh','24':'Gujarat','27':'Maharashtra','29':'Karnataka','30':'Goa','32':'Kerala','33':'Tamil Nadu','36':'Telangana','37':'Andhra Pradesh'};
 
 /* ══════════════════════════════════════════════════════════════
@@ -792,12 +779,9 @@ const makePDF = (inv, co, terms) => {
   if(roff!==0)sRows.push(['ROUND OFF',(roff>0?'+ ':'- ')+'Rs. '+fmtN(Math.abs(roff))]);
 
   // TDS row
-  const hasTDS = inv.tdsEnabled && inv.tdsAmount > 0;
-  const tdsAmt = hasTDS ? parseFloat(inv.tdsAmount)||0 : 0;
-  const netPayable = grand - tdsAmt;
 
   const totW=96,totX=PW-MR-totW,rowH=6.2,grandH=7.5;
-  const totBlock=sRows.length*rowH+grandH+(hasTDS?rowH*2:0);
+  const totBlock=sRows.length*rowH+grandH;
   if(Y+totBlock+8>PH-32){doc.addPage();drawPageFrame(false);Y=32;}
   else Y+=4;
 
@@ -821,39 +805,16 @@ const makePDF = (inv, co, terms) => {
   doc.text('Rs. '+fmtN(grand),PW-MR-2,gY+5,{align:'right'});
 
   // TDS & Net Payable rows
-  let afterGrandY = gY+grandH;
-  if(hasTDS){
-    const tdsY=afterGrandY;
-    doc.setDrawColor(220,50,50);doc.setLineWidth(0.3);doc.line(totX,tdsY,PW-MR,tdsY);
-    doc.rect(totX,tdsY,totW,rowH,'S');
-    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(180,30,30);
-    doc.text(`TDS u/s ${inv.tdsSection||''} @ ${inv.tdsRate||0}%`,totX+4,tdsY+4.5);
-    doc.setFont('helvetica','bold');
-    doc.text('- Rs. '+fmtN(tdsAmt),PW-MR-2,tdsY+4.5,{align:'right'});
-
-    const npY=tdsY+rowH;
-    doc.setFillColor(232,248,240);doc.rect(totX,npY,totW,grandH,'F');
-    doc.setDrawColor(22,163,74);doc.setLineWidth(0.4);doc.line(totX,npY,PW-MR,npY);
-    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(22,101,52);
-    doc.text('NET PAYABLE',totX+4,npY+5);
-    doc.text('Rs. '+fmtN(netPayable),PW-MR-2,npY+5,{align:'right'});
-    afterGrandY=npY+grandH;
-  }
-
-  Y=afterGrandY+8;
+  Y=gY+grandH+8;
 
   // Amount in words (left of totals block)
   if(sub>0){
-    const amtForWords = hasTDS ? netPayable : grand;
+    const amtForWords = grand;
     doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...MED);
     doc.text('Amount in Words:',ML+2,gY-sRows.length*rowH+5);
     doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(...MED);
-    const wordsY = hasTDS ? gY-sRows.length*rowH+10 : gY-sRows.length*rowH+11;
+    const wordsY = gY-sRows.length*rowH+11;
     doc.splitTextToSize(numberToWords(amtForWords),totX-ML-6).slice(0,3).forEach((l,i)=>doc.text(l,ML+2,wordsY+i*4.5));
-    if(hasTDS){
-      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(180,30,30);
-      doc.text(`(After TDS deduction of Rs. ${fmtN(tdsAmt)} u/s ${inv.tdsSection||''})`,ML+2,wordsY+14);
-    }
   }
 
   doc.setDrawColor(...XGRAY);doc.setLineWidth(0.5);doc.line(ML,Y,PW-MR,Y);Y+=5;
@@ -1281,12 +1242,19 @@ const makeExcel = (invoices) => {
 };
 
 /* ── MODALS ── */
-const CompanyModal = ({onClose})=>{
+const CompanyModal = ({onClose, currentUser})=>{
   const [d,setD]=useState(S.get(SK.CO,{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',website:'',logo:'',bankName:'',bankAccount:'',bankIFSC:'',bankBranch:'',signatory:'',panNo:''}));
+  const [waNum,setWaNum]=useState(S.get(SK.WA,''));
   const [prev,setPrev]=useState(d.logo||'');
   const fileRef=useRef();
   const up=k=>e=>setD(p=>({...p,[k]:e.target.value}));
-  const save=()=>{if(!d.name){toast.error('Company name required');return;}S.set(SK.CO,d);toast.success('Company saved!');onClose();};
+  const isSuper=isSuperAdmin(currentUser?.email);
+  const save=()=>{
+    if(!d.name){toast.error('Company name required');return;}
+    S.set(SK.CO,d);
+    if(isSuper) S.set(SK.WA,waNum.replace(/\D/g,''));
+    toast.success('Company saved!');onClose();
+  };
   const handleLogo=e=>{const f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){toast.error('Max 2MB');return;}const r=new FileReader();r.onload=ev=>{const b=ev.target.result;setD(p=>({...p,logo:b}));setPrev(b);};r.readAsDataURL(f);};
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal" style={{maxWidth:860,width:"95vw"}}>
@@ -1330,6 +1298,20 @@ const CompanyModal = ({onClose})=>{
           <div className="field"><label className="field-label">Branch Name</label><input className="field-input" value={d.bankBranch} onChange={up('bankBranch')}/></div>
         </div>
         <div className="field" style={{maxWidth:340}}><label className="field-label">Authorised Signatory Name</label><input className="field-input" value={d.signatory} onChange={up('signatory')} placeholder="Proprietor / Director"/></div>
+        {isSuper&&(
+          <div style={{marginTop:12,padding:'12px 14px',background:'rgba(37,211,102,0.06)',border:'1px solid rgba(37,211,102,0.2)',borderRadius:10}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#16a34a',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#16a34a"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              WhatsApp Business Number <span style={{fontSize:10,color:'#16a34a',fontWeight:500}}>(Super Admin only)</span>
+            </div>
+            <div style={{display:'flex',gap:10,alignItems:'center'}}>
+              <span style={{fontSize:13,color:'var(--text3)',fontWeight:600,flexShrink:0}}>+91</span>
+              <input className="field-input" value={waNum} onChange={e=>setWaNum(e.target.value)} placeholder="9876543210 (10 digits)" maxLength={10} style={{maxWidth:200}}/>
+              <span style={{fontSize:11,color:'var(--text3)'}}>Used for WhatsApp invoice sharing</span>
+            </div>
+            {waNum&&<div style={{fontSize:11,color:'#16a34a',marginTop:6}}>✅ Current: +91 {waNum} — WhatsApp button will use this number</div>}
+          </div>
+        )}
       </div>
       <div className="modal-ftr"><button className="btn btn-outline" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={save}><Ic n="save"/>Save Company</button></div>
     </div>
@@ -1356,44 +1338,15 @@ const HSNModal = ({onClose})=>{
   const del=i=>{const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.HSN,u);toast.info('Deleted');};
   const editE=i=>{setForm({...list[i]});setEditing(i);};
 
-  // ── TDS tab state ──
-  const [tdsList,setTdsList]=useState(()=>{const d=S.get(SK.TDS,null);return d||DEFAULT_TDS_SECTIONS.map((t,i)=>({...t,id:i+1}));});
-  const [tdsForm,setTdsForm]=useState({section:'',desc:'',rate:''});
-  const [tdsEditing,setTdsEditing]=useState(null);
-  const [tdsQ,setTdsQ]=useState('');
-  const upT=k=>e=>setTdsForm(p=>({...p,[k]:e.target.value}));
-  const tdsFiltered=tdsList.filter(t=>!tdsQ||t.section.toLowerCase().includes(tdsQ.toLowerCase())||t.desc.toLowerCase().includes(tdsQ.toLowerCase()));
-  const saveTDS=()=>{
-    if(!tdsForm.section||!tdsForm.desc||!tdsForm.rate){toast.error('Section, description & rate required');return;}
-    let u;
-    if(tdsEditing!==null){u=tdsList.map((t,i)=>i===tdsEditing?{...tdsForm}:t);}
-    else{u=[...tdsList,{...tdsForm}];}
-    setTdsList(u);S.set(SK.TDS,u);setTdsForm({section:'',desc:'',rate:''});setTdsEditing(null);
-    toast.success(tdsEditing!==null?'TDS entry updated!':'TDS entry added!');
-  };
-  const delTDS=i=>{const u=tdsList.filter((_,j)=>j!==i);setTdsList(u);S.set(SK.TDS,u);toast.info('Deleted');};
-  const editTDS=i=>{setTdsForm({...tdsList[i]});setTdsEditing(i);};
 
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal" style={{maxWidth:1060,width:"96vw"}}>
       <div className="modal-hdr">
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <span className="modal-title">{activeTab==='hsn'?'🏷️ HSN / SAC Database':'📋 TDS Section Database'}</span>
-        </div>
-        <div style={{display:'flex',gap:6,alignItems:'center'}}>
-          <div style={{display:'flex',background:'var(--card2)',border:'1px solid var(--border)',borderRadius:8,padding:3,gap:3}}>
-            {[['hsn','🏷️ HSN/SAC'],['tds','📋 TDS']].map(([k,l])=>(
-              <button key={k} onClick={()=>{setActiveTab(k);setEditing(null);setTdsEditing(null);}}
-                style={{padding:'5px 14px',borderRadius:6,fontSize:12,fontWeight:activeTab===k?700:500,cursor:'pointer',
-                  border:'none',background:activeTab===k?'var(--primary)':'transparent',
-                  color:activeTab===k?'#fff':'var(--text2)',transition:'all 0.2s'}}>{l}</button>
-            ))}
-          </div>
-          <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
-        </div>
+        <span className="modal-title">🏷️ HSN / SAC Database</span>
+        <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
       </div>
       <div className="modal-body">
-        {activeTab==='hsn'&&<>
+        <>
           <div className="card" style={{marginBottom:18}}>
             <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editing!==null?'✏️ Edit Entry':'➕ Add HSN/SAC Code'}</div>
             <div className="g4">
@@ -1418,46 +1371,8 @@ const HSNModal = ({onClose})=>{
           {filtered.length>0?(<div className="dt-wrap"><table className="dt" style={{width:'100%'}}><thead><tr><th>Type</th><th>Code</th><th>Description</th><th>Category</th><th>Rate</th><th>Unit</th><th style={{width:80}}>Actions</th></tr></thead>
           <tbody>{filtered.map((h,i)=>{const idx=list.indexOf(h);return(<tr key={i}><td><span className={`badge ${h.type==='SAC'?'badge-blue':'badge-gold'}`}>{h.type}</span></td><td style={{fontWeight:700,color:'var(--gold)',fontFamily:'monospace'}}>{h.code}</td><td style={{maxWidth:250}}>{h.desc}</td><td style={{color:'var(--text3)',fontSize:12}}>{h.category||'—'}</td><td><span className="badge badge-green">{h.taxRate}%</span></td><td style={{color:'var(--text2)'}}>{h.unit}</td><td><div style={{display:'flex',gap:5}}><button className="btn btn-sm btn-outline btn-icon" onClick={()=>editE(idx)}><Ic n="edit" s={12}/></button><button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(idx)}><Ic n="trash" s={12}/></button></div></td></tr>);})}</tbody>
           </table></div>):<div style={{textAlign:'center',padding:'32px',color:'var(--text3)'}}>{q?'No matches.':'No entries yet.'}</div>}
-        </>}
+        </>
 
-        {activeTab==='tds'&&<>
-          <div className="card" style={{marginBottom:18}}>
-            <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{tdsEditing!==null?'✏️ Edit TDS Section':'➕ Add TDS Section'}</div>
-            <div className="g3">
-              <div className="field"><label className="field-label">Section *</label><input className="field-input" value={tdsForm.section} onChange={upT('section')} placeholder="e.g. 194J" style={{textTransform:'uppercase'}}/></div>
-              <div className="field"><label className="field-label">Rate % *</label><input className="field-input" value={tdsForm.rate} onChange={upT('rate')} placeholder="e.g. 10 or 'As per slab'"/></div>
-              <div className="field"><label className="field-label">Description *</label><input className="field-input" value={tdsForm.desc} onChange={upT('desc')} placeholder="Professional / Technical Services"/></div>
-            </div>
-            <div style={{display:'flex',gap:10}}>
-              <button className="btn btn-primary" onClick={saveTDS}>{tdsEditing!==null?'Update':'Add TDS Section'}</button>
-              {tdsEditing!==null&&<button className="btn btn-outline" onClick={()=>{setTdsForm({section:'',desc:'',rate:''});setTdsEditing(null);}}>Cancel</button>}
-              {tdsList.length===0&&<button className="btn btn-outline" onClick={()=>{const d=DEFAULT_TDS_SECTIONS;setTdsList(d);S.set(SK.TDS,d);toast.success('Default TDS sections loaded!');}}>Load Defaults</button>}
-            </div>
-          </div>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-            <span style={{color:'var(--text2)',fontSize:13}}>{tdsList.length} sections</span>
-            <input className="field-input" value={tdsQ} onChange={e=>setTdsQ(e.target.value)} placeholder="🔍 Search section..." style={{maxWidth:260}}/>
-          </div>
-          <div className="dt-wrap">
-            <table className="dt" style={{width:'100%'}}>
-              <thead><tr><th>Section</th><th>Description</th><th>Rate %</th><th style={{width:80}}>Actions</th></tr></thead>
-              <tbody>
-                {tdsFiltered.map((t,i)=>{const idx=tdsList.indexOf(t);return(
-                  <tr key={i}>
-                    <td><span className="badge badge-gold" style={{fontFamily:'monospace',letterSpacing:1}}>{t.section}</span></td>
-                    <td style={{color:'var(--text)'}}>{t.desc}</td>
-                    <td><span className="badge badge-green">{t.rate}{t.rate!=='As per slab'?'%':''}</span></td>
-                    <td><div style={{display:'flex',gap:5}}>
-                      <button className="btn btn-sm btn-outline btn-icon" onClick={()=>editTDS(idx)}><Ic n="edit" s={12}/></button>
-                      <button className="btn btn-sm btn-danger btn-icon" onClick={()=>delTDS(idx)}><Ic n="trash" s={12}/></button>
-                    </div></td>
-                  </tr>
-                );})}
-                {tdsFiltered.length===0&&<tr><td colSpan={4} style={{textAlign:'center',padding:24,color:'var(--text3)'}}>{tdsQ?'No matches.':'No entries yet.'}</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </>}
       </div>
       <div className="modal-ftr"><button className="btn btn-primary" onClick={onClose}>Done</button></div>
     </div>
@@ -1868,6 +1783,14 @@ const CustomerModal = ({onClose, onSelect})=>{
   </div>;
 };
 
+/* ── GLOBAL DOC BADGE (used by HistoryModal and Dashboard) ── */
+const docBadge=(dt,isB2C)=>{
+  if(isB2C) return {label:'B2C',bg:'#E0F2FE',color:'#0369A1'};
+  if(dt==='DEBIT NOTE') return {label:'DN',bg:'#FEF3C7',color:'#92400E'};
+  if(dt==='CREDIT NOTE') return {label:'CN',bg:'#D1FAE5',color:'#065F46'};
+  return {label:'B2B',bg:'var(--primary-bg)',color:'var(--primary2)'};
+};
+
 const HistoryModal = ({onClose,onLoad,currentUser})=>{
   const [invs,setInvs]=useState(S.get(SK.INV,[]));
   const [q,setQ]=useState('');
@@ -1883,12 +1806,6 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
   const sorted=[...invs].filter(i=>!q||i.invNo?.toLowerCase().includes(q.toLowerCase())||i.billTo?.name?.toLowerCase().includes(q.toLowerCase())||(i.docType||'').toLowerCase().includes(q.toLowerCase())||(i.isB2C?'b2c':'b2b').includes(q.toLowerCase())).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
   const total=invs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
   const mn=new Date(),mInvs=invs.filter(i=>{const d=new Date(i.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();});
-  const docBadge=(dt,isB2C)=>{
-    if(isB2C) return {label:'B2C',bg:'#E0F2FE',color:'#0369A1'};
-    if(dt==='DEBIT NOTE') return {label:'DN',bg:'#FEF3C7',color:'#92400E'};
-    if(dt==='CREDIT NOTE') return {label:'CN',bg:'#D1FAE5',color:'#065F46'};
-    return {label:'B2B',bg:'var(--primary-bg)',color:'var(--primary2)'};
-  };
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal" style={{maxWidth:1100,width:'95vw'}}>
       <div className="modal-hdr">
@@ -1979,6 +1896,10 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
                     <td style={{padding:'8px 8px'}}>
                       <div style={{display:'flex',gap:4,justifyContent:'flex-end',alignItems:'center'}}>
                         <button className="btn btn-sm btn-outline-primary" style={{padding:'4px 10px',fontSize:11}} onClick={()=>{onLoad(inv);onClose();}}>Load</button>
+                        <button className="btn btn-sm btn-outline btn-icon" title="Duplicate invoice" onClick={()=>{
+                          const dup={...inv,invNo:genInvNo(inv.docType),date:today(),dueDate:'',status:'Draft',sentToCustomer:false,paidDate:'',time:nowTime()};
+                          onLoad(dup);onClose();toast.success('Invoice duplicated — edit and save!');
+                        }}>📋</button>
                         <button className="btn btn-sm btn-outline btn-icon" title="Download PDF" onClick={()=>makePDF(inv,co,S.get(SK.TERMS,DEFAULT_TERMS))}><Ic n="pdf" s={12}/></button>
                         {isAdmin&&<button className="btn btn-sm btn-danger btn-icon" title="Delete" onClick={()=>del(inv.invNo)}><Ic n="trash" s={12}/></button>}
                       </div>
@@ -2166,7 +2087,26 @@ const AdminPanel = ({currentUser,onClose})=>{
   const [editUID,setEditUID]=useState(null);
   const [showPw,setShowPw]=useState(false);
   const [auditQ,setAuditQ]=useState('');
+  const [auditData,setAuditData]=useState(()=>S.get(SK.AUDIT,[]));
   const modalBodyRef=useRef();
+
+  // Auto-refresh audit log every 10 minutes
+  useEffect(()=>{
+    const refresh=()=>{
+      const fresh=S.get(SK.AUDIT,[]);
+      setAuditData(fresh);
+    };
+    refresh(); // initial load
+    const timer=setInterval(()=>{
+      // Re-pull from Firebase cache
+      getDb().ref('invoicepro/'+SK.AUDIT).once('value').then(snap=>{
+        const val=snap.val();
+        if(val){_cache[SK.AUDIT]=val;setAuditData(val);}
+        else{setAuditData(S.get(SK.AUDIT,[]));}
+      }).catch(()=>setAuditData(S.get(SK.AUDIT,[])));
+    },10*60*1000); // 10 minutes
+    return()=>clearInterval(timer);
+  },[]);
   const invs=S.get(SK.INV,[]);
   const co=S.get(SK.CO,{});
   const isSuper=isSuperAdmin(currentUser?.email);
@@ -2223,10 +2163,11 @@ const AdminPanel = ({currentUser,onClose})=>{
     logAudit('USER_TOGGLED',`${u?.name} → ${u?.active?'Inactive':'Active'}`,currentUser);
   };
 
-  const auditLogs=S.get(SK.AUDIT,[]).filter(l=>!auditQ||
-    l.action.toLowerCase().includes(auditQ.toLowerCase())||
-    l.detail.toLowerCase().includes(auditQ.toLowerCase())||
-    l.userName.toLowerCase().includes(auditQ.toLowerCase()));
+  const auditLogs=auditData.filter(l=>!auditQ||
+    (l.action||'').toLowerCase().includes(auditQ.toLowerCase())||
+    (l.detail||'').toLowerCase().includes(auditQ.toLowerCase())||
+    (l.userName||'').toLowerCase().includes(auditQ.toLowerCase())
+  ).slice().reverse();
 
   const roleBadge=r=>r==='superadmin'?{cls:'badge-gold',label:'Super Admin'}:r==='admin'?{cls:'badge-primary',label:'Admin'}:{cls:'badge-green',label:'User'};
 
@@ -2340,8 +2281,17 @@ const AdminPanel = ({currentUser,onClose})=>{
         {tab==='audit'&&(
           <div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-              <span style={{color:'var(--text2)',fontSize:13,fontWeight:600}}>📋 Audit Log — {auditLogs.length} entries</span>
-              {isSuper&&<button className="btn btn-sm btn-danger" onClick={()=>{if(window.confirm('Clear all audit logs?')){S.set(SK.AUDIT,[]);toast.info('Audit log cleared');}}}>🗑️ Clear Log</button>}
+              <span style={{color:'var(--text2)',fontSize:13,fontWeight:600}}>📋 Audit Log — {auditLogs.length} entries <span style={{fontSize:10,color:'var(--text3)',fontWeight:400}}>(auto-refreshes every 10 min)</span></span>
+              <div style={{display:'flex',gap:8}}>
+                <button className="btn btn-sm btn-outline-primary" onClick={()=>{
+                  getDb().ref('invoicepro/'+SK.AUDIT).once('value').then(snap=>{
+                    const val=snap.val();
+                    if(val){_cache[SK.AUDIT]=val;setAuditData(val);toast.success('Audit log refreshed!');}
+                    else{const d=S.get(SK.AUDIT,[]);setAuditData(d);toast.info('No new entries');}
+                  }).catch(()=>{setAuditData(S.get(SK.AUDIT,[]));toast.info('Refreshed from cache');});
+                }}><Ic n="refresh" s={12}/>Refresh Now</button>
+                {isSuper&&<button className="btn btn-sm btn-danger" onClick={()=>{if(window.confirm('Clear all audit logs?')){S.set(SK.AUDIT,[]);setAuditData([]);toast.info('Audit log cleared');}}}>🗑️ Clear Log</button>}
+              </div>
             </div>
             <input className="field-input" value={auditQ} onChange={e=>setAuditQ(e.target.value)} placeholder="🔍 Search by action, user or detail..." style={{marginBottom:12}}/>
             {auditLogs.length>0?(
@@ -2515,7 +2465,6 @@ const newInvoice = (user,docType)=>({invNo:genInvNo(docType||'TAX INVOICE'),date
   sameAddress:true,items:[newItem()],notes:'',gstType:'INTRA',docType:docType||'TAX INVOICE',isB2C:false,
   status:'Draft',sentToCustomer:false,paidDate:'',
   origInvNo:'',origInvDate:'',
-  tdsEnabled:false,tdsSection:'',tdsDesc:'',tdsRate:0,tdsAmount:0,
   subtotal:0,taxBreakdown:{},totalGST:0,roundOff:0,grand:0,
   createdBy:user?.email||'',time:nowTime()
 });
@@ -2525,6 +2474,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
   const co=S.get(SK.CO,{});
   const hsnList=S.get(SK.HSN,[]);
   const [showCustModal,setShowCustModal]=useState(false);
+  const [showProductModal,setShowProductModal]=useState(false);
   const [custQ,setCustQ]=useState('');
   const [showCustDrop,setShowCustDrop]=useState(false);
   const custList=S.get(SK.CUST,[]);
@@ -2949,12 +2899,21 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
       </div>
     </div>
     {showCustModal&&<CustomerModal onClose={()=>setShowCustModal(false)} onSelect={fillCustomer}/>}
+    {showProductModal&&<ProductMasterModal onClose={()=>setShowProductModal(false)} onSelect={p=>{
+      const item={desc:p.name+(p.desc?' — '+p.desc:''),hsnCode:p.hsnCode||'',unit:p.unit||'Nos',qty:1,rate:p.rate||'',discount:0,taxRate:p.taxRate||'18',taxable:0,gstAmt:0,total:0};
+      const calc=it=>{const qty=parseFloat(it.qty)||0,rate=parseFloat(it.rate)||0,disc=parseFloat(it.discount)||0,tax=parseFloat(it.taxRate)||0,gross=qty*rate,discAmt=gross*(disc/100),taxable=gross-discAmt;it.taxable=taxable.toFixed(2);it.gstAmt=(taxable*tax/100).toFixed(2);it.total=(taxable*(1+tax/100)).toFixed(2);return it;};
+      setInv(prev=>({...prev,items:[...prev.items,calc(item)]}));
+      toast.success(`${p.name} added!`);
+    }}/>}
 
     {/* Products Table */}
     <div className="card item-table-card" style={{marginBottom:16}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
         <div className="section-title" style={{marginBottom:0}}><span className="dot"></span>Products / Services</div>
-        <button className="btn btn-outline-primary btn-sm" onClick={addItem}><Ic n="plus" s={13}/>Add Row</button>
+        <div style={{display:'flex',gap:8}}>
+          <button className="btn btn-sm btn-outline-primary" onClick={()=>setShowProductModal(true)}><Ic n="tag" s={12}/>Pick from Master</button>
+          <button className="btn btn-outline-primary btn-sm" onClick={addItem}><Ic n="plus" s={13}/>Add Row</button>
+        </div>
       </div>
       <div className="table-wrap">
         <table className="ptable">
@@ -3009,71 +2968,6 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
       </div>
 
       <div>
-        {/* TDS Toggle */}
-        <div style={{marginBottom:10,background:'var(--card2)',border:'1px solid var(--border)',borderRadius:10,padding:'10px 14px'}}>
-          <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',userSelect:'none'}}>
-            <input type="checkbox" checked={!!inv.tdsEnabled}
-              onChange={e=>{
-                const enabled=e.target.checked;
-                setInv(p=>({...p,tdsEnabled:enabled,tdsSection:enabled?p.tdsSection:'',tdsDesc:enabled?p.tdsDesc:'',tdsRate:enabled?p.tdsRate:0,tdsAmount:0}));
-              }}
-              style={{accentColor:'var(--primary)',width:15,height:15}}/>
-            <span style={{fontWeight:700,fontSize:13,color:'var(--text)'}}>Apply TDS Deduction</span>
-            {inv.tdsEnabled&&<span style={{fontSize:10,background:'#FEF3C7',color:'#B45309',padding:'2px 8px',borderRadius:8,border:'1px solid #FDE68A',fontWeight:700}}>TDS ON</span>}
-          </label>
-          {inv.tdsEnabled&&(()=>{
-            const tdsList=S.get(SK.TDS,DEFAULT_TDS_SECTIONS);
-            const sub=parseFloat(inv.subtotal)||0;
-            // Derive TDS amount from current rate — never call setInv during render
-            const tdsAmt=sub*(parseFloat(inv.tdsRate)||0)/100;
-            // Build stable key for select value: section|desc
-            const selectVal=inv.tdsSection&&inv.tdsDesc
-              ? inv.tdsSection+'|'+inv.tdsDesc
-              : inv.tdsSection
-              ? (tdsList.find(t=>t.section===inv.tdsSection)?.section+'|'+tdsList.find(t=>t.section===inv.tdsSection)?.desc)||''
-              : '';
-            return(
-            <div style={{marginTop:10}}>
-              <div className="g2" style={{gap:10,marginBottom:8}}>
-                <div className="field" style={{marginBottom:0}}>
-                  <label className="field-label">TDS Section</label>
-                  <select className="field-input" value={selectVal}
-                    onChange={e=>{
-                      const val=e.target.value;
-                      if(!val){setInv(p=>({...p,tdsSection:'',tdsDesc:'',tdsRate:0,tdsAmount:0}));return;}
-                      const found=tdsList.find(t=>t.section+'|'+t.desc===val);
-                      const [sec,desc]=val.split('|');
-                      const rate=found?(found.rate==='As per slab'?0:parseFloat(found.rate)||0):0;
-                      const newAmt=(parseFloat(inv.subtotal)||0)*rate/100;
-                      setInv(p=>({...p,tdsSection:sec||'',tdsDesc:desc||'',tdsRate:rate,tdsAmount:newAmt}));
-                    }}>
-                    <option value="">— Select TDS Section —</option>
-                    {tdsList.map((t,i)=>(
-                      <option key={i} value={t.section+'|'+t.desc}>
-                        {t.section} — {t.desc} ({t.rate}{t.rate!=='As per slab'?'%':''})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field" style={{marginBottom:0}}>
-                  <label className="field-label">TDS Rate %</label>
-                  <input type="number" className="field-input"
-                    value={inv.tdsRate||''}
-                    min="0" max="100" step="0.1"
-                    onChange={e=>{
-                      const r=parseFloat(e.target.value)||0;
-                      const newAmt=(parseFloat(inv.subtotal)||0)*r/100;
-                      setInv(p=>({...p,tdsRate:r,tdsAmount:newAmt}));
-                    }}
-                    placeholder="e.g. 10"/>
-                </div>
-              </div>
-              {(inv.tdsRate>0||tdsAmt>0)&&<div style={{fontSize:12,color:'var(--text3)',background:'var(--card)',padding:'6px 10px',borderRadius:6,border:'1px solid var(--border)'}}>
-                TDS = {inv.tdsRate||0}% of ₹{Number(sub).toLocaleString('en-IN',{minimumFractionDigits:2})} = <strong style={{color:'var(--red)'}}>{fmt(tdsAmt)}</strong>
-              </div>}
-            </div>
-          );})()}
-        </div>
 
         <div className="tax-box" style={{marginBottom:10}}>
           <div className="tax-row"><span className="tax-label">Sub Total (Taxable)</span><span className="tax-val">{fmt(inv.subtotal)}</span></div>
@@ -3091,22 +2985,8 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
             <span className="tax-label">Grand Total</span>
             <span className="tax-val">{fmt(inv.grand)}</span>
           </div>
-          {inv.tdsEnabled&&(parseFloat(inv.tdsRate)||0)>0&&(()=>{
-            const liveTds=(parseFloat(inv.subtotal)||0)*(parseFloat(inv.tdsRate)||0)/100;
-            const netPay=(parseFloat(inv.grand)||0)-liveTds;
-            return(<>
-              <div className="tax-row" style={{borderTop:'1px dashed var(--border2)',padding:'7px 16px'}}>
-                <span className="tax-label" style={{color:'var(--red)',fontSize:12}}>TDS Deducted (u/s {inv.tdsSection})</span>
-                <span className="tax-val" style={{color:'var(--red)',fontSize:13}}>− {fmt(liveTds)}</span>
-              </div>
-              <div className="tax-row" style={{background:'linear-gradient(135deg,rgba(15,217,138,0.08),rgba(15,217,138,0.04))',borderTop:'2px solid var(--green)',padding:'7px 16px'}}>
-                <span className="tax-label" style={{color:'var(--green)',fontWeight:700}}>Net Payable</span>
-                <span className="tax-val" style={{color:'var(--green)',fontSize:15}}>{fmt(netPay)}</span>
-              </div>
-            </>);
-          })()}
         </div>
-        <div className="amt-words">{numberToWords(inv.tdsEnabled&&(parseFloat(inv.tdsRate)||0)>0?Math.max(0,(parseFloat(inv.grand)||0)-(parseFloat(inv.subtotal)||0)*(parseFloat(inv.tdsRate)||0)/100):inv.grand)}</div>
+        <div className="amt-words">{numberToWords(inv.grand)}</div>
       </div>
     </div>
 
@@ -3131,6 +3011,20 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
         </button>
         <button className="btn btn-gold" onClick={()=>{save(true);makePDF(inv,co,terms);}}>
           <Ic n="pdf" s={15}/>Download PDF + New
+        </button>
+        <button title="Share on WhatsApp" style={{padding:'9px 14px',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',background:'#25D366',color:'#fff',border:'none',display:'inline-flex',alignItems:'center',gap:6,boxShadow:'0 4px 14px rgba(37,211,102,0.35)'}}
+          onClick={()=>{
+            const custPhone=(inv.billTo?.phone||'').replace(/\D/g,'');
+            const waNumber=S.get(SK.WA,'');
+            // Use customer phone if available, else use business WA number
+            const phone=custPhone||waNumber;
+            const msg=`Dear ${inv.billTo?.name||'Customer'},\n\nPlease find your ${inv.docType||'Tax Invoice'} *${inv.invNo}* dated *${fmtDate(inv.date)}* for *${fmt(inv.grand)}*.\n\nThank you for your business!\n\n— ${co.name||''}`;
+            if(!phone){toast.error('No phone number. Set WhatsApp number in Company Settings.');return;}
+            const url=`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
+            window.open(url,'_blank');
+          }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp
         </button>
       </div>
     </div>
@@ -3630,6 +3524,341 @@ const POHistoryModal = ({onClose, onLoad, currentUser, onNewPO})=>{
   </div>;
 };
 
+/* ══════════════════════════════════════════════════════════════
+   ⭐ FEATURE 1: AUTO OVERDUE DETECTION
+   ══════════════════════════════════════════════════════════════ */
+const checkOverdue = () => {
+  const invs = S.get(SK.INV, []);
+  const todayStr = today();
+  let changed = false;
+  const updated = invs.map(inv => {
+    if (inv.dueDate && inv.dueDate < todayStr &&
+        inv.status !== 'Paid' && inv.status !== 'Overdue' && inv.status !== 'Draft') {
+      changed = true;
+      return { ...inv, status: 'Overdue' };
+    }
+    return inv;
+  });
+  if (changed) {
+    S.set(SK.INV, updated);
+    const cnt = updated.filter(i=>i.status==='Overdue').length;
+    toast.error(`⚠️ ${cnt} invoice${cnt>1?'s':''} marked Overdue!`);
+  }
+  return updated.filter(i=>i.status==='Overdue').length;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ⭐ FEATURE 2: PRODUCTS / ITEM MASTER
+   ══════════════════════════════════════════════════════════════ */
+const DEFAULT_PRODUCTS = [];
+
+const ProductMasterModal = ({onClose, onSelect})=>{
+  const blank={name:'',desc:'',hsnCode:'',unit:'Nos',rate:'',taxRate:'18',category:''};
+  const [list,setList]=useState(S.get(SK.PRODUCTS,DEFAULT_PRODUCTS));
+  const [form,setForm]=useState(blank);
+  const [editing,setEditing]=useState(null);
+  const [q,setQ]=useState('');
+  const [tab,setTab]=useState(onSelect?'search':'list');
+  const up=k=>e=>setForm(p=>({...p,[k]:e.target.value}));
+
+  const save=()=>{
+    if(!form.name||!form.rate){toast.error('Product name and rate required');return;}
+    let u;
+    if(editing!==null){u=list.map((p,i)=>i===editing?{...form}:p);}
+    else{
+      if(list.find(p=>p.name.toLowerCase()===form.name.toLowerCase())){toast.error('Product already exists');return;}
+      u=[...list,{...form,createdAt:new Date().toISOString()}];
+    }
+    setList(u);S.set(SK.PRODUCTS,u);
+    setForm(blank);setEditing(null);setTab('list');
+    toast.success(editing!==null?'Product updated!':'Product saved!');
+  };
+  const del=i=>{if(!window.confirm('Delete product?'))return;const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.PRODUCTS,u);};
+  const edit=i=>{setForm({...list[i]});setEditing(i);setTab('add');};
+  const filtered=list.filter(p=>!q||p.name.toLowerCase().includes(q.toLowerCase())||p.hsnCode?.includes(q)||(p.category||'').toLowerCase().includes(q.toLowerCase()));
+
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal" style={{maxWidth:1060,width:'96vw'}}>
+      <div className="modal-hdr">
+        <span className="modal-title">📦 Product / Item Master</span>
+        <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
+      </div>
+      <div className="modal-body">
+        <div style={{display:'flex',gap:8,marginBottom:16}}>
+          {[['list',`📋 All Products (${list.length})`],['add',editing!==null?'✏️ Edit':'➕ Add Product']].map(([k,l])=>(
+            <button key={k} onClick={()=>setTab(k)}
+              style={{padding:'7px 18px',borderRadius:8,fontSize:12,fontWeight:tab===k?700:500,cursor:'pointer',
+                border:`2px solid ${tab===k?'var(--primary)':'var(--border2)'}`,
+                background:tab===k?'var(--primary-bg)':'transparent',
+                color:tab===k?'var(--primary2)':'var(--text2)'}}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        {tab==='add'&&(
+          <div className="card" style={{marginBottom:16}}>
+            <div className="g3">
+              <div className="field"><label className="field-label">Product Name *</label><input className="field-input" value={form.name} onChange={up('name')} placeholder="e.g. Laptop Core i5"/></div>
+              <div className="field"><label className="field-label">Category</label><input className="field-input" value={form.category} onChange={up('category')} placeholder="e.g. Electronics"/></div>
+              <div className="field"><label className="field-label">HSN / SAC Code</label><input className="field-input" value={form.hsnCode} onChange={up('hsnCode')} placeholder="e.g. 8471"/></div>
+            </div>
+            <div className="g4">
+              <div className="field"><label className="field-label">Default Unit</label><select className="field-input" value={form.unit} onChange={up('unit')}>{UNITS.map(u=><option key={u}>{u}</option>)}</select></div>
+              <div className="field"><label className="field-label">Default Rate (₹) *</label><input type="number" className="field-input" value={form.rate} onChange={up('rate')} placeholder="0.00"/></div>
+              <div className="field"><label className="field-label">GST Rate %</label><select className="field-input" value={form.taxRate} onChange={up('taxRate')}>{TAX_RATES.map(r=><option key={r} value={r}>{r}%</option>)}</select></div>
+              <div className="field"><label className="field-label">Description</label><input className="field-input" value={form.desc} onChange={up('desc')} placeholder="Optional description"/></div>
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button className="btn btn-primary" onClick={save}>{editing!==null?'Update Product':'Save Product'}</button>
+              {editing!==null&&<button className="btn btn-outline" onClick={()=>{setForm(blank);setEditing(null);setTab('list');}}>Cancel</button>}
+            </div>
+          </div>
+        )}
+
+        {tab==='list'&&(
+          <>
+            <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 Search by name, HSN, category..." style={{marginBottom:12}}/>
+            {filtered.length>0?(
+              <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'52vh',overflowY:'auto'}}>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 90px 80px 80px 100px auto',gap:0,padding:'8px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>
+                  <span>Name / Category</span><span>HSN/SAC</span><span>Unit</span><span>GST%</span><span style={{textAlign:'right'}}>Rate (₹)</span><span style={{textAlign:'center'}}>Actions</span>
+                </div>
+                {filtered.map((p,i)=>(
+                  <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 90px 80px 80px 100px auto',gap:0,padding:'10px 14px',borderBottom:'1px solid var(--border)',alignItems:'center'}}>
+                    <div>
+                      <div style={{fontWeight:700,color:'var(--text)',fontSize:13}}>{p.name}</div>
+                      {p.category&&<div style={{fontSize:11,color:'var(--text3)'}}>{p.category}</div>}
+                      {p.desc&&<div style={{fontSize:11,color:'var(--text3)',fontStyle:'italic'}}>{p.desc}</div>}
+                    </div>
+                    <div style={{fontFamily:'monospace',fontSize:11,color:'var(--gold)'}}>{p.hsnCode||'—'}</div>
+                    <div style={{fontSize:12,color:'var(--text2)'}}>{p.unit||'Nos'}</div>
+                    <div><span className="badge badge-green">{p.taxRate||'18'}%</span></div>
+                    <div style={{fontWeight:700,color:'var(--primary2)',textAlign:'right',fontSize:13}}>₹{Number(p.rate||0).toLocaleString('en-IN')}</div>
+                    <div style={{display:'flex',gap:5,justifyContent:'center'}}>
+                      {onSelect&&<button className="btn btn-sm btn-outline-primary" onClick={()=>{onSelect(p);onClose();}}>Select</button>}
+                      <button className="btn btn-sm btn-outline btn-icon" onClick={()=>edit(list.indexOf(p))}><Ic n="edit" s={12}/></button>
+                      <button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(list.indexOf(p))}><Ic n="trash" s={12}/></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ):<div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>
+                <div style={{fontSize:36,marginBottom:8}}>📦</div>
+                <div style={{marginBottom:12}}>No products yet.</div>
+                <button className="btn btn-primary" onClick={()=>setTab('add')}>➕ Add First Product</button>
+              </div>}
+          </>
+        )}
+      </div>
+      <div className="modal-ftr"><button className="btn btn-primary" onClick={onClose}>Close</button></div>
+    </div>
+  </div>;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ⭐ FEATURE 3: DASHBOARD
+   ══════════════════════════════════════════════════════════════ */
+const Dashboard = ({onClose, onLoad})=>{
+  const invs=S.get(SK.INV,[]);
+  const exps=S.get(SK.EXP,[]);
+  const co=S.get(SK.CO,{});
+  const mn=new Date();
+
+  // Auto-detect overdue on dashboard open
+  useEffect(()=>{ checkOverdue(); },[]);
+
+  // Financials
+  const totalRev=invs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const totalExp=exps.reduce((s,e)=>s+(parseFloat(e.total)||0),0);
+  const netProfit=totalRev-totalExp;
+  const mInvs=invs.filter(i=>{const d=new Date(i.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();});
+  const mRev=mInvs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const overdueInvs=invs.filter(i=>i.status==='Overdue');
+  const overdueAmt=overdueInvs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const unpaidInvs=invs.filter(i=>i.status!=='Paid'&&i.status!=='Draft'&&i.status!=='Cancelled');
+  const unpaidAmt=unpaidInvs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+
+  // Monthly revenue for bar chart (last 6 months)
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(mn.getFullYear(),mn.getMonth()-i,1);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label=d.toLocaleString('default',{month:'short'});
+    const rev=invs.filter(inv=>inv.date?.startsWith(key)).reduce((s,inv)=>s+(parseFloat(inv.grand)||0),0);
+    const exp=exps.filter(e=>e.date?.startsWith(key)).reduce((s,e)=>s+(parseFloat(e.total)||0),0);
+    months.push({key,label,rev,exp});
+  }
+  const maxBar=Math.max(...months.map(m=>Math.max(m.rev,m.exp)),1);
+
+  // Status distribution
+  const statusCount={Draft:0,Sent:0,Paid:0,Overdue:0,Other:0};
+  invs.forEach(i=>{
+    if(statusCount[i.status]!==undefined) statusCount[i.status]++;
+    else statusCount.Other++;
+  });
+
+  // Top 5 customers
+  const custMap={};
+  invs.filter(i=>i.grand>0).forEach(i=>{
+    const n=i.billTo?.name||'Unknown';
+    if(!custMap[n])custMap[n]=0;
+    custMap[n]+=parseFloat(i.grand)||0;
+  });
+  const top5=Object.entries(custMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxCust=top5[0]?.[1]||1;
+
+  // Recent 5 invoices
+  const recent=[...invs].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,5);
+
+  const StatCard=({icon,label,value,sub,color,bg})=>(
+    <div style={{background:bg||'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'16px 20px',position:'relative',overflow:'hidden'}}>
+      <div style={{fontSize:24,marginBottom:6}}>{icon}</div>
+      <div style={{fontFamily:'Sora,sans-serif',fontSize:20,fontWeight:800,color:color||'var(--text)'}}>{value}</div>
+      <div style={{fontSize:11,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginTop:2}}>{label}</div>
+      {sub&&<div style={{fontSize:11,color:color||'var(--text3)',marginTop:4,fontWeight:600}}>{sub}</div>}
+    </div>
+  );
+
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal" style={{maxWidth:1100,width:'97vw'}}>
+      <div className="modal-hdr">
+        <div>
+          <span className="modal-title">📊 Dashboard</span>
+          <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>Welcome back, {S.get(SK.USERS,[])[0]?.name||'Admin'} · {co.name||'Your Company'}</div>
+        </div>
+        <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
+      </div>
+      <div className="modal-body">
+
+        {/* ── Overdue Alert ── */}
+        {overdueInvs.length>0&&(
+          <div className="alert" style={{background:'rgba(255,77,106,0.08)',border:'1px solid rgba(255,77,106,0.25)',color:'var(--red)',marginBottom:16,borderRadius:10}}>
+            <span style={{fontSize:18}}>⚠️</span>
+            <div>
+              <strong>{overdueInvs.length} overdue invoice{overdueInvs.length>1?'s':''}</strong> totalling <strong>{fmt(overdueAmt)}</strong> — immediate attention required.
+              <button className="btn btn-sm btn-danger" style={{marginLeft:12}} onClick={()=>{onClose();/* history will show filtered */}}>View</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── KPI Cards ── */}
+        <div className="g4" style={{marginBottom:20}}>
+          <StatCard icon="💰" label="Net Revenue" value={fmt(totalRev)} sub={`${invs.length} invoices total`} color="var(--green)" bg="linear-gradient(135deg,rgba(15,217,138,0.06),var(--card))"/>
+          <StatCard icon="📅" label="This Month" value={fmt(mRev)} sub={`${mInvs.length} invoices`} color="var(--primary2)" bg="linear-gradient(135deg,rgba(79,142,247,0.06),var(--card))"/>
+          <StatCard icon="💸" label="Outstanding" value={fmt(unpaidAmt)} sub={`${unpaidInvs.length} unpaid`} color="var(--gold)" bg="linear-gradient(135deg,rgba(245,166,35,0.06),var(--card))"/>
+          <StatCard icon={netProfit>=0?"📈":"📉"} label="Net Profit" value={fmt(netProfit)} sub={`Expenses: ${fmt(totalExp)}`} color={netProfit>=0?'var(--green)':'var(--red)'} bg={`linear-gradient(135deg,rgba(${netProfit>=0?'15,217,138':'255,77,106'},0.06),var(--card))`}/>
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:16}}>
+          {/* ── Revenue Chart ── */}
+          <div className="card">
+            <div style={{fontWeight:700,color:'var(--text)',marginBottom:14,fontSize:14}}>📊 Revenue vs Expenses (Last 6 Months)</div>
+            <div style={{display:'flex',alignItems:'flex-end',gap:8,height:120}}>
+              {months.map((m,i)=>(
+                <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+                  <div style={{width:'100%',display:'flex',gap:2,alignItems:'flex-end',height:100}}>
+                    <div title={`Revenue: ${fmt(m.rev)}`} style={{flex:1,background:'var(--primary)',borderRadius:'4px 4px 0 0',height:`${Math.max((m.rev/maxBar)*100,2)}%`,opacity:0.85,cursor:'default',transition:'opacity 0.2s'}}
+                      onMouseEnter={e=>e.currentTarget.style.opacity='1'} onMouseLeave={e=>e.currentTarget.style.opacity='0.85'}/>
+                    <div title={`Expenses: ${fmt(m.exp)}`} style={{flex:1,background:'var(--red)',borderRadius:'4px 4px 0 0',height:`${Math.max((m.exp/maxBar)*100,2)}%`,opacity:0.6,cursor:'default',transition:'opacity 0.2s'}}
+                      onMouseEnter={e=>e.currentTarget.style.opacity='1'} onMouseLeave={e=>e.currentTarget.style.opacity='0.6'}/>
+                  </div>
+                  <div style={{fontSize:10,color:'var(--text3)',fontWeight:600}}>{m.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:16,marginTop:8}}>
+              <span style={{fontSize:10,color:'var(--primary)',fontWeight:600}}>■ Revenue</span>
+              <span style={{fontSize:10,color:'var(--red)',fontWeight:600}}>■ Expenses</span>
+            </div>
+          </div>
+
+          {/* ── Invoice Status Donut-style ── */}
+          <div className="card">
+            <div style={{fontWeight:700,color:'var(--text)',marginBottom:14,fontSize:14}}>🍩 Invoice Status</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {[['Paid','var(--green)'],['Sent','var(--primary)'],['Draft','var(--text3)'],['Overdue','var(--red)']].map(([st,col])=>{
+                const cnt=statusCount[st]||0;
+                const pct=invs.length>0?Math.round(cnt/invs.length*100):0;
+                return(
+                <div key={st} style={{display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{fontSize:11,color:col,fontWeight:700,width:54}}>{st}</div>
+                  <div style={{flex:1,background:'var(--card2)',borderRadius:99,height:10,overflow:'hidden'}}>
+                    <div style={{width:`${pct}%`,height:'100%',background:col,borderRadius:99,transition:'width 0.5s ease'}}/>
+                  </div>
+                  <div style={{fontSize:11,color:'var(--text3)',width:36,textAlign:'right'}}>{cnt} ({pct}%)</div>
+                </div>);
+              })}
+            </div>
+            <div style={{marginTop:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <div style={{background:'var(--card2)',borderRadius:8,padding:'8px 12px',textAlign:'center'}}>
+                <div style={{fontSize:16,fontWeight:800,color:'var(--green)'}}>{statusCount.Paid}</div>
+                <div style={{fontSize:10,color:'var(--text3)'}}>PAID</div>
+              </div>
+              <div style={{background:'var(--card2)',borderRadius:8,padding:'8px 12px',textAlign:'center'}}>
+                <div style={{fontSize:16,fontWeight:800,color:'var(--red)'}}>{statusCount.Overdue}</div>
+                <div style={{fontSize:10,color:'var(--text3)'}}>OVERDUE</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+          {/* ── Top 5 Customers ── */}
+          <div className="card">
+            <div style={{fontWeight:700,color:'var(--text)',marginBottom:12,fontSize:14}}>🏆 Top 5 Customers by Revenue</div>
+            {top5.length>0?(
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {top5.map(([name,rev],i)=>(
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:10}}>
+                    <div style={{width:20,height:20,borderRadius:'50%',background:'var(--accent-grad)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:'#fff',flexShrink:0}}>{i+1}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:12,fontWeight:600,color:'var(--text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{name}</div>
+                      <div style={{width:`${(rev/maxCust)*100}%`,height:5,background:'var(--primary)',borderRadius:99,marginTop:3,opacity:0.7}}/>
+                    </div>
+                    <div style={{fontSize:12,fontWeight:700,color:'var(--primary2)',flexShrink:0}}>{fmt(rev)}</div>
+                  </div>
+                ))}
+              </div>
+            ):<div style={{textAlign:'center',padding:20,color:'var(--text3)',fontSize:12}}>No invoices yet</div>}
+          </div>
+
+          {/* ── Recent Invoices ── */}
+          <div className="card">
+            <div style={{fontWeight:700,color:'var(--text)',marginBottom:12,fontSize:14}}>🕐 Recent Invoices</div>
+            {recent.length>0?(
+              <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                {recent.map((inv,i)=>{
+                  const b=docBadge(inv.docType,inv.isB2C);
+                  const stCols={Paid:'var(--green)',Sent:'var(--primary)',Draft:'var(--text3)',Overdue:'var(--red)'};
+                  return(
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:i<recent.length-1?'1px solid var(--border)':'none',cursor:'pointer'}}
+                    onClick={()=>{onLoad(inv);onClose();}}>
+                    <span style={{background:b.bg,color:b.color,borderRadius:5,padding:'2px 6px',fontSize:9,fontWeight:700,flexShrink:0}}>{b.label}</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:12,fontWeight:700,color:'var(--gold)',fontFamily:'monospace'}}>{inv.invNo}</div>
+                      <div style={{fontSize:11,color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{inv.billTo?.name||'—'}</div>
+                    </div>
+                    <div style={{textAlign:'right',flexShrink:0}}>
+                      <div style={{fontSize:12,fontWeight:700,color:'var(--text)'}}>{fmt(Math.abs(inv.grand||0))}</div>
+                      <div style={{fontSize:10,color:stCols[inv.status]||'var(--text3)',fontWeight:600}}>{inv.status}</div>
+                    </div>
+                  </div>);
+                })}
+              </div>
+            ):<div style={{textAlign:'center',padding:20,color:'var(--text3)',fontSize:12}}>No invoices yet</div>}
+          </div>
+        </div>
+
+      </div>
+      <div className="modal-ftr">
+        <span style={{fontSize:11,color:'var(--text3)'}}>Last updated: {new Date().toLocaleTimeString()}</span>
+        <button className="btn btn-primary" onClick={onClose}>Close</button>
+      </div>
+    </div>
+  </div>;
+};
+
 /* ── APP ── */
 const App = ()=>{
   const [user,setUser]=useState(null);
@@ -3663,7 +3892,12 @@ const App = ()=>{
     }
   },[theme]);
 
-  const login=u=>{setUser(u);toast.success(`Welcome, ${u.name}!`);};
+  const login=u=>{
+    setUser(u);
+    toast.success(`Welcome, ${u.name}!`);
+    // Auto-detect overdue invoices on login
+    setTimeout(()=>checkOverdue(), 1000);
+  };
   const [menuOpen, setMenuOpen] = useState(false);
   const openModal = (m) => { setModal(m); setMenuOpen(false); };
 
@@ -3686,6 +3920,7 @@ const App = ()=>{
   if(!user) return <><Login onLogin={login}/><Toast/></>;
 
   const invCount=(S.get(SK.INV,[])).length;
+  const overdueCount=(S.get(SK.INV,[])).filter(i=>i.status==='Overdue').length;
   const isAdmin=user.role==='admin'||user.role==='superadmin';
 
   return <div>
@@ -3709,6 +3944,9 @@ const App = ()=>{
         </div>
 
         {/* Nav items */}
+        <div onClick={()=>openModal('dashboard')} className="mob-nav-item" style={{background:'linear-gradient(135deg,rgba(79,142,247,0.08),transparent)',border:'1px solid rgba(79,142,247,0.15)'}}>
+          <span style={{fontSize:18}}>📊</span><span style={{color:'var(--primary2)',fontWeight:700}}>Dashboard</span>
+        </div>
         <div onClick={()=>openModal('history')} className="mob-nav-item">
           <span style={{fontSize:18}}>📋</span>
           <span>Invoice History</span>
@@ -3748,37 +3986,36 @@ const App = ()=>{
 
     {/* ── HEADER ── */}
     <header className="app-header">
-      {/* Left: brand */}
-      <div style={{display:'flex',alignItems:'center',gap:10}}>
-        <div>
-          <span className="app-brand">InvoicePro</span>
-          <span className="app-brand-sub"> · GST Invoice Manager</span>
-        </div>
-        {invCount>0&&<span className="mob-only" style={{display:'none',background:'var(--primary)',color:'#fff',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:700}}>{invCount}</span>}
+      {/* Left: brand — no wrap */}
+      <div style={{display:'flex',alignItems:'center',flexShrink:0,whiteSpace:'nowrap'}}>
+        <span className="app-brand">InvoicePro</span>
+        <span className="app-brand-sub"> · GST Invoice Manager</span>
       </div>
 
       {/* Desktop nav — hidden on mobile */}
       <div className="header-right">
-        <div title="Toggle Theme" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:6,padding:'4px 10px',background:'var(--card2)',border:'1px solid var(--border)',borderRadius:20}} onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
-          {theme==='dark'?<Ic n="moon" s={14}/>:<Ic n="sun" s={14}/>}
-          <span style={{fontSize:12,color:'var(--text2)'}}>{theme==='dark'?'Dark':'Light'}</span>
+        <div title="Toggle Theme" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:4,padding:'4px 9px',background:'var(--card2)',border:'1px solid var(--border)',borderRadius:20,flexShrink:0}} onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
+          {theme==='dark'?<Ic n="moon" s={13}/>:<Ic n="sun" s={13}/>}
+          <span style={{fontSize:11,color:'var(--text2)'}}>{theme==='dark'?'Dark':'Light'}</span>
         </div>
-        <button className="btn btn-outline btn-sm" onClick={()=>setModal('terms')}><Ic n="pdf" s={13}/>Terms</button>
-        <button className="btn btn-outline btn-sm" onClick={()=>setModal('history')}>
-          <Ic n="history" s={13}/>History
-          {invCount>0&&<span style={{background:'var(--primary)',color:'#fff',borderRadius:'50%',width:18,height:18,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700}}>{invCount}</span>}
+        <button className="btn btn-outline-primary btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('dashboard')}>📊 Dashboard</button>
+        <button className="btn btn-outline btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('terms')}>📋 Terms</button>
+        <button className="btn btn-outline btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('history')}>
+          🕐 History
+          {invCount>0&&<span style={{background:'var(--primary)',color:'#fff',borderRadius:'50%',width:16,height:16,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,marginLeft:2}}>{invCount}</span>}
+          {overdueCount>0&&<span style={{background:'var(--red)',color:'#fff',borderRadius:'50%',width:14,height:14,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:700,marginLeft:2}}>{overdueCount}</span>}
         </button>
-        <button className="btn btn-outline btn-sm" onClick={()=>setModal('pohistory')}>🛒 POs</button>
-        <button className="btn btn-outline btn-sm" onClick={()=>setModal('expenses')}>🧾 Expenses</button>
-        <button className="btn btn-outline btn-sm" onClick={()=>setModal('customers')}>👥 Customers</button>
-        <button className="btn btn-outline-gold btn-sm" onClick={()=>setModal('hsn')}><Ic n="tag" s={13}/>HSN</button>
-        <button className="btn btn-outline-primary btn-sm" onClick={()=>setModal('company')}><Ic n="building" s={13}/>Company</button>
-        {isAdmin&&<button className="btn btn-gold btn-sm" onClick={()=>setModal('admin')}><Ic n="shield" s={13}/>{isSuperAdmin(user.email)?'👑 Super Admin':'Admin'}</button>}
-        <div className="user-pill">
+        <button className="btn btn-outline btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('pohistory')}>🛒 POs</button>
+        <button className="btn btn-outline btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('expenses')}>🧾 Expenses</button>
+        <button className="btn btn-outline btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('customers')}>👥 Customers</button>
+        <button className="btn btn-outline-gold btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('hsn')}>🏷️ HSN</button>
+        <button className="btn btn-outline-primary btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('company')}>🏢 Company</button>
+        {isAdmin&&<button className="btn btn-gold btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('admin')}>{isSuperAdmin(user.email)?'👑 Super Admin':'🛡️ Admin'}</button>}
+        <div className="user-pill" style={{flexShrink:0}}>
           <div className="user-avatar">{user.name[0]}</div>
-          <span>{user.name}</span>
+          <span style={{maxWidth:80,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.name}</span>
         </div>
-        <button className="btn btn-outline btn-icon" onClick={logout} title="Logout"><Ic n="logout" s={14}/></button>
+        <button className="btn btn-outline btn-icon" style={{width:30,height:30,padding:0,flexShrink:0}} onClick={logout} title="Logout"><Ic n="logout" s={13}/></button>
       </div>
 
       {/* Mobile right: invoice count + hamburger */}
@@ -3813,7 +4050,9 @@ const App = ()=>{
       </div>
     </div>}
 
-    {modal==='company'&&<CompanyModal onClose={()=>setModal(null)}/>}
+    {modal==='dashboard'&&<Dashboard onClose={()=>setModal(null)} onLoad={loadInv}/>}
+    {modal==='products'&&<ProductMasterModal onClose={()=>setModal(null)}/>}
+    {modal==='company'&&<CompanyModal onClose={()=>setModal(null)} currentUser={user}/>}
     {modal==='hsn'&&<HSNModal onClose={()=>setModal(null)}/>}
     {modal==='terms'&&<TermsModal onClose={()=>setModal(null)}/>}
     {modal==='customers'&&<CustomerModal onClose={()=>setModal(null)}/>}
