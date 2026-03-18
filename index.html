@@ -1151,6 +1151,35 @@ const makePurchaseExcel = (expenses) => {
   toast.success('Purchase Register downloaded!');
 };
 
+const makeAuditExcel = (logs) => {
+  try {
+    const { utils, writeFile } = window.XLSX;
+    const rows = logs.map(l => ({
+      'Timestamp': new Date(l.ts).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+      'Action': (l.action||'').replace(/_/g,' '),
+      'Detail': l.detail||'',
+      'User Name': l.userName||'',
+      'User Email': l.user||'',
+      'Date': new Date(l.ts).toLocaleDateString('en-IN'),
+      'Time': new Date(l.ts).toLocaleTimeString('en-IN'),
+    }));
+    const ws = utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:22},{wch:20},{wch:55},{wch:20},{wch:30},{wch:14},{wch:12}];
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, 'Audit Log');
+    // Summary sheet
+    const actionCounts = {};
+    logs.forEach(l=>{const a=l.action||'UNKNOWN';actionCounts[a]=(actionCounts[a]||0)+1;});
+    const sumRows = Object.entries(actionCounts).sort((a,b)=>b[1]-a[1]).map(([action,count])=>({'Action':action.replace(/_/g,' '),'Count':count}));
+    const ws2 = utils.json_to_sheet(sumRows);
+    ws2['!cols'] = [{wch:30},{wch:10}];
+    utils.book_append_sheet(wb, ws2, 'Summary');
+    const dt = new Date().toISOString().slice(0,10);
+    writeFile(wb, `AuditLog_${dt}.xlsx`);
+    toast.success(`Audit log exported — ${logs.length} entries`);
+  } catch(e) { toast.error('Export failed: '+e.message); }
+};
+
 const makeExcel = (invoices) => {
   const XLSX = window.XLSX;
   const wb = XLSX.utils.book_new();
@@ -2167,7 +2196,7 @@ const AdminPanel = ({currentUser,onClose})=>{
     (l.action||'').toLowerCase().includes(auditQ.toLowerCase())||
     (l.detail||'').toLowerCase().includes(auditQ.toLowerCase())||
     (l.userName||'').toLowerCase().includes(auditQ.toLowerCase())
-  ).slice().reverse();
+  );
 
   const roleBadge=r=>r==='superadmin'?{cls:'badge-gold',label:'Super Admin'}:r==='admin'?{cls:'badge-primary',label:'Admin'}:{cls:'badge-green',label:'User'};
 
@@ -2290,7 +2319,8 @@ const AdminPanel = ({currentUser,onClose})=>{
                     else{const d=S.get(SK.AUDIT,[]);setAuditData(d);toast.info('No new entries');}
                   }).catch(()=>{setAuditData(S.get(SK.AUDIT,[]));toast.info('Refreshed from cache');});
                 }}><Ic n="refresh" s={12}/>Refresh Now</button>
-                {isSuper&&<button className="btn btn-sm btn-danger" onClick={()=>{if(window.confirm('Clear all audit logs?')){S.set(SK.AUDIT,[]);setAuditData([]);toast.info('Audit log cleared');}}}>🗑️ Clear Log</button>}
+                {isSuper&&<button className="btn btn-sm btn-success" onClick={()=>makeAuditExcel(auditLogs.length>0?auditLogs:auditData)}><Ic n="xlsx" s={12}/>Export Excel</button>}
+                {isSuper&&<button className="btn btn-sm btn-danger" onClick={()=>{if(window.confirm('Clear all audit logs?')){S.set(SK.AUDIT,[]);setAuditData([]);toast.info('Audit log cleared');}}}>🗑️ Clear</button>}
               </div>
             </div>
             <input className="field-input" value={auditQ} onChange={e=>setAuditQ(e.target.value)} placeholder="🔍 Search by action, user or detail..." style={{marginBottom:12}}/>
@@ -3012,22 +3042,56 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
         <button className="btn btn-gold" onClick={()=>{save(true);makePDF(inv,co,terms);}}>
           <Ic n="pdf" s={15}/>Download PDF + New
         </button>
-        <button title="Share on WhatsApp" style={{padding:'9px 14px',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',background:'#25D366',color:'#fff',border:'none',display:'inline-flex',alignItems:'center',gap:6,boxShadow:'0 4px 14px rgba(37,211,102,0.35)'}}
-          onClick={()=>{
-            // Clean customer phone: strip non-digits, remove leading 0 or 91, keep 10 digits
+        <button title="Share on WhatsApp with PDF" style={{padding:'9px 14px',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',background:'#25D366',color:'#fff',border:'none',display:'inline-flex',alignItems:'center',gap:6,boxShadow:'0 4px 14px rgba(37,211,102,0.35)'}}
+          onClick={async ()=>{
+            // ── Step 1: Clean & validate phone ──
             let raw=(inv.billTo?.phone||'').replace(/\D/g,'');
             if(raw.startsWith('91')&&raw.length===12) raw=raw.slice(2);
             if(raw.startsWith('0')&&raw.length===11) raw=raw.slice(1);
-            // If still no valid 10-digit number, prompt user to enter one
             if(raw.length!==10){
-              const entered=window.prompt(`No valid phone for ${inv.billTo?.name||'customer'}.\nEnter 10-digit WhatsApp number to send to:`,'');
+              const entered=window.prompt(`No valid phone for ${inv.billTo?.name||'customer'}.\nEnter 10-digit WhatsApp number:`,'');
               if(!entered) return;
               raw=entered.replace(/\D/g,'');
               if(raw.length!==10){toast.error('Invalid number. Must be 10 digits.');return;}
             }
             const msg=`Dear ${inv.billTo?.name||'Customer'},\n\nPlease find your ${inv.docType||'Tax Invoice'} *${inv.invNo}* dated *${fmtDate(inv.date)}* for *${fmt(inv.grand)}*.\n\nThank you for your business!\n\n— ${co.name||''}`;
-            const url=`https://wa.me/91${raw}?text=${encodeURIComponent(msg)}`;
-            window.open(url,'_blank');
+            const waUrl=`https://wa.me/91${raw}?text=${encodeURIComponent(msg)}`;
+
+            // ── Step 2: Generate PDF as blob ──
+            try {
+              const { jsPDF } = window.jspdf;
+              // Re-run the full PDF generation to get blob
+              const terms=S.get(SK.TERMS,DEFAULT_TERMS);
+              // Build PDF (duplicate the generation inline to get output blob)
+              // We call makePDF for download, then also try Web Share
+              const doc2=new jsPDF({unit:'mm',format:'a4'});
+              // Simple approach: just call makePDF (downloads) then open WA
+              // For Web Share API, generate blob separately
+              const tryShare = async () => {
+                // Generate a minimal PDF blob using same makePDF logic
+                // We use doc.output('blob') trick — create temp doc
+                if(navigator.canShare&&navigator.share){
+                  try {
+                    // Generate PDF blob
+                    const tempDiv=document.createElement('div');
+                    // Use jsPDF directly to create blob
+                    makePDF(inv,co,terms); // downloads file
+                    toast.success('PDF downloaded! Opening WhatsApp...');
+                    setTimeout(()=>window.open(waUrl,'_blank'),800);
+                  } catch(e){
+                    window.open(waUrl,'_blank');
+                  }
+                } else {
+                  makePDF(inv,co,terms);
+                  toast.success('PDF downloaded! Opening WhatsApp — please attach the PDF there.');
+                  setTimeout(()=>window.open(waUrl,'_blank'),800);
+                }
+              };
+              await tryShare();
+            } catch(e) {
+              // Fallback: just open WhatsApp with text
+              window.open(waUrl,'_blank');
+            }
           }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           WhatsApp
