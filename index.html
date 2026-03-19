@@ -1548,7 +1548,6 @@ const ExpenseModal = ({onClose, currentUser})=>{
         </div>
         <div style={{display:'flex',gap:8}}>
           {isAdmin&&<button className="btn btn-success btn-sm" onClick={()=>makePurchaseExcel(expenses)}><Ic n="xlsx" s={13}/>Purchase Register</button>}
-          {!isAdmin&&<span style={{fontSize:11,color:'#B45309',background:'#FEF3C7',padding:'3px 10px',borderRadius:20,border:'1px solid #FDE68A'}}>🔒 Reports: Admin only</span>}
           <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
         </div>
       </div>
@@ -1852,14 +1851,12 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
           <span style={{fontSize:11,color:'var(--text3)',background:'var(--card2)',padding:'3px 10px',borderRadius:20,border:'1px solid var(--border)'}}>
             {sorted.length} of {invs.length} records
           </span>
-          {!isAdmin&&<span style={{fontSize:11,color:'#B45309',background:'#FEF3C7',padding:'3px 10px',borderRadius:20,border:'1px solid #FDE68A'}}>
-            🔒 View only — contact admin to delete
-          </span>}
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          {isAdmin&&<><button className="btn btn-outline-primary btn-sm" onClick={()=>makeGSTR1(invs)}><Ic n="xlsx" s={13}/>GSTR-1</button>
-          <button className="btn btn-success btn-sm" onClick={()=>makeExcel(invs)}><Ic n="xlsx" s={13}/>Sales Register</button></>}
-          {!isAdmin&&<span style={{fontSize:11,color:'#B45309',background:'#FEF3C7',padding:'3px 10px',borderRadius:20,border:'1px solid #FDE68A'}}>🔒 Reports: Admin only</span>}
+          {isAdmin&&<>
+            <button className="btn btn-outline-primary btn-sm" onClick={()=>makeGSTR1(invs)}><Ic n="xlsx" s={13}/>GSTR-1</button>
+            <button className="btn btn-success btn-sm" onClick={()=>makeExcel(invs)}><Ic n="xlsx" s={13}/>Sales Register</button>
+          </>}
           <button className="btn btn-outline btn-sm" onClick={pickSaveFolder} title="Set folder for auto-saving PDFs">📁 Save Folder</button>
           <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
         </div>
@@ -1878,14 +1875,14 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
           <div className="hist-table-wrap" style={{maxHeight:'58vh',overflowY:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse',tableLayout:'fixed'}}>
               <colgroup>
-                <col style={{width:50}}/> {/* Type */}
-                <col style={{width:145}}/> {/* Invoice No */}
-                <col/> {/* Customer — flex */}
-                <col style={{width:92}}/> {/* Date */}
-                <col style={{width:88}}/> {/* Status */}
-                <col style={{width:38}}/> {/* Sent */}
-                <col style={{width:115}}/> {/* Amount */}
-                <col style={{width:isAdmin?156:106}}/> {/* Actions */}
+                <col style={{width:50}}/>{/* Type */}
+                <col style={{width:145}}/>{/* Invoice No */}
+                <col/>{/* Customer — flex */}
+                <col style={{width:92}}/>{/* Date */}
+                <col style={{width:88}}/>{/* Status */}
+                <col style={{width:38}}/>{/* Sent */}
+                <col style={{width:115}}/>{/* Amount */}
+                <col style={{width:isAdmin?160:120}}/>{/* Actions */}
               </colgroup>
               <thead>
                 <tr style={{background:'var(--card2)',borderBottom:'2px solid var(--border2)',position:'sticky',top:0,zIndex:2}}>
@@ -1931,15 +1928,15 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
                     <td style={{padding:'10px 10px',textAlign:'right',fontWeight:700,color:isCN?'var(--red)':'var(--text)',fontSize:13,whiteSpace:'nowrap'}}>
                       {isCN&&<span style={{color:'var(--red)'}}>−</span>}{fmt(Math.abs(inv.grand||0))}
                     </td>
-                    <td style={{padding:'8px 8px'}}>
-                      <div style={{display:'flex',gap:4,justifyContent:'flex-end',alignItems:'center'}}>
-                        <button className="btn btn-sm btn-outline-primary" style={{padding:'4px 10px',fontSize:11}} onClick={()=>{onLoad(inv);onClose();}}>Load</button>
-                        <button className="btn btn-sm btn-outline btn-icon" title="Duplicate invoice" onClick={()=>{
+                    <td style={{padding:'8px 6px'}}>
+                      <div style={{display:'flex',gap:3,justifyContent:'flex-end',alignItems:'center'}}>
+                        <button className="btn btn-sm btn-outline-primary" style={{padding:'4px 8px',fontSize:11}} onClick={()=>{onLoad(inv);onClose();}}>Load</button>
+                        <button className="btn btn-sm btn-outline btn-icon" style={{width:28,height:28}} title="Duplicate" onClick={()=>{
                           const dup={...inv,invNo:genInvNo(inv.docType),date:today(),dueDate:'',status:'Draft',sentToCustomer:false,paidDate:'',time:nowTime()};
                           onLoad(dup);onClose();toast.success('Invoice duplicated — edit and save!');
                         }}>📋</button>
-                        <button className="btn btn-sm btn-outline btn-icon" title="Download PDF" onClick={()=>makePDF(inv,co,S.get(SK.TERMS,DEFAULT_TERMS))}><Ic n="pdf" s={12}/></button>
-                        {isAdmin&&<button className="btn btn-sm btn-danger btn-icon" title="Delete" onClick={()=>del(inv.invNo)}><Ic n="trash" s={12}/></button>}
+                        <button className="btn btn-sm btn-outline btn-icon" style={{width:28,height:28}} title="Download PDF" onClick={()=>makePDF(inv,co,S.get(SK.TERMS,DEFAULT_TERMS))}><Ic n="pdf" s={12}/></button>
+                        {isAdmin&&<button className="btn btn-sm btn-danger btn-icon" style={{width:28,height:28}} title="Delete" onClick={()=>del(inv.invNo)}><Ic n="trash" s={12}/></button>}
                       </div>
                     </td>
                   </tr>);
@@ -1953,8 +1950,10 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
           </div>}
       </div>
       <div className="modal-ftr">
-        <span style={{fontSize:12,color:'var(--text3)'}}>
-          {isAdmin?'✅ Admin — full access':'👁️ Staff — view & download only'}
+        <span style={{fontSize:12,color:'var(--text3)',display:'flex',alignItems:'center',gap:6}}>
+          {isAdmin
+            ? <><span style={{color:'var(--green)'}}>✅</span> Admin — full access</>
+            : <><span>👁️</span> Staff — view &amp; download only. Contact admin to delete.</>}
         </span>
         <button className="btn btn-primary" onClick={onClose}>Close</button>
       </div>
