@@ -477,6 +477,15 @@ const fmt  = n => '₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigi
 const fmtN = n => Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const today  = ()=>new Date().toISOString().split('T')[0];
 const fmtDate= d=>{if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+// Helper: get correct grand total for any invoice type (fixes NonGST invoices saved with grand=0)
+const getGrand = inv => {
+  if(inv.docType==='NON GST INVOICE'){
+    const items=(inv.items||[]).filter(r=>r.desc);
+    const ng=items.reduce((s,r)=>s+(parseFloat(r.total)||((parseFloat(r.qty)||0)*(parseFloat(r.rate)||0))),0);
+    return ng||parseFloat(inv.grand)||0;
+  }
+  return parseFloat(inv.grand)||0;
+};
 const nowTime= ()=>{const d=new Date();const h=d.getHours().toString().padStart(2,'0'),mi=d.getMinutes().toString().padStart(2,'0'),s=d.getSeconds().toString().padStart(2,'0');return`${h}:${mi}:${s}`;}
 const validateGSTIN = g=>/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(g||'');
 const stateCode = g=>g&&g.length>=2?g.substring(0,2):null;
@@ -787,7 +796,10 @@ const makePDF = (inv, co, terms) => {
 
   // TOTALS BLOCK (right side)
   const sub=parseFloat(inv.subtotal)||0,tgst=parseFloat(inv.totalGST)||0;
-  const roff=parseFloat(inv.roundOff)||0,grand=parseFloat(inv.grand)||0;
+  const roff=parseFloat(inv.roundOff)||0;
+  // For Non-GST: compute grand from items directly (fallback for saved invoices that had 0)
+  const ngItemTotal=isNonGST?items.reduce((s,r)=>s+(parseFloat(r.total)||((parseFloat(r.qty)||0)*(parseFloat(r.rate)||0))),0):0;
+  const grand=isNonGST?ngItemTotal:(parseFloat(inv.grand)||0);
   const bMap=inv.taxBreakdown||{};
 
   let sRows;
@@ -840,7 +852,7 @@ const makePDF = (inv, co, terms) => {
   Y=gY+grandH+8;
 
   // Amount in words (left of totals block)
-  if(sub>0){
+  if(sub>0||isNonGST){
     const amtForWords = grand;
     doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...MED);
     doc.text('Amount in Words:',ML+2,gY-sRows.length*rowH+5);
@@ -861,6 +873,7 @@ const makePDF = (inv, co, terms) => {
   if(showBank||showUPI){
     let px=ML;
     const payColW=payMode==='both'?CW/2-4:CW;
+    let paySecHeight=8; // track height used by payment section
 
     // NET BANKING column
     if(showBank){
@@ -874,16 +887,18 @@ const makePDF = (inv, co, terms) => {
           doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MED);doc.text(lbl+':',px+2,by);
           doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...DARK);doc.text(String(val||''),px+22,by);by+=4.6;
         });
+        paySecHeight=Math.max(paySecHeight, by-Y+4);
       } else {
         doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);doc.text('No bank details configured.',px+2,Y+13);
+        paySecHeight=Math.max(paySecHeight,20);
       }
     }
 
     // UPI column
     if(showUPI){
       const upiColW = payMode==='both' ? payColW : CW;
-      const upiX=showBank?ML+payColW+8:ML;
-      const upiCX=upiX+upiColW/2; // centre of UPI column
+      const upiX = showBank ? ML+payColW+8 : ML;
+      const upiCX = upiX + upiColW/2; // centre of UPI column
       doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
       doc.text('UPI PAYMENT',upiX+2,Y+5);
       doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(upiX+2,Y+6.5,upiX+28,Y+6.5);
@@ -899,22 +914,25 @@ const makePDF = (inv, co, terms) => {
         try{
           const qrSize=28;
           // Auto-detect image format from data URL
-          const fmt=co.upiQR.startsWith('data:image/png')?'PNG':co.upiQR.startsWith('data:image/svg')?'SVG':'JPEG';
-          const qrLeft=upiCX-qrSize/2; // centred in column
-          doc.addImage(co.upiQR,fmt,qrLeft,uy,qrSize,qrSize);
+          const qrFmt=co.upiQR.startsWith('data:image/png')?'PNG':co.upiQR.startsWith('data:image/svg')?'SVG':'JPEG';
+          const qrLeft=upiCX-qrSize/2; // centred in UPI column
+          doc.addImage(co.upiQR,qrFmt,qrLeft,uy,qrSize,qrSize);
           doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MED);
           doc.text('Scan to pay',upiCX,uy+qrSize+4,{align:'center'});
+          paySecHeight=Math.max(paySecHeight, uy-Y+qrSize+10);
           uy+=qrSize+9;
         }catch(e){
           doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);
           doc.text('QR image error.',upiX+2,uy);
+          paySecHeight=Math.max(paySecHeight,uy-Y+8);
         }
       } else {
         doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);
         doc.text('No UPI QR configured.',upiX+2,uy);
+        paySecHeight=Math.max(paySecHeight,uy-Y+8);
       }
     }
-    Y+=50;
+    Y+=paySecHeight;
     doc.setDrawColor(...XGRAY);doc.setLineWidth(0.4);doc.line(ML,Y,PW-MR,Y);Y+=4;
   }
 
@@ -1031,7 +1049,7 @@ const makeGSTR1 = (invoices) => {
       const gt=inv.gstType||'INTRA';
       b2bRows.push([
         (inv.billTo?.gstin||'').toUpperCase(),inv.billTo?.name||'',inv.invNo||'',fmtDate(inv.date)||'',
-        Number(inv.grand||0).toFixed(2),
+        Number(getGrand(inv)||0).toFixed(2),
         inv.billTo?.state||stateName(inv.billTo?.gstin)||'',
         'N','Regular','',tR,
         Number(tax).toFixed(2),
@@ -1118,7 +1136,7 @@ const makeGSTR1 = (invoices) => {
         inv.invNo||'',
         fmtDate(inv.date)||'',
         noteType,
-        Number(Math.abs(inv.grand||0)).toFixed(2),
+        Number(Math.abs(getGrand(inv)||0)).toFixed(2),
         inv.origInvNo||'',
         inv.origInvDate?fmtDate(inv.origInvDate):'',
         inv.billTo?.state||stateName(inv.billTo?.gstin)||'',
@@ -1313,7 +1331,7 @@ const makeExcel = (invoices) => {
         isNG?'':(gt!=='INTRA'?tR:''),
         isNG?'':(gt!=='INTRA'?Number(sign*gst).toFixed(2):''),
         isNG?0:Number(sign*gst).toFixed(2),
-        Number(isNG?lineTotal:(parseFloat(inv.grand)||0)).toFixed(2),
+        Number(isNG?lineTotal:getGrand(inv)).toFixed(2),
         inv.poNo||'',
         inv.notes||'',
         inv.createdBy||'',
@@ -1956,11 +1974,11 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
     if(!window.confirm('Delete this invoice permanently?'))return;
     const inv=invs.find(i=>i.invNo===id);
     const u=invs.filter(i=>i.invNo!==id);setInvs(u);S.set(SK.INV,u);
-    logAudit('INVOICE_DELETED',`${inv?.invNo} — ${inv?.billTo?.name} — ₹${Math.abs(inv?.grand||0)}`,currentUser);
+    logAudit('INVOICE_DELETED',`${inv?.invNo} — ${inv?.billTo?.name} — ₹${Math.abs(getGrand(inv||{}))||0}`,currentUser);
     toast.info('Invoice deleted');
   };
   const sorted=[...invs].filter(i=>!q||i.invNo?.toLowerCase().includes(q.toLowerCase())||i.billTo?.name?.toLowerCase().includes(q.toLowerCase())||(i.docType||'').toLowerCase().includes(q.toLowerCase())||(i.isB2C?'b2c':'b2b').includes(q.toLowerCase())).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
-  const total=invs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const total=invs.reduce((s,i)=>s+getGrand(i),0);
   const mn=new Date(),mInvs=invs.filter(i=>{const d=new Date(i.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();});
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal" style={{maxWidth:1100,width:'95vw'}}>
@@ -1985,7 +2003,7 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
           <div className="stat-card"><div className="stat-val">{invs.length}</div><div className="stat-lbl">Total Records</div></div>
           <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:total<0?'var(--red)':undefined}}>{fmt(total)}</div><div className="stat-lbl">Net Revenue</div></div>
           <div className="stat-card"><div className="stat-val">{mInvs.length}</div><div className="stat-lbl">This Month</div></div>
-          <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{fmt(mInvs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0))}</div><div className="stat-lbl">Month Revenue</div></div>
+          <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{fmt(mInvs.reduce((s,i)=>s+getGrand(i),0))}</div><div className="stat-lbl">Month Revenue</div></div>
         </div>
         <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
           placeholder="🔍 Search by invoice no., customer name, type (B2B / B2C / Debit / Credit)..."
@@ -2045,7 +2063,7 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
                       {inv.sentToCustomer?'📤':'—'}
                     </td>
                     <td style={{padding:'10px 10px',textAlign:'right',fontWeight:700,color:isCN?'var(--red)':'var(--text)',fontSize:13,whiteSpace:'nowrap'}}>
-                      {isCN&&<span style={{color:'var(--red)'}}>−</span>}{fmt(Math.abs(inv.grand||0))}
+                      {isCN&&<span style={{color:'var(--red)'}}>−</span>}{fmt(Math.abs(getGrand(inv)||0))}
                     </td>
                     <td style={{padding:'8px 6px'}}>
                       <div style={{display:'flex',gap:3,justifyContent:'flex-end',alignItems:'center'}}>
@@ -2371,7 +2389,7 @@ const AdminPanel = ({currentUser,onClose})=>{
   const co=S.get(SK.CO,{});
   const isSuper=isSuperAdmin(currentUser?.email);
 
-  const total=invs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const total=invs.reduce((s,i)=>s+getGrand(i),0);
   const mn=new Date(),mInvs=invs.filter(i=>{const d=new Date(i.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();});
   const cnCount=invs.filter(i=>i.docType==='CREDIT NOTE').length;
   const dnCount=invs.filter(i=>i.docType==='DEBIT NOTE').length;
@@ -2383,20 +2401,32 @@ const AdminPanel = ({currentUser,onClose})=>{
   const saveUser=()=>{
     if(!uForm.email||!uForm.name||!uForm.password){toast.error('All fields required');return;}
     if(!uForm.email.includes('@')){toast.error('Valid email required');return;}
+    if(uForm.password.length<4){toast.error('Password must be at least 4 characters');return;}
     // Prevent admin from creating superadmin
     if(!isSuper&&uForm.role==='superadmin'){toast.error('Only Super Admin can assign Super Admin role');return;}
     let updated;
     if(editUID){
       updated=users.map(u=>u.id===editUID?{...u,...uForm}:u);
     } else {
-      if(users.find(u=>u.email.toLowerCase()===uForm.email.toLowerCase())){toast.error('Email exists');return;}
+      if(users.find(u=>u.email.toLowerCase()===uForm.email.toLowerCase())){toast.error('Email already exists');return;}
       const newU={id:Date.now().toString(),...uForm,createdAt:new Date().toISOString()};
       updated=[...users,newU];
     }
-    setUsers(updated);S.set(SK.USERS,updated);
-    logAudit(editUID?'USER_EDITED':'USER_CREATED',`${uForm.name} (${uForm.email}) role:${uForm.role}`,currentUser);
+    // Update local state immediately
+    setUsers(updated);
+    // Save to local cache first (guaranteed)
+    _cache[SK.USERS]=updated;
+    try{localStorage.setItem(SK.USERS,JSON.stringify(updated));}catch(e){}
+    // Write to Firebase (non-blocking, with error handling)
+    getDb().ref('invoicepro/'+SK.USERS).set(updated)
+      .then(()=>{ logAudit(editUID?'USER_EDITED':'USER_CREATED',`${uForm.name} (${uForm.email}) role:${uForm.role}`,currentUser); })
+      .catch(e=>{
+        console.warn('Firebase user write failed:',e.message);
+        // Still log locally
+        logAudit(editUID?'USER_EDITED':'USER_CREATED',`${uForm.name} (${uForm.email}) role:${uForm.role}`,currentUser);
+      });
     setUForm({email:'',name:'',password:'',role:'user',active:true});setEditUID(null);
-    toast.success(editUID?'User updated!':'User created!');
+    toast.success(editUID?'User updated!':'User created successfully!');
   };
   const delUser=id=>{
     if(!isSuper){toast.error('Only Super Admin can delete users');return;}
@@ -2404,7 +2434,11 @@ const AdminPanel = ({currentUser,onClose})=>{
     if(isSuperAdmin(u?.email)){toast.error('Cannot delete Super Admin');return;}
     if(id===currentUser.id){toast.error('Cannot delete yourself');return;}
     if(!window.confirm(`Delete user "${u?.name}"?`))return;
-    const updated=users.filter(u=>u.id!==id);setUsers(updated);S.set(SK.USERS,updated);
+    const updated=users.filter(u=>u.id!==id);
+    setUsers(updated);
+    _cache[SK.USERS]=updated;
+    try{localStorage.setItem(SK.USERS,JSON.stringify(updated));}catch(e){}
+    getDb().ref('invoicepro/'+SK.USERS).set(updated).catch(e=>console.warn('Firebase write:',e.message));
     logAudit('USER_DELETED',`${u?.name} (${u?.email})`,currentUser);
     toast.info('User deleted');
   };
@@ -2413,13 +2447,16 @@ const AdminPanel = ({currentUser,onClose})=>{
     setUForm({email:u.email,name:u.name,password:u.password,role:u.role,active:u.active});
     setEditUID(u.id);
     setTab('users');
-    // Scroll modal body to top so the form is visible on mobile
     setTimeout(()=>modalBodyRef.current?.scrollTo({top:0,behavior:'smooth'}),50);
   };
   const toggleActive=id=>{
     const u=users.find(u=>u.id===id);
     if(isSuperAdmin(u?.email)){toast.error('Cannot deactivate Super Admin');return;}
-    const updated=users.map(u=>u.id===id?{...u,active:!u.active}:u);setUsers(updated);S.set(SK.USERS,updated);
+    const updated=users.map(u=>u.id===id?{...u,active:!u.active}:u);
+    setUsers(updated);
+    _cache[SK.USERS]=updated;
+    try{localStorage.setItem(SK.USERS,JSON.stringify(updated));}catch(e){}
+    getDb().ref('invoicepro/'+SK.USERS).set(updated).catch(e=>console.warn('Firebase write:',e.message));
     logAudit('USER_TOGGLED',`${u?.name} → ${u?.active?'Inactive':'Active'}`,currentUser);
   };
 
@@ -2459,7 +2496,7 @@ const AdminPanel = ({currentUser,onClose})=>{
             </div>
             <div className="g4" style={{marginBottom:12}}>
               <div className="stat-card" style={{background:'linear-gradient(135deg,#78350F,#92400E)'}}><div className="stat-val" style={{color:'#FCD34D'}}>{mInvs.length}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>This Month</div></div>
-              <div className="stat-card" style={{background:'linear-gradient(135deg,#4A044E,#701A75)'}}><div className="stat-val" style={{color:'#E879F9',fontSize:16}}>{fmt(mInvs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0))}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>Month Revenue</div></div>
+              <div className="stat-card" style={{background:'linear-gradient(135deg,#4A044E,#701A75)'}}><div className="stat-val" style={{color:'#E879F9',fontSize:16}}>{fmt(mInvs.reduce((s,i)=>s+getGrand(i),0))}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>Month Revenue</div></div>
               <div className="stat-card" style={{background:'linear-gradient(135deg,#1C1917,#292524)'}}><div className="stat-val" style={{color:'#D6D3D1',fontSize:16}}>{fmt(expenses.filter(e=>{const d=new Date(e.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();}).reduce((s,e)=>s+(parseFloat(e.total)||0),0))}</div><div className="stat-lbl" style={{color:'rgba(255,255,255,0.7)'}}>Month Expenses</div></div>
               <div className="stat-card"><div className="stat-val">{expenses.length}</div><div className="stat-lbl">Purchase Records</div></div>
             </div>
@@ -2597,7 +2634,7 @@ const AdminPanel = ({currentUser,onClose})=>{
                     <td style={{fontWeight:600}}>{inv.billTo?.name||'—'}</td>
                     <td style={{fontFamily:'monospace',fontSize:12,color:'var(--text2)'}}>{inv.billTo?.gstin||'—'}</td>
                     <td><span className={`badge ${inv.gstType==='INTRA'?'badge-green':'badge-blue'}`}>{inv.gstType==='INTRA'?'CGST+SGST':'IGST'}</span></td>
-                    <td style={{fontWeight:700}}>{fmt(inv.grand)}</td>
+                    <td style={{fontWeight:700}}>{fmt(getGrand(inv))}</td>
                     <td style={{color:'var(--text3)',fontSize:12}}>{inv.createdBy||'—'}</td>
                   </tr>))}
                 </tbody>
@@ -2797,15 +2834,26 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
   // Recalculate totals
   useEffect(()=>{
     const items=inv.items||[];
-    let sub=0,gstMap={};
-    items.forEach(r=>{
-      const taxable=parseFloat(r.taxable)||0, gst=parseFloat(r.gstAmt)||0, rate=r.taxRate||'0';
-      sub+=taxable;gstMap[rate]=(gstMap[rate]||0)+gst;
-    });
-    const tgst=Object.values(gstMap).reduce((a,b)=>a+b,0);
-    const raw=sub+tgst, rounded=Math.round(raw), roff=parseFloat((rounded-raw).toFixed(2));
-    setInv(p=>({...p,subtotal:sub.toFixed(2),taxBreakdown:gstMap,totalGST:tgst.toFixed(2),roundOff:roff,grand:rounded}));
-  },[JSON.stringify(inv.items)]);
+    const isNG=inv.docType==='NON GST INVOICE';
+    if(isNG){
+      // For Non-GST: grand = sum of (qty * rate) for each item
+      let ngTotal=0;
+      items.forEach(r=>{
+        ngTotal+=(parseFloat(r.qty)||0)*(parseFloat(r.rate)||0);
+      });
+      const rounded=Math.round(ngTotal);
+      setInv(p=>({...p,subtotal:'0',taxBreakdown:{},totalGST:'0',roundOff:0,grand:rounded}));
+    } else {
+      let sub=0,gstMap={};
+      items.forEach(r=>{
+        const taxable=parseFloat(r.taxable)||0, gst=parseFloat(r.gstAmt)||0, rate=r.taxRate||'0';
+        sub+=taxable;gstMap[rate]=(gstMap[rate]||0)+gst;
+      });
+      const tgst=Object.values(gstMap).reduce((a,b)=>a+b,0);
+      const raw=sub+tgst, rounded=Math.round(raw), roff=parseFloat((rounded-raw).toFixed(2));
+      setInv(p=>({...p,subtotal:sub.toFixed(2),taxBreakdown:gstMap,totalGST:tgst.toFixed(2),roundOff:roff,grand:rounded}));
+    }
+  },[JSON.stringify(inv.items),inv.docType]);
 
   // GST type determination — B2C uses manual toggle, B2B uses GSTIN comparison
   useEffect(()=>{
@@ -2826,7 +2874,12 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
   const save=(autoNew=false)=>{
     if(!inv.billTo?.name){toast.error('Customer name required');return;}
     const isCN = inv.docType==='CREDIT NOTE';
-    const grandVal = isCN ? -Math.abs(inv.grand||0) : Math.abs(inv.grand||0);
+    const isNG = inv.docType==='NON GST INVOICE';
+    // For NonGST: recompute grand from items directly to avoid stale state
+    const computedGrand = isNG
+      ? inv.items.filter(r=>r.desc).reduce((s,r)=>s+(parseFloat(r.total)||((parseFloat(r.qty)||0)*(parseFloat(r.rate)||0))),0)
+      : (inv.grand||0);
+    const grandVal = isCN ? -Math.abs(computedGrand) : Math.abs(computedGrand);
     // Always store GSTIN in uppercase
     const cleanBillTo = {...inv.billTo, gstin:(inv.billTo?.gstin||'').toUpperCase()};
     const toSave = {...inv, grand: grandVal, billTo: cleanBillTo};
@@ -2978,7 +3031,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
                         </div>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:3}}>
                           <span style={{fontSize:12,color:'var(--text2)',fontWeight:500}}>{oi.billTo?.name||'Unknown Customer'}</span>
-                          <span style={{fontSize:11,fontWeight:600,color:'var(--primary2)'}}>₹{Number(Math.abs(oi.grand||0)).toLocaleString('en-IN')}</span>
+                          <span style={{fontSize:11,fontWeight:600,color:'var(--primary2)'}}>₹{Number(Math.abs(getGrand(oi)||0)).toLocaleString('en-IN')}</span>
                         </div>
                       </div>
                     ))}
@@ -3205,20 +3258,12 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
             <tbody>
               {inv.items.map((row,i)=>(
                 <NonGSTRow key={i} row={row} idx={i} hsnList={hsnList}
-                  onChange={(idx,r)=>setInv(p=>{
-                    const items=[...p.items];items[idx]=r;
-                    const g=items.reduce((s,x)=>s+(parseFloat(x.total)||0),0);
-                    return {...p,items,subtotal:g.toFixed(2),totalGST:0,taxBreakdown:{},roundOff:0,grand:g};
-                  })}
-                  onDelete={idx=>setInv(p=>{
-                    const items=p.items.filter((_,j)=>j!==idx);
-                    const g=items.reduce((s,x)=>s+(parseFloat(x.total)||0),0);
-                    return {...p,items:items.length?items:[newNonGSTItem()],subtotal:g.toFixed(2),totalGST:0,taxBreakdown:{},roundOff:0,grand:g};
-                  })}/>
+                  onChange={(idx,r)=>setInv(p=>{const items=[...p.items];items[idx]=r;return {...p,items};}) }
+                  onDelete={idx=>setInv(p=>{const items=p.items.filter((_,j)=>j!==idx);return {...p,items:items.length?items:[newNonGSTItem()]};}) }/>
               ))}
             </tbody>
             <tfoot><tr><td colSpan={6} style={{padding:'8px 10px'}}>
-              <button className="btn btn-outline btn-sm" onClick={()=>setInv(p=>({...p,items:[...p.items,newNonGSTItem()]}))}><Ic n="plus" s={12}/>Add Row</button>
+              <button className="btn btn-outline btn-sm" onClick={addItem}><Ic n="plus" s={12}/>Add Row</button>
             </td></tr></tfoot>
           </table>
         </div>
@@ -3348,7 +3393,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
               raw=entered.replace(/\D/g,'');
               if(raw.length!==10){toast.error('Invalid number. Must be 10 digits.');return;}
             }
-            const msg=`Dear ${inv.billTo?.name||'Customer'},\n\nPlease find your ${inv.docType||'Tax Invoice'} *${inv.invNo}* dated *${fmtDate(inv.date)}* for *${fmt(inv.grand)}*.\n\nThank you for your business!\n\n— ${co.name||''}`;
+            const msg=`Dear ${inv.billTo?.name||'Customer'},\n\nPlease find your ${inv.docType||'Tax Invoice'} *${inv.invNo}* dated *${fmtDate(inv.date)}* for *${fmt(getGrand(inv))}*.\n\nThank you for your business!\n\n— ${co.name||''}`;
             const waUrl=`https://wa.me/91${raw}?text=${encodeURIComponent(msg)}`;
 
             // ── Step 2: Generate PDF as blob ──
@@ -4033,15 +4078,15 @@ const Dashboard = ({onClose, onLoad})=>{
   useEffect(()=>{ checkOverdue(); },[]);
 
   // Financials
-  const totalRev=invs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const totalRev=invs.reduce((s,i)=>s+getGrand(i),0);
   const totalExp=exps.reduce((s,e)=>s+(parseFloat(e.total)||0),0);
   const netProfit=totalRev-totalExp;
   const mInvs=invs.filter(i=>{const d=new Date(i.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();});
-  const mRev=mInvs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const mRev=mInvs.reduce((s,i)=>s+getGrand(i),0);
   const overdueInvs=invs.filter(i=>i.status==='Overdue');
-  const overdueAmt=overdueInvs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const overdueAmt=overdueInvs.reduce((s,i)=>s+getGrand(i),0);
   const unpaidInvs=invs.filter(i=>i.status!=='Paid'&&i.status!=='Draft'&&i.status!=='Cancelled');
-  const unpaidAmt=unpaidInvs.reduce((s,i)=>s+(parseFloat(i.grand)||0),0);
+  const unpaidAmt=unpaidInvs.reduce((s,i)=>s+getGrand(i),0);
 
   // Monthly revenue for bar chart (last 6 months)
   const months=[];
@@ -4049,7 +4094,7 @@ const Dashboard = ({onClose, onLoad})=>{
     const d=new Date(mn.getFullYear(),mn.getMonth()-i,1);
     const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     const label=d.toLocaleString('default',{month:'short'});
-    const rev=invs.filter(inv=>inv.date?.startsWith(key)).reduce((s,inv)=>s+(parseFloat(inv.grand)||0),0);
+    const rev=invs.filter(inv=>inv.date?.startsWith(key)).reduce((s,inv)=>s+getGrand(inv),0);
     const exp=exps.filter(e=>e.date?.startsWith(key)).reduce((s,e)=>s+(parseFloat(e.total)||0),0);
     months.push({key,label,rev,exp});
   }
@@ -4064,10 +4109,10 @@ const Dashboard = ({onClose, onLoad})=>{
 
   // Top 5 customers
   const custMap={};
-  invs.filter(i=>i.grand>0).forEach(i=>{
+  invs.filter(i=>getGrand(i)>0).forEach(i=>{
     const n=i.billTo?.name||'Unknown';
     if(!custMap[n])custMap[n]=0;
-    custMap[n]+=parseFloat(i.grand)||0;
+    custMap[n]+=getGrand(i);
   });
   const top5=Object.entries(custMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const maxCust=top5[0]?.[1]||1;
@@ -4204,7 +4249,7 @@ const Dashboard = ({onClose, onLoad})=>{
                       <div style={{fontSize:11,color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{inv.billTo?.name||'—'}</div>
                     </div>
                     <div style={{textAlign:'right',flexShrink:0}}>
-                      <div style={{fontSize:12,fontWeight:700,color:'var(--text)'}}>{fmt(Math.abs(inv.grand||0))}</div>
+                      <div style={{fontSize:12,fontWeight:700,color:'var(--text)'}}>{fmt(Math.abs(getGrand(inv)||0))}</div>
                       <div style={{fontSize:10,color:stCols[inv.status]||'var(--text3)',fontWeight:600}}>{inv.status}</div>
                     </div>
                   </div>);
