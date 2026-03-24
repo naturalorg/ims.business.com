@@ -434,13 +434,21 @@ const _cache = {};
 // Load ALL keys from Firebase into local cache on startup (one read, fast)
 const loadCache = async () => {
   try {
-    // Race between Firebase load and 8-second timeout
     const result = await Promise.race([
       getDb().ref('invoicepro').once('value'),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase timeout after 8s')), 8000))
     ]);
     const data = result.val();
-    if(data) Object.entries(data).forEach(([k,v]) => { _cache[k] = v; });
+    if(data) Object.entries(data).forEach(([k,v]) => {
+      // Firebase stores arrays as objects with numeric keys — convert back to arrays
+      if(v && typeof v === 'object' && !Array.isArray(v)){
+        const keys = Object.keys(v);
+        const allNumeric = keys.length > 0 && keys.every(k => /^\d+$/.test(k));
+        _cache[k] = allNumeric ? Object.values(v) : v;
+      } else {
+        _cache[k] = v;
+      }
+    });
     console.log('✅ Firebase loaded', Object.keys(_cache).length, 'keys');
   } catch(e) {
     console.warn('⚠️ Firebase load failed, using localStorage fallback:', e.message);
@@ -476,7 +484,7 @@ const stateName = g=>g&&g.length>=2?(STATE_CODES[g.substring(0,2)]||'Other State
 const getFY = ()=>{const d=new Date(),y=d.getFullYear(),m=d.getMonth()+1;return m>=4?y:y-1;};
 const genInvNo = (docType)=>{
   const fy=getFY();
-  const prefix = docType==='DEBIT NOTE'?'INVDN':docType==='CREDIT NOTE'?'INVCN':'INV';
+  const prefix = docType==='DEBIT NOTE'?'INVDN':docType==='CREDIT NOTE'?'INVCN':docType==='NON GST INVOICE'?'INVNG':'INV';
   const key=SK.CTR+'_'+prefix+'_'+fy;
   let c=S.get(key,1);
   const no=`${prefix}-${fy}-${String(c).padStart(4,'0')}`;
@@ -512,15 +520,20 @@ const logAudit = (action, detail, user) => {
 
 const seedUsers = ()=>{
   let users = S.get(SK.USERS,[]);
+  if(!Array.isArray(users)) users=[];
   const superAdminDefs = [
     {id:'SA1',email:'Adithya@business.com',name:'Adithya M',password:'Business@2026',role:'superadmin',active:true},
     {id:'SA2',email:'Invoice@business.com',name:'Invoice Admin',password:'Business@2026',role:'superadmin',active:true},
   ];
+  let changed=false;
   superAdminDefs.forEach(sa=>{
-    if(!users.find(u=>u.email.toLowerCase()===sa.email.toLowerCase()))
+    if(!users.find(u=>u.email.toLowerCase()===sa.email.toLowerCase())){
       users=[sa,...users];
+      changed=true;
+    }
   });
-  S.set(SK.USERS,users);
+  // Only write back to Firebase if we actually added missing super admins
+  if(changed) S.set(SK.USERS,users);
   return users;
 };
 
@@ -587,6 +600,7 @@ const makePDF = (inv, co, terms) => {
   const ALTROW=[244,247,252];
 
   const gstType=inv.gstType||'INTRA', docType=(inv.isB2C?'TAX INVOICE (B2C)':(inv.docType||'TAX INVOICE'));
+  const isNonGST = inv.docType==='NON GST INVOICE';
   const items=(inv.items||[]).filter(r=>r.desc);
 
   // Page frame with corner circles
@@ -732,7 +746,12 @@ const makePDF = (inv, co, terms) => {
   let tH,tB,cS;
   // Total available = 182mm
 
-  if(gstType==='INTRA'){
+  if(isNonGST){
+    // 4 cols for Non-GST: DESC(100)+QTY(25)+RATE(30)+AMT(27)=182
+    tH=[['DESCRIPTION','QTY','RATE (Rs.)','AMOUNT (Rs.)']];
+    tB=items.map(r=>[r.desc||'',(r.qty||1)+' '+(r.unit||'Nos'),fmtN(r.rate||0),fmtN(r.total||((r.qty||0)*(parseFloat(r.rate)||0)))]);
+    cS={0:{cellWidth:100},1:{cellWidth:25,halign:'center'},2:{cellWidth:30,halign:'right'},3:{cellWidth:27,halign:'right'}};
+  } else if(gstType==='INTRA'){
     // 7 cols: DESC(50)+HSN(19)+QTY(16)+RATE(25)+TAX%(12)+TAX AMT(28)+AMT(32)=182
     // HSN=19 ensures 6-digit codes never wrap. Short header labels prevent header row wrapping.
     tH=[['DESCRIPTION','HSN/SAC','QTY','RATE (Rs.)','TAX%','TAX (Rs.)','AMOUNT (Rs.)']];
@@ -771,23 +790,27 @@ const makePDF = (inv, co, terms) => {
   const roff=parseFloat(inv.roundOff)||0,grand=parseFloat(inv.grand)||0;
   const bMap=inv.taxBreakdown||{};
 
-  const sRows=[['SUB-TOTAL','Rs. '+fmtN(sub)]];
-  // Consolidated totals — one line each for CGST, SGST or IGST
-  let totalCGST=0,totalSGST=0,totalIGST=0;
-  Object.entries(bMap).filter(([,a])=>a>0).forEach(([rate,amt])=>{
-    if(gstType==='INTRA'){totalCGST+=amt/2;totalSGST+=amt/2;}
-    else{totalIGST+=amt;}
-  });
-  if(gstType==='INTRA'){
-    if(totalCGST>0)sRows.push(['TOTAL CGST','Rs. '+fmtN(totalCGST)]);
-    if(totalSGST>0)sRows.push(['TOTAL SGST','Rs. '+fmtN(totalSGST)]);
+  let sRows;
+  if(isNonGST){
+    // Non-GST: just show TOTAL (no tax breakdown)
+    sRows=[['TOTAL (No GST)','Rs. '+fmtN(grand)]];
   } else {
-    if(totalIGST>0)sRows.push(['TOTAL IGST','Rs. '+fmtN(totalIGST)]);
+    sRows=[['SUB-TOTAL','Rs. '+fmtN(sub)]];
+    // Consolidated totals — one line each for CGST, SGST or IGST
+    let totalCGST=0,totalSGST=0,totalIGST=0;
+    Object.entries(bMap).filter(([,a])=>a>0).forEach(([rate,amt])=>{
+      if(gstType==='INTRA'){totalCGST+=amt/2;totalSGST+=amt/2;}
+      else{totalIGST+=amt;}
+    });
+    if(gstType==='INTRA'){
+      if(totalCGST>0)sRows.push(['TOTAL CGST','Rs. '+fmtN(totalCGST)]);
+      if(totalSGST>0)sRows.push(['TOTAL SGST','Rs. '+fmtN(totalSGST)]);
+    } else {
+      if(totalIGST>0)sRows.push(['TOTAL IGST','Rs. '+fmtN(totalIGST)]);
+    }
+    if(tgst>0)sRows.push(['TOTAL TAX','Rs. '+fmtN(tgst)]);
+    if(roff!==0)sRows.push(['ROUND OFF',(roff>0?'+ ':'- ')+'Rs. '+fmtN(Math.abs(roff))]);
   }
-  if(tgst>0)sRows.push(['TOTAL TAX','Rs. '+fmtN(tgst)]);
-  if(roff!==0)sRows.push(['ROUND OFF',(roff>0?'+ ':'- ')+'Rs. '+fmtN(Math.abs(roff))]);
-
-  // TDS row
 
   const totW=96,totX=PW-MR-totW,rowH=6.2,grandH=7.5;
   const totBlock=sRows.length*rowH+grandH;
@@ -810,7 +833,7 @@ const makePDF = (inv, co, terms) => {
   const gY=Y+sRows.length*rowH;
   doc.setFillColor(...BLUE); doc.rect(totX,gY,totW,grandH,'F');
   doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...WHITE);
-  doc.text('GRAND TOTAL',totX+4,gY+5);
+  doc.text(isNonGST?'TOTAL AMOUNT':'GRAND TOTAL',totX+4,gY+5);
   doc.text('Rs. '+fmtN(grand),PW-MR-2,gY+5,{align:'right'});
 
   // TDS & Net Payable rows
@@ -827,17 +850,82 @@ const makePDF = (inv, co, terms) => {
   }
 
   doc.setDrawColor(...XGRAY);doc.setLineWidth(0.5);doc.line(ML,Y,PW-MR,Y);Y+=5;
-  if(Y+46>PH-22){doc.addPage();drawPageFrame(false);Y=32;}
+  if(Y+90>PH-22){doc.addPage();drawPageFrame(false);Y=32;}
 
-  // BOTTOM ROW: TERMS & CONDITIONS (left 50%) | Signature (centre 25%) | BANK DETAILS (right 25%)
-  const tW=CW*0.50;
-  const sigW2=CW*0.25;
-  const bW=CW-tW-sigW2-8;
-  const sigX2=ML+tW+4;
-  const bankX=sigX2+sigW2+4;
+  // ══ TOP ROW: PAYMENT DETAILS (full width) ══
+  // Decide what to show based on company payment mode
+  const payMode=co.paymentMode||'netbanking'; // 'netbanking','upi','both'
+  const showBank=(payMode==='netbanking'||payMode==='both');
+  const showUPI=(payMode==='upi'||payMode==='both');
+
+  if(showBank||showUPI){
+    let px=ML;
+    const payColW=payMode==='both'?CW/2-4:CW;
+
+    // NET BANKING column
+    if(showBank){
+      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
+      doc.text('BANK DETAILS',px+2,Y+5);
+      doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(px+2,Y+6.5,px+28,Y+6.5);
+      if(co.bankName||co.bankAccount){
+        let by=Y+12;
+        const bankRows=[['Bank',co.bankName],['A/c No.',co.bankAccount],['IFSC',co.bankIFSC],['Branch',co.bankBranch],['Acc. Holder',co.name]];
+        bankRows.filter(([,v])=>v).forEach(([lbl,val])=>{
+          doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MED);doc.text(lbl+':',px+2,by);
+          doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...DARK);doc.text(String(val||''),px+22,by);by+=4.6;
+        });
+      } else {
+        doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);doc.text('No bank details configured.',px+2,Y+13);
+      }
+    }
+
+    // UPI column
+    if(showUPI){
+      const upiColW = payMode==='both' ? payColW : CW;
+      const upiX=showBank?ML+payColW+8:ML;
+      const upiCX=upiX+upiColW/2; // centre of UPI column
+      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
+      doc.text('UPI PAYMENT',upiX+2,Y+5);
+      doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(upiX+2,Y+6.5,upiX+28,Y+6.5);
+      let uy=Y+12;
+      if(co.upiId){
+        doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MED);
+        doc.text('UPI ID:',upiX+2,uy);
+        doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...DARK);
+        doc.text(co.upiId,upiX+20,uy);
+        uy+=6;
+      }
+      if(co.upiQR){
+        try{
+          const qrSize=28;
+          // Auto-detect image format from data URL
+          const fmt=co.upiQR.startsWith('data:image/png')?'PNG':co.upiQR.startsWith('data:image/svg')?'SVG':'JPEG';
+          const qrLeft=upiCX-qrSize/2; // centred in column
+          doc.addImage(co.upiQR,fmt,qrLeft,uy,qrSize,qrSize);
+          doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MED);
+          doc.text('Scan to pay',upiCX,uy+qrSize+4,{align:'center'});
+          uy+=qrSize+9;
+        }catch(e){
+          doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);
+          doc.text('QR image error.',upiX+2,uy);
+        }
+      } else {
+        doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);
+        doc.text('No UPI QR configured.',upiX+2,uy);
+      }
+    }
+    Y+=50;
+    doc.setDrawColor(...XGRAY);doc.setLineWidth(0.4);doc.line(ML,Y,PW-MR,Y);Y+=4;
+  }
+
+  // ══ BOTTOM ROW: TERMS & CONDITIONS (60%) | SIGNATURE (40%) ══
+  if(Y+42>PH-22){doc.addPage();drawPageFrame(false);Y=32;}
+  const tW2=CW*0.60;
+  const sigW3=CW-tW2-4;
+  const sigX3=ML+tW2+4;
   const rowTop=Y;
 
-  // ── LEFT: TERMS & CONDITIONS ──
+  // LEFT: TERMS & CONDITIONS (60%)
   doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
   doc.text('TERMS & CONDITIONS',ML+2,rowTop+5);
   doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(ML+2,rowTop+6.5,ML+38,rowTop+6.5);
@@ -845,44 +933,25 @@ const makePDF = (inv, co, terms) => {
   let ty=rowTop+12;
   doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MED);
   tLines.slice(0,7).forEach(t=>{
-    if(ty>rowTop+43)return;
+    if(ty>rowTop+42)return;
     const clean=t.replace(/^\d+\.\s*/,'');
-    doc.text('• '+clean,ML+2,ty,{maxWidth:tW-2});
+    doc.text('• '+clean,ML+2,ty,{maxWidth:tW2-4});
     ty+=4.2;
   });
 
-  // ── CENTRE: SIGNATURE ──
+  // RIGHT: SIGNATURE (40%)
   doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...BLUE);
-  doc.text('For '+(co.name||''),sigX2+sigW2/2,rowTop+5,{align:'center'});
-  const sigLineY=rowTop+28;
+  doc.text('For '+(co.name||''),sigX3+sigW3/2,rowTop+5,{align:'center'});
+  const sigLineY2=rowTop+28;
   doc.setDrawColor(...DARK);doc.setLineWidth(0.4);
-  doc.line(sigX2+6,sigLineY,sigX2+sigW2-6,sigLineY);
+  doc.line(sigX3+8,sigLineY2,sigX3+sigW3-8,sigLineY2);
   doc.setFont('helvetica','italic');doc.setFontSize(8.5);doc.setTextColor(...DARK);
-  doc.text('Signature',sigX2+sigW2/2,sigLineY-3.5,{align:'center'});
+  doc.text('Signature',sigX3+sigW3/2,sigLineY2-3.5,{align:'center'});
   doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...DARK);
-  doc.text('Authorized Signatory',sigX2+sigW2/2,sigLineY+5,{align:'center'});
+  doc.text('Authorized Signatory',sigX3+sigW3/2,sigLineY2+5,{align:'center'});
   if(co.signatory){
     doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MED);
-    doc.text(co.signatory,sigX2+sigW2/2,sigLineY+11,{align:'center'});
-  }
-
-  // ── RIGHT: BANK DETAILS ──
-  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
-  doc.text('BANK DETAILS',bankX,rowTop+5);
-  doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(bankX,rowTop+6.5,bankX+26,rowTop+6.5);
-  if(co.bankName||co.bankAccount){
-    let by=rowTop+12;
-    const bankRows=[['Bank',co.bankName],['A/c No.',co.bankAccount],['IFSC',co.bankIFSC],['Branch',co.bankBranch],['Name',co.name]];
-    bankRows.filter(([,v])=>v).forEach(([lbl,val])=>{
-      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MED);
-      doc.text(lbl+':',bankX,by);
-      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...DARK);
-      doc.text(String(val||''),bankX+15,by);
-      by+=4.6;
-    });
-  } else {
-    doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);
-    doc.text('No bank details configured.',bankX,rowTop+13);
+    doc.text(co.signatory,sigX3+sigW3/2,sigLineY2+11,{align:'center'});
   }
 
   Y+=46;
@@ -928,7 +997,7 @@ const pickSaveFolder = async () => {
 const autoSavePDF = async (doc, inv) => {
   if(!_folderHandle){ return; } // no folder set — skip auto-save
   try {
-    const folderName = inv.isB2C ? 'B2C Invoices' : (inv.docType==='DEBIT NOTE'?'Debit Notes':inv.docType==='CREDIT NOTE'?'Credit Notes':'B2B Invoices');
+    const folderName = inv.docType==='NON GST INVOICE'?'Non-GST Invoices':inv.isB2C ? 'B2C Invoices' : (inv.docType==='DEBIT NOTE'?'Debit Notes':inv.docType==='CREDIT NOTE'?'Credit Notes':'B2B Invoices');
     // Create subfolder if not exists
     const subFolder = await _folderHandle.getDirectoryHandle(folderName, {create:true});
     const fileName = (inv.invNo||'Invoice')+'.pdf';
@@ -1206,12 +1275,16 @@ const makeExcel = (invoices) => {
   invoices.forEach(inv=>{
     const items=(inv.items||[]).filter(r=>r.desc);
     const gt=inv.gstType||'INTRA';
-    const dt=inv.isB2C?'TAX INVOICE (B2C)':(inv.docType||'TAX INVOICE');
+    const isNG=inv.docType==='NON GST INVOICE';
+    const dt=inv.isB2C?'TAX INVOICE (B2C)':isNG?'NON-GST TRANSACTION':(inv.docType||'TAX INVOICE');
     const isCN=dt==='CREDIT NOTE';
     const sign=isCN?-1:1;
     const isCDN = inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE';
     items.forEach(r=>{
-      const tR=parseFloat(r.taxRate)||0, tax=parseFloat(r.taxable)||0, gst=parseFloat(r.gstAmt)||0;
+      const tR=isNG?0:(parseFloat(r.taxRate)||0);
+      const tax=isNG?0:(parseFloat(r.taxable)||0);
+      const gst=isNG?0:(parseFloat(r.gstAmt)||0);
+      const lineTotal=isNG?((parseFloat(r.qty)||0)*(parseFloat(r.rate)||0)):(parseFloat(r.total)||0);
       rows.push([
         sl++,
         dt,
@@ -1224,23 +1297,23 @@ const makeExcel = (invoices) => {
         (inv.billTo?.gstin||'').toUpperCase(),
         stateName(inv.billTo?.gstin)||inv.billTo?.state||'',
         [inv.billTo?.address,inv.billTo?.city,inv.billTo?.state,inv.billTo?.pin].filter(Boolean).join(', '),
-        r.hsnCode||'',
+        isNG?'':(r.hsnCode||''),
         r.desc||'',
-        r.unit||'Nos',
+        isNG?'Nos':(r.unit||'Nos'),
         r.qty||1,
         r.rate||0,
-        r.discount||0,
+        isNG?0:(r.discount||0),
         Number(sign*tax).toFixed(2),
-        gt,
+        isNG?'NON-GST':gt,
         tR,
-        gt==='INTRA'?tR/2:'',
-        gt==='INTRA'?Number(sign*gst/2).toFixed(2):'',
-        gt==='INTRA'?tR/2:'',
-        gt==='INTRA'?Number(sign*gst/2).toFixed(2):'',
-        gt!=='INTRA'?tR:'',
-        gt!=='INTRA'?Number(sign*gst).toFixed(2):'',
-        Number(sign*gst).toFixed(2),
-        Number(parseFloat(inv.grand)||0).toFixed(2),
+        isNG?'':( gt==='INTRA'?tR/2:''),
+        isNG?'':(gt==='INTRA'?Number(sign*gst/2).toFixed(2):''),
+        isNG?'':(gt==='INTRA'?tR/2:''),
+        isNG?'':(gt==='INTRA'?Number(sign*gst/2).toFixed(2):''),
+        isNG?'':(gt!=='INTRA'?tR:''),
+        isNG?'':(gt!=='INTRA'?Number(sign*gst).toFixed(2):''),
+        isNG?0:Number(sign*gst).toFixed(2),
+        Number(isNG?lineTotal:(parseFloat(inv.grand)||0)).toFixed(2),
         inv.poNo||'',
         inv.notes||'',
         inv.createdBy||'',
@@ -1256,22 +1329,24 @@ const makeExcel = (invoices) => {
   invoices.forEach(inv=>{
     const isCN=inv.docType==='CREDIT NOTE', sign=isCN?-1:1;
     const isB2C=inv.isB2C||false;
+    const isNG=inv.docType==='NON GST INVOICE';
     (inv.items||[]).filter(r=>r.desc).forEach(r=>{
       const m=inv.date?.substring(0,7)||'?';
-      if(!totals[m])totals[m]={inv:0,b2c:0,cn:0,dn:0,taxable:0,tax:0,total:0};
-      totals[m].taxable+=sign*(parseFloat(r.taxable)||0);
-      totals[m].tax+=sign*(parseFloat(r.gstAmt)||0);
-      totals[m].total+=sign*(parseFloat(r.total)||0);
+      if(!totals[m])totals[m]={inv:0,b2c:0,cn:0,dn:0,ng:0,taxable:0,tax:0,total:0};
+      totals[m].taxable+=isNG?0:sign*(parseFloat(r.taxable)||0);
+      totals[m].tax+=isNG?0:sign*(parseFloat(r.gstAmt)||0);
+      totals[m].total+=isNG?((parseFloat(r.qty)||0)*(parseFloat(r.rate)||0)):sign*(parseFloat(r.total)||0);
     });
     const m=inv.date?.substring(0,7)||'?';
-    if(!totals[m])totals[m]={inv:0,b2c:0,cn:0,dn:0,taxable:0,tax:0,total:0};
+    if(!totals[m])totals[m]={inv:0,b2c:0,cn:0,dn:0,ng:0,taxable:0,tax:0,total:0};
     if(isCN)totals[m].cn++;
     else if(inv.docType==='DEBIT NOTE')totals[m].dn++;
+    else if(isNG)totals[m].ng++;
     else if(isB2C)totals[m].b2c++;
     else totals[m].inv++;
   });
-  const summRows=[['Month','B2B Invoices','B2C Invoices','Debit Notes','Credit Notes','Net Taxable (Rs.)','Net Tax (Rs.)','Net Total (Rs.)'],
-    ...Object.entries(totals).sort().map(([m,v])=>[m,v.inv,v.b2c,v.dn,v.cn,Number(v.taxable).toFixed(2),Number(v.tax).toFixed(2),Number(v.total).toFixed(2)])];
+  const summRows=[['Month','B2B Invoices','B2C Invoices','Non-GST','Debit Notes','Credit Notes','Net Taxable (Rs.)','Net Tax (Rs.)','Net Total (Rs.)'],
+    ...Object.entries(totals).sort().map(([m,v])=>[m,v.inv,v.b2c,v.ng,v.dn,v.cn,Number(v.taxable).toFixed(2),Number(v.tax).toFixed(2),Number(v.total).toFixed(2)])];
   const ws2=XLSX.utils.aoa_to_sheet(summRows);
   ws2['!cols']=[{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:22},{wch:18},{wch:18}];
   XLSX.utils.book_append_sheet(wb, ws2, 'Monthly Summary');
@@ -1281,10 +1356,12 @@ const makeExcel = (invoices) => {
 
 /* ── MODALS ── */
 const CompanyModal = ({onClose, currentUser})=>{
-  const [d,setD]=useState(S.get(SK.CO,{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',website:'',logo:'',bankName:'',bankAccount:'',bankIFSC:'',bankBranch:'',signatory:'',panNo:''}));
+  const [d,setD]=useState(S.get(SK.CO,{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',website:'',logo:'',bankName:'',bankAccount:'',bankIFSC:'',bankBranch:'',signatory:'',panNo:'',paymentMode:'netbanking',upiId:'',upiQR:''}));
   const [waNum,setWaNum]=useState(S.get(SK.WA,''));
   const [prev,setPrev]=useState(d.logo||'');
+  const [upiQRPrev,setUpiQRPrev]=useState(d.upiQR||'');
   const fileRef=useRef();
+  const upiQRRef=useRef();
   const up=k=>e=>setD(p=>({...p,[k]:e.target.value}));
   const isSuper=isSuperAdmin(currentUser?.email);
   const save=()=>{
@@ -1294,6 +1371,7 @@ const CompanyModal = ({onClose, currentUser})=>{
     toast.success('Company saved!');onClose();
   };
   const handleLogo=e=>{const f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){toast.error('Max 2MB');return;}const r=new FileReader();r.onload=ev=>{const b=ev.target.result;setD(p=>({...p,logo:b}));setPrev(b);};r.readAsDataURL(f);};
+  const handleUpiQR=e=>{const f=e.target.files[0];if(!f)return;if(f.size>1*1024*1024){toast.error('Max 1MB for QR');return;}const r=new FileReader();r.onload=ev=>{const b=ev.target.result;setD(p=>({...p,upiQR:b}));setUpiQRPrev(b);};r.readAsDataURL(f);};
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal" style={{maxWidth:860,width:"95vw"}}>
       <div className="modal-hdr"><span className="modal-title">🏢 Company Details</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
@@ -1336,6 +1414,46 @@ const CompanyModal = ({onClose, currentUser})=>{
           <div className="field"><label className="field-label">Branch Name</label><input className="field-input" value={d.bankBranch} onChange={up('bankBranch')}/></div>
         </div>
         <div className="field" style={{maxWidth:340}}><label className="field-label">Authorised Signatory Name</label><input className="field-input" value={d.signatory} onChange={up('signatory')} placeholder="Proprietor / Director"/></div>
+
+        <div className="sep-text">Payment Method on Invoice</div>
+        <div style={{marginBottom:14}}>
+          <div className="field-label" style={{marginBottom:8}}>Show in PDF Invoice</div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            {[['netbanking','🏦 Net Banking Only'],['upi','📱 UPI Only'],['both','🏦 + 📱 Both']].map(([v,l])=>(
+              <label key={v} style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',padding:'7px 14px',borderRadius:8,border:`2px solid ${d.paymentMode===v?'var(--primary)':'var(--border2)'}`,background:d.paymentMode===v?'var(--primary-bg)':'transparent',fontSize:12,fontWeight:d.paymentMode===v?700:500,color:d.paymentMode===v?'var(--primary2)':'var(--text2)',transition:'all 0.2s'}}>
+                <input type="radio" name="paymode" value={v} checked={d.paymentMode===v} onChange={up('paymentMode')} style={{display:'none'}}/>
+                {l}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {(d.paymentMode==='upi'||d.paymentMode==='both')&&(
+          <div style={{background:'var(--card2)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
+            <div style={{fontWeight:700,color:'var(--primary2)',fontSize:13,marginBottom:12}}>📱 UPI Settings</div>
+            <div className="g2" style={{alignItems:'start'}}>
+              <div>
+                <div className="field"><label className="field-label">UPI ID</label><input className="field-input" value={d.upiId||''} onChange={up('upiId')} placeholder="yourname@bank or 9876543210@upi"/></div>
+                <div style={{fontSize:11,color:'var(--text3)',marginTop:-8}}>This appears on the invoice as UPI ID</div>
+              </div>
+              <div>
+                <div className="field-label" style={{marginBottom:6}}>UPI QR Code Image</div>
+                <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                  <div style={{width:72,height:72,border:'2px dashed var(--border2)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',background:'var(--card)',cursor:'pointer',flexShrink:0}}
+                    onClick={()=>upiQRRef.current.click()}>
+                    {upiQRPrev?<img src={upiQRPrev} alt="QR" style={{width:'100%',height:'100%',objectFit:'contain'}}/>:<div style={{textAlign:'center',color:'var(--text3)',fontSize:10}}><Ic n="upload" s={18}/><div style={{marginTop:2}}>QR Code</div></div>}
+                  </div>
+                  <div>
+                    <input ref={upiQRRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleUpiQR}/>
+                    <button className="btn btn-outline-primary btn-sm" onClick={()=>upiQRRef.current.click()}>📷 Upload QR</button>
+                    {upiQRPrev&&<button className="btn btn-danger btn-sm" style={{marginTop:6,display:'block'}} onClick={()=>{setUpiQRPrev('');setD(p=>({...p,upiQR:''}));}}>Remove</button>}
+                    <div style={{fontSize:10,color:'var(--text3)',marginTop:4}}>PNG/JPG · max 1MB</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {isSuper&&(
           <div style={{marginTop:12,padding:'12px 14px',background:'rgba(37,211,102,0.06)',border:'1px solid rgba(37,211,102,0.2)',borderRadius:10}}>
             <div style={{fontSize:12,fontWeight:700,color:'#16a34a',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
@@ -1825,6 +1943,7 @@ const docBadge=(dt,isB2C)=>{
   if(isB2C) return {label:'B2C',bg:'#E0F2FE',color:'#0369A1'};
   if(dt==='DEBIT NOTE') return {label:'DN',bg:'#FEF3C7',color:'#92400E'};
   if(dt==='CREDIT NOTE') return {label:'CN',bg:'#D1FAE5',color:'#065F46'};
+  if(dt==='NON GST INVOICE') return {label:'NG',bg:'#F3E8FF',color:'#6B21A8'};
   return {label:'B2B',bg:'var(--primary-bg)',color:'var(--primary2)'};
 };
 
@@ -2014,8 +2133,13 @@ const ItemRow = ({row, idx, onChange, onDelete, hsnList, gstType, descOnly=false
   const hsnMatched = hsnQ.length>0
     ? hsnList.filter(h=>h.code.startsWith(hsnQ)||h.code.includes(hsnQ)||h.desc.toLowerCase().includes(hsnQ.toLowerCase())).slice(0,15)
     : [];
+  const products=S.get(SK.PRODUCTS,[]);
+  // Description search: Product Master first (with rate), then HSN
   const descMatched = descQ.length>1
-    ? hsnList.filter(h=>h.desc.toLowerCase().includes(descQ.toLowerCase())||h.code.startsWith(descQ)).slice(0,12)
+    ? [
+        ...products.filter(p=>p.name.toLowerCase().includes(descQ.toLowerCase())||(p.desc||'').toLowerCase().includes(descQ.toLowerCase())).slice(0,6).map(p=>({code:p.hsnCode||'',desc:p.name,taxRate:p.taxRate||'18',unit:p.unit||'Nos',category:p.category||'Product',_rate:p.rate})),
+        ...hsnList.filter(h=>h.desc.toLowerCase().includes(descQ.toLowerCase())||h.code.startsWith(descQ)).slice(0,8)
+      ].slice(0,12)
     : [];
 
   const calc=updated=>{
@@ -2035,7 +2159,7 @@ const ItemRow = ({row, idx, onChange, onDelete, hsnList, gstType, descOnly=false
     onChange(idx,updated); setHsnQ(h.code); setShowHsnDrop(false);
   };
   const selectDesc=h=>{
-    const updated=calc({...row, desc:h.desc, hsnCode:h.code, taxRate:h.taxRate, unit:h.unit});
+    const updated=calc({...row, desc:h.desc, hsnCode:h.code, taxRate:h.taxRate, unit:h.unit, rate:h._rate||row.rate||''});
     onChange(idx,updated); setDescQ(h.desc); setHsnQ(h.code); setShowDescDrop(false);
   };
 
@@ -2054,11 +2178,14 @@ const ItemRow = ({row, idx, onChange, onDelete, hsnList, gstType, descOnly=false
       {items.map((h,j)=>(
         <div key={j} className="hsn-opt" onMouseDown={e=>{e.preventDefault();onSel(h);}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
-            <span className="hsn-code">{h.code}</span>
-            <span className="badge badge-green" style={{fontSize:10}}>{h.taxRate}%</span>
+            <span className="hsn-code">{h.code||'—'}</span>
+            <div style={{display:'flex',gap:4,alignItems:'center'}}>
+              {h._rate&&<span style={{fontSize:10,color:'var(--primary2)',fontWeight:600}}>₹{Number(h._rate).toLocaleString('en-IN')}</span>}
+              {h.taxRate&&<span className="badge badge-green" style={{fontSize:10}}>{h.taxRate}%</span>}
+              {h.category&&<span style={{fontSize:9,background:'var(--primary-bg)',color:'var(--primary2)',padding:'1px 5px',borderRadius:6,fontWeight:600}}>{h.category.slice(0,10)}</span>}
+            </div>
           </div>
           <div className="hsn-desc">{h.desc}</div>
-          {h.category&&<div style={{fontSize:10,color:'var(--text3)',marginTop:1}}>{h.category}</div>}
         </div>
       ))}
     </div>, document.body
@@ -2115,11 +2242,107 @@ const ItemRow = ({row, idx, onChange, onDelete, hsnList, gstType, descOnly=false
 /* ── PRODUCT ROW — alias ── */
 const ProductRow=(props)=><ItemRow {...props} descOnly={false}/>;
 
+/* ── NON-GST ROW — Description search from HSN+Products, no GST columns ── */
+const NonGSTRow = ({row,idx,onChange,onDelete,hsnList})=>{
+  const [showDescDrop,setShowDescDrop]=useState(false);
+  const [descQ,setDescQ]=useState(row.desc||'');
+  const [descPos,setDescPos]=useState({top:0,left:0,width:380});
+  const descRef=useRef(); const descDropRef=useRef();
+  const products=S.get(SK.PRODUCTS,[]);
+
+  useEffect(()=>{setDescQ(row.desc||'');},[row.desc]);
+  useEffect(()=>{
+    const h=e=>{
+      if(descRef.current&&!descRef.current.contains(e.target)&&
+         descDropRef.current&&!descDropRef.current.contains(e.target))
+        setShowDescDrop(false);
+    };
+    document.addEventListener('mousedown',h);
+    return()=>document.removeEventListener('mousedown',h);
+  },[]);
+  useEffect(()=>{
+    if(showDescDrop&&descRef.current){
+      const r=descRef.current.getBoundingClientRect();
+      setDescPos({top:r.bottom+4,left:Math.min(r.left,window.innerWidth-390),width:Math.max(r.width,370)});
+    }
+  },[showDescDrop]);
+
+  // Search from both HSN list and Product Master
+  const descMatched=descQ.length>1?[
+    ...products.filter(p=>p.name.toLowerCase().includes(descQ.toLowerCase())||(p.desc||'').toLowerCase().includes(descQ.toLowerCase())).slice(0,6).map(p=>({type:'product',label:p.name,sub:p.category,rate:p.rate})),
+    ...hsnList.filter(h=>h.desc.toLowerCase().includes(descQ.toLowerCase())||h.code.startsWith(descQ)).slice(0,6).map(h=>({type:'hsn',label:h.desc,sub:h.code,rate:''}))
+  ].slice(0,12):[];
+
+  const calcNG=updated=>{
+    updated.total=((parseFloat(updated.qty)||0)*(parseFloat(updated.rate)||0)).toFixed(2);
+    return updated;
+  };
+  const up=k=>e=>onChange(idx,calcNG({...row,[k]:e.target.value}));
+
+  const selectItem=item=>{
+    const updated=calcNG({...row,desc:item.label,rate:item.rate||row.rate||''});
+    onChange(idx,updated);setDescQ(item.label);setShowDescDrop(false);
+  };
+
+  return <tr>
+    <td className="p-sno">{idx+1}</td>
+    <td style={{minWidth:260,position:'relative'}}>
+      <input ref={descRef} className="p-input" value={descQ}
+        onChange={e=>{setDescQ(e.target.value);up('desc')(e);setShowDescDrop(e.target.value.length>1);}}
+        onFocus={()=>{if(descQ.length>1)setShowDescDrop(true);}}
+        placeholder="Type to search products/services..."/>
+      {showDescDrop&&descMatched.length>0&&ReactDOM.createPortal(
+        <div ref={descDropRef} style={{position:'fixed',top:descPos.top,left:descPos.left,width:descPos.width,
+          background:'var(--card)',border:'1.5px solid var(--border2)',borderRadius:10,
+          boxShadow:'0 8px 40px rgba(0,0,0,0.45)',zIndex:99999,maxHeight:280,overflowY:'auto'}}>
+          <div style={{padding:'6px 12px',fontSize:10,color:'var(--text3)',borderBottom:'1px solid var(--border)',fontWeight:700,background:'var(--card2)',borderRadius:'10px 10px 0 0'}}>
+            {descMatched.length} matches
+          </div>
+          {descMatched.map((item,i)=>(
+            <div key={i} className="hsn-opt" onMouseDown={e=>{e.preventDefault();selectItem(item);}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{fontWeight:600,color:'var(--text)',fontSize:12}}>{item.label}</span>
+                <span style={{fontSize:9,background:item.type==='product'?'var(--primary-bg)':'var(--gold-bg)',color:item.type==='product'?'var(--primary2)':'var(--gold)',padding:'1px 6px',borderRadius:8,fontWeight:700}}>{item.type==='product'?'Product':'HSN'}</span>
+              </div>
+              <div style={{fontSize:10,color:'var(--text3)',marginTop:2}}>{item.sub}{item.rate&&` · ₹${Number(item.rate).toLocaleString('en-IN')}`}</div>
+            </div>
+          ))}
+        </div>, document.body
+      )}
+    </td>
+    <td style={{minWidth:80}}><input type="number" className="p-input r" value={row.rate||''} onChange={up('rate')} placeholder="0.00" min="0"/></td>
+    <td style={{minWidth:70}}><input type="number" className="p-input r" value={row.qty||''} onChange={up('qty')} placeholder="1" min="0"/></td>
+    <td className="p-total" style={{minWidth:100}}>₹{Number(row.total||0).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+    <td style={{width:38}}>
+      <button className="btn btn-icon btn-danger btn-sm" onClick={()=>onDelete(idx)}><Ic n="trash" s={13}/></button>
+    </td>
+  </tr>;
+};
+
 
 /* ── ADMIN PANEL ── */
 const AdminPanel = ({currentUser,onClose})=>{
   const [tab,setTab]=useState('dashboard');
-  const [users,setUsers]=useState(()=>seedUsers());
+  const [users,setUsers]=useState(()=>{
+    const u=S.get(SK.USERS,[]);
+    return Array.isArray(u)?u:[];
+  });
+
+  // Always pull fresh users from Firebase when AdminPanel opens
+  useEffect(()=>{
+    getDb().ref('invoicepro/'+SK.USERS).once('value').then(snap=>{
+      const val=snap.val();
+      if(val&&Array.isArray(val)){
+        _cache[SK.USERS]=val;
+        setUsers(val);
+      } else if(val&&typeof val==='object'){
+        // Firebase may return object with numeric keys — convert back to array
+        const arr=Object.values(val);
+        _cache[SK.USERS]=arr;
+        setUsers(arr);
+      }
+    }).catch(()=>{});
+  },[]);
   const [uForm,setUForm]=useState({email:'',name:'',password:'',role:'user',active:true});
   const [editUID,setEditUID]=useState(null);
   const [showPw,setShowPw]=useState(false);
@@ -2441,7 +2664,9 @@ const Login = ({onLogin})=>{
   const login=()=>{
     setErr('');setLoading(true);
     setTimeout(()=>{
-      const users=seedUsers();
+      // Read users from cache — never write during login (prevents data loss race)
+      let users = S.get(SK.USERS,[]);
+      if(!Array.isArray(users)) users=[];
       const u=users.find(u=>u.email.toLowerCase()===email.toLowerCase()&&u.password===pw);
       if(!u){setErr('Invalid email or password.');setLoading(false);return;}
       if(!u.active){setErr('Account is deactivated. Contact admin.');setLoading(false);return;}
@@ -2502,10 +2727,12 @@ const Login = ({onLogin})=>{
 
 /* ── INVOICE FORM ── */
 const newItem  = ()=>({desc:'',hsnCode:'',unit:'Nos',qty:1,rate:'',discount:0,taxRate:'18',taxable:0,gstAmt:0,total:0});
+const newNonGSTItem = ()=>({desc:'',qty:1,rate:'',total:0});
 const newInvoice = (user,docType)=>({invNo:genInvNo(docType||'TAX INVOICE'),date:today(),dueDate:'',poNo:'',
   billTo:{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:''},
   shipTo:{name:'',address:'',city:'',state:'',pin:''},
-  sameAddress:true,items:[newItem()],notes:'',gstType:'INTRA',docType:docType||'TAX INVOICE',isB2C:false,
+  sameAddress:true,items:[docType==='NON GST INVOICE'?newNonGSTItem():newItem()],
+  notes:'',gstType:'INTRA',docType:docType||'TAX INVOICE',isB2C:false,
   status:'Draft',sentToCustomer:false,paidDate:'',
   origInvNo:'',origInvDate:'',
   subtotal:0,taxBreakdown:{},totalGST:0,roundOff:0,grand:0,
@@ -2592,7 +2819,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
   const upB=k=>e=>setInv(p=>({...p,billTo:{...p.billTo,[k]:e.target.value}}));
   const upS=k=>e=>setInv(p=>({...p,shipTo:{...p.shipTo,[k]:e.target.value}}));
   const upF=k=>e=>setInv(p=>({...p,[k]:e.target.value}));
-  const addItem=()=>setInv(p=>({...p,items:[...p.items,newItem()]}));
+  const addItem=()=>setInv(p=>({...p,items:[...p.items,p.docType==='NON GST INVOICE'?newNonGSTItem():newItem()]}));
   const updateItem=(i,u)=>setInv(p=>({...p,items:p.items.map((it,j)=>j===i?u:it)}));
   const deleteItem=i=>setInv(p=>({...p,items:p.items.filter((_,j)=>j!==i)}));
 
@@ -2616,6 +2843,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
   };
 
   const gstType=inv.gstType;
+  const isNonGST=inv.docType==='NON GST INVOICE';
   const sellerSC=stateCode(co.gstin);
   const buyerGSTINOK=inv.billTo?.gstin?validateGSTIN(inv.billTo.gstin):true;
   const terms=S.get(SK.TERMS,DEFAULT_TERMS);
@@ -2625,7 +2853,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:18,gap:10}}>
       <div className="inv-header-left">
         <div className="inv-title" style={{fontFamily:'Sora,sans-serif',fontSize:26,fontWeight:800,color:'var(--text)'}}>
-          {inv.docType==='DEBIT NOTE'?'New Debit Note':inv.docType==='CREDIT NOTE'?'New Credit Note':inv.isB2C?'New B2C Invoice':'New Tax Invoice'}
+          {inv.docType==='DEBIT NOTE'?'New Debit Note':inv.docType==='CREDIT NOTE'?'New Credit Note':inv.docType==='NON GST INVOICE'?'New Non-GST Invoice':inv.isB2C?'New B2C Invoice':'New Tax Invoice'}
         </div>
         <div className="inv-co-row" style={{color:'var(--text3)',fontSize:13,marginTop:3,display:'flex',alignItems:'center',gap:6}}>
           {co.name&&<span style={{color:'var(--text2)',fontWeight:600,flexShrink:0}}>{co.name}</span>}
@@ -2647,7 +2875,8 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
           {[['TAX INVOICE','var(--primary)','var(--primary-bg)','var(--primary2)','📄 Tax Invoice (B2B)',false],
             ['TAX INVOICE','#0369A1','#E0F2FE','#0369A1','🧾 Tax Invoice (B2C)',true],
             ['DEBIT NOTE','#B45309','#FEF3C7','#92400E','📈 Debit Note',false],
-            ['CREDIT NOTE','#065F46','#D1FAE5','#064E3B','📉 Credit Note',false]].map(([dt,bc,bg,tc,label,b2c])=>{
+            ['CREDIT NOTE','#065F46','#D1FAE5','#064E3B','📉 Credit Note',false],
+            ['NON GST INVOICE','#6B21A8','#F3E8FF','#6B21A8','🧾 Non GST Invoice',false]].map(([dt,bc,bg,tc,label,b2c])=>{
             const isActive = inv.docType===dt && (!!inv.isB2C===b2c);
             return(
             <button key={label} onClick={()=>{
@@ -2677,6 +2906,9 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
         </div>
         {inv.docType==='CREDIT NOTE'&&<div style={{marginTop:8,fontSize:11,color:'#065F46',background:'#D1FAE5',padding:'5px 10px',borderRadius:6}}>
           ⚠️ Credit Note values will be stored as <strong>negative</strong> and will reduce revenue totals.
+        </div>}
+        {inv.docType==='NON GST INVOICE'&&<div style={{marginTop:8,fontSize:11,color:'#6B21A8',background:'#F3E8FF',padding:'5px 10px',borderRadius:6}}>
+          ℹ️ Non-GST Invoice — <strong>no HSN, tax or GST</strong> applied. Only Description, Rate, Qty and Total. Useful for small/exempt sales.
         </div>}
         {/* Original Invoice Reference — only for Credit Note & Debit Note */}
         {(inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE')&&(
@@ -2930,15 +3162,15 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
             {inv.sentToCustomer&&<span style={{fontSize:10,color:'#1D4ED8',background:'#EFF6FF',padding:'1px 7px',borderRadius:10,border:'1px solid #BFDBFE'}}>✓ Sent</span>}
           </label>
         </div>
-        {/* GST info */}
-        <div style={{marginTop:10,padding:'10px 14px',background:'var(--card2)',borderRadius:8,fontSize:12}}>
+        {/* GST info — hidden for Non-GST invoices */}
+        {!isNonGST&&<div style={{marginTop:10,padding:'10px 14px',background:'var(--card2)',borderRadius:8,fontSize:12}}>
           <div style={{fontWeight:700,color:'var(--text2)',marginBottom:4}}>GST Determination</div>
           <div style={{color:'var(--text3)'}}>Seller: <span style={{color:'var(--text)'}}>{sellerSC?stateName(co.gstin):'Not configured'}</span></div>
           {inv.billTo?.gstin&&<div style={{color:'var(--text3)'}}>Buyer: <span style={{color:'var(--text)'}}>{stateName(inv.billTo.gstin)}</span></div>}
           <div style={{marginTop:6}}>
             <span className={`badge ${gstType==='INTRA'?'badge-green':'badge-blue'}`}>{gstType==='INTRA'?'CGST + SGST (Intra)':'IGST (Inter-State)'}</span>
           </div>
-        </div>
+        </div>}
       </div>
     </div>
     {showCustModal&&<CustomerModal onClose={()=>setShowCustModal(false)} onSelect={fillCustomer}/>}
@@ -2954,40 +3186,74 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
         <div className="section-title" style={{marginBottom:0}}><span className="dot"></span>Products / Services</div>
         <div style={{display:'flex',gap:8}}>
-          <button className="btn btn-sm btn-outline-primary" onClick={()=>setShowProductModal(true)}><Ic n="tag" s={12}/>Pick from Master</button>
+          {inv.docType!=='NON GST INVOICE'&&<button className="btn btn-sm btn-outline-primary" onClick={()=>setShowProductModal(true)}><Ic n="tag" s={12}/>Pick from Master</button>}
           <button className="btn btn-outline-primary btn-sm" onClick={addItem}><Ic n="plus" s={13}/>Add Row</button>
         </div>
       </div>
-      <div className="table-wrap">
-        <table className="ptable">
-          <thead>
-            <tr>
+
+      {inv.docType==='NON GST INVOICE'?(
+        <div className="table-wrap">
+          <table className="ptable" style={{minWidth:500}}>
+            <thead><tr>
               <th style={{width:28}}>#</th>
-              <th>Description (auto-fills from HSN)</th>
-              <th>HSN / SAC Code</th>
-              <th>Unit</th>
-              <th className="r">Qty</th>
-              <th className="r">Rate (₹)</th>
-              <th className="r">Disc%</th>
-              <th>GST%</th>
-              <th className="r">Taxable</th>
-              <th>Tax Split</th>
-              <th className="r">Total</th>
+              <th>Description</th>
+              <th className="r" style={{width:120}}>Rate (₹)</th>
+              <th className="r" style={{width:90}}>Qty</th>
+              <th className="r" style={{width:120}}>Total (₹)</th>
               <th style={{width:38}}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {inv.items.map((row,i)=>(
-              <ProductRow key={i} row={row} idx={i} onChange={updateItem} onDelete={deleteItem} hsnList={hsnList} gstType={gstType}/>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr><td colSpan={12} style={{padding:'8px 10px'}}>
-              <button className="btn btn-outline btn-sm" onClick={addItem}><Ic n="plus" s={12}/>Add Another Row</button>
-            </td></tr>
-          </tfoot>
-        </table>
-      </div>
+            </tr></thead>
+            <tbody>
+              {inv.items.map((row,i)=>(
+                <NonGSTRow key={i} row={row} idx={i} hsnList={hsnList}
+                  onChange={(idx,r)=>setInv(p=>{
+                    const items=[...p.items];items[idx]=r;
+                    const g=items.reduce((s,x)=>s+(parseFloat(x.total)||0),0);
+                    return {...p,items,subtotal:g.toFixed(2),totalGST:0,taxBreakdown:{},roundOff:0,grand:g};
+                  })}
+                  onDelete={idx=>setInv(p=>{
+                    const items=p.items.filter((_,j)=>j!==idx);
+                    const g=items.reduce((s,x)=>s+(parseFloat(x.total)||0),0);
+                    return {...p,items:items.length?items:[newNonGSTItem()],subtotal:g.toFixed(2),totalGST:0,taxBreakdown:{},roundOff:0,grand:g};
+                  })}/>
+              ))}
+            </tbody>
+            <tfoot><tr><td colSpan={6} style={{padding:'8px 10px'}}>
+              <button className="btn btn-outline btn-sm" onClick={()=>setInv(p=>({...p,items:[...p.items,newNonGSTItem()]}))}><Ic n="plus" s={12}/>Add Row</button>
+            </td></tr></tfoot>
+          </table>
+        </div>
+      ):(
+        <div className="table-wrap">
+          <table className="ptable">
+            <thead>
+              <tr>
+                <th style={{width:28}}>#</th>
+                <th>Description (auto-fills from HSN)</th>
+                <th>HSN / SAC Code</th>
+                <th>Unit</th>
+                <th className="r">Qty</th>
+                <th className="r">Rate (₹)</th>
+                <th className="r">Disc%</th>
+                <th>GST%</th>
+                <th className="r">Taxable</th>
+                <th>Tax Split</th>
+                <th className="r">Total</th>
+                <th style={{width:38}}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {inv.items.map((row,i)=>(
+                <ProductRow key={i} row={row} idx={i} onChange={updateItem} onDelete={deleteItem} hsnList={hsnList} gstType={gstType}/>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr><td colSpan={12} style={{padding:'8px 10px'}}>
+                <button className="btn btn-outline btn-sm" onClick={addItem}><Ic n="plus" s={12}/>Add Another Row</button>
+              </td></tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
     </div>
 
     {/* Bottom: Notes + Tax Summary */}
@@ -3013,21 +3279,36 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
       <div>
 
         <div className="tax-box" style={{marginBottom:10}}>
-          <div className="tax-row"><span className="tax-label">Sub Total (Taxable)</span><span className="tax-val">{fmt(inv.subtotal)}</span></div>
-          {Object.entries(inv.taxBreakdown||{}).filter(([,a])=>a>0).flatMap(([rate,amt])=>
-            gstType==='INTRA'?[
-              <div key={`c${rate}`} className="tax-row"><span className="tax-label">CGST @ {parseFloat(rate)/2}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt/2)}</span></div>,
-              <div key={`s${rate}`} className="tax-row"><span className="tax-label">SGST @ {parseFloat(rate)/2}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt/2)}</span></div>
-            ]:[
-              <div key={`i${rate}`} className="tax-row"><span className="tax-label">IGST @ {rate}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt)}</span></div>
-            ]
+          {inv.docType==='NON GST INVOICE'?(
+            <>
+              <div className="tax-row"><span className="tax-label">Total (No GST)</span><span className="tax-val">{fmt(inv.grand)}</span></div>
+              <div className="tax-row" style={{padding:'5px 16px',background:'rgba(107,33,168,0.06)',borderRadius:4}}>
+                <span style={{fontSize:11,color:'#6B21A8'}}>ℹ️ Non-GST — no tax applied</span>
+              </div>
+              <div className="tax-row total-row" style={{padding:'7px 16px'}}>
+                <span className="tax-label">Grand Total</span>
+                <span className="tax-val">{fmt(inv.grand)}</span>
+              </div>
+            </>
+          ):(
+            <>
+              <div className="tax-row"><span className="tax-label">Sub Total (Taxable)</span><span className="tax-val">{fmt(inv.subtotal)}</span></div>
+              {Object.entries(inv.taxBreakdown||{}).filter(([,a])=>a>0).flatMap(([rate,amt])=>
+                gstType==='INTRA'?[
+                  <div key={`c${rate}`} className="tax-row"><span className="tax-label">CGST @ {parseFloat(rate)/2}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt/2)}</span></div>,
+                  <div key={`s${rate}`} className="tax-row"><span className="tax-label">SGST @ {parseFloat(rate)/2}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt/2)}</span></div>
+                ]:[
+                  <div key={`i${rate}`} className="tax-row"><span className="tax-label">IGST @ {rate}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt)}</span></div>
+                ]
+              )}
+              <div className="tax-row"><span className="tax-label">Total Tax</span><span className="tax-val">{fmt(inv.totalGST)}</span></div>
+              {inv.roundOff!==0&&<div className="tax-row"><span className="tax-label">Round Off</span><span className="tax-val" style={{fontSize:12,color:'var(--text3)'}}>{inv.roundOff>0?'+':''}{fmt(Math.abs(inv.roundOff))}</span></div>}
+              <div className="tax-row total-row" style={{padding:'7px 16px'}}>
+                <span className="tax-label">Grand Total</span>
+                <span className="tax-val">{fmt(inv.grand)}</span>
+              </div>
+            </>
           )}
-          <div className="tax-row"><span className="tax-label">Total Tax</span><span className="tax-val">{fmt(inv.totalGST)}</span></div>
-          {inv.roundOff!==0&&<div className="tax-row"><span className="tax-label">Round Off</span><span className="tax-val" style={{fontSize:12,color:'var(--text3)'}}>{inv.roundOff>0?'+':''}{fmt(Math.abs(inv.roundOff))}</span></div>}
-          <div className="tax-row total-row" style={{padding:'7px 16px'}}>
-            <span className="tax-label">Grand Total</span>
-            <span className="tax-val">{fmt(inv.grand)}</span>
-          </div>
         </div>
         <div className="amt-words">{numberToWords(inv.grand)}</div>
       </div>
