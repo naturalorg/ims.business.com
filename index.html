@@ -372,7 +372,7 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ── CONSTANTS ── */
-const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa' };
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze' };
 const UNITS = ['Nos','Pcs','Kg','Gm','Ltr','Ml','Mtr','Cm','Sqft','Box','Set','Pair','Roll','Pack','Bag','Bottle','Can','Sheet','Hour','Month'];
 const TAX_RATES = ['0','0.1','0.25','1','1.5','3','5','6','7.5','9','12','14','18','28'];
 const DEFAULT_TERMS = `1. Payment is due within 30 days from the date of invoice.
@@ -486,6 +486,23 @@ const getGrand = inv => {
   }
   return parseFloat(inv.grand)||0;
 };
+
+/* ── FREEZE HELPERS ──
+   freeze store: { sales: ['2025-01','2025-02',...], expenses: ['2025-01',...] }
+   A month is frozen if its YYYY-MM key appears in the respective array.
+   Only Super Admin can add/remove months from the freeze list.
+*/
+const getFreezeData = () => {
+  const d = S.get(SK.FREEZE, {sales:[],expenses:[]});
+  return { sales: Array.isArray(d.sales)?d.sales:[], expenses: Array.isArray(d.expenses)?d.expenses:[] };
+};
+const isMonthFrozen = (dateStr, type='sales') => {
+  if(!dateStr) return false;
+  const ym = dateStr.substring(0,7); // 'YYYY-MM'
+  return getFreezeData()[type].includes(ym);
+};
+const isSalesFrozen  = (inv)  => isMonthFrozen(inv?.date,  'sales');
+const isExpenseFrozen= (exp)  => isMonthFrozen(exp?.date,  'expenses');
 const nowTime= ()=>{const d=new Date();const h=d.getHours().toString().padStart(2,'0'),mi=d.getMinutes().toString().padStart(2,'0'),s=d.getSeconds().toString().padStart(2,'0');return`${h}:${mi}:${s}`;}
 const validateGSTIN = g=>/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(g||'');
 const stateCode = g=>g&&g.length>=2?g.substring(0,2):null;
@@ -897,8 +914,9 @@ const makePDF = (inv, co, terms) => {
     // UPI column
     if(showUPI){
       const upiColW = payMode==='both' ? payColW : CW;
-      const upiX = showBank ? ML+payColW+8 : ML;
-      const upiCX = upiX + upiColW/2; // centre of UPI column
+      const upiX    = showBank ? ML+payColW+8 : ML;
+      // LEFT-align QR when UPI-only; centre only when in right half (both mode)
+      const qrAnchorX = upiX + 2; // always left-aligned anchor
       doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
       doc.text('UPI PAYMENT',upiX+2,Y+5);
       doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(upiX+2,Y+6.5,upiX+28,Y+6.5);
@@ -906,19 +924,18 @@ const makePDF = (inv, co, terms) => {
       if(co.upiId){
         doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MED);
         doc.text('UPI ID:',upiX+2,uy);
-        doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...DARK);
+        doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...DARK);
         doc.text(co.upiId,upiX+20,uy);
-        uy+=6;
+        uy+=7;
       }
       if(co.upiQR){
         try{
-          const qrSize=28;
-          // Auto-detect image format from data URL
+          const qrSize=32;
           const qrFmt=co.upiQR.startsWith('data:image/png')?'PNG':co.upiQR.startsWith('data:image/svg')?'SVG':'JPEG';
-          const qrLeft=upiCX-qrSize/2; // centred in UPI column
-          doc.addImage(co.upiQR,qrFmt,qrLeft,uy,qrSize,qrSize);
+          // Always place QR left-aligned within the UPI column
+          doc.addImage(co.upiQR,qrFmt,qrAnchorX,uy,qrSize,qrSize);
           doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MED);
-          doc.text('Scan to pay',upiCX,uy+qrSize+4,{align:'center'});
+          doc.text('Scan to pay',qrAnchorX+qrSize/2,uy+qrSize+4,{align:'center'});
           paySecHeight=Math.max(paySecHeight, uy-Y+qrSize+10);
           uy+=qrSize+9;
         }catch(e){
@@ -1276,6 +1293,292 @@ const makeAuditExcel = (logs) => {
   } catch(e) { toast.error('Export failed: '+e.message); }
 };
 
+/* ══════════════════════════════════════════════════════════════
+   📦 FULL EXCEL BACKUP — All data in one workbook, every sheet
+   Sheets: Company Info, Sales Register, Monthly Sales Summary,
+           Purchase Register, Category Summary, Monthly Purchase Summary,
+           PO Register, Customer Database, HSN Database,
+           Audit Log, Frozen Periods, Period-wise P&L Summary
+   ══════════════════════════════════════════════════════════════ */
+const makeFullExcel = () => {
+  try {
+    const XLSX = window.XLSX;
+    const wb   = XLSX.utils.book_new();
+    const dt   = new Date().toISOString().slice(0,10);
+    const co   = S.get(SK.CO, {});
+    const invoices  = S.get(SK.INV, []);
+    const expenses  = S.get(SK.EXP, []);
+    const pos       = S.get(SK.PO,  []);
+    const customers = S.get(SK.CUST,[]);
+    const hsnList   = S.get(SK.HSN, []);
+    const auditLogs = S.get(SK.AUDIT,[]);
+    const freezeD   = S.get(SK.FREEZE,{sales:[],expenses:[]});
+    const terms     = S.get(SK.TERMS,'');
+    const poTerms   = S.get(SK.PO_TERMS,'');
+
+    const addSheet = (wb, data, sheetName, colWidths) => {
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      if(colWidths) ws['!cols'] = colWidths.map(w=>({wch:w}));
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      return ws;
+    };
+
+    // ── 1. COMPANY INFO ──
+    const coRows = [
+      ['Field','Value'],
+      ['Company Name', co.name||''],
+      ['GSTIN', co.gstin||''],
+      ['PAN Number', co.panNo||''],
+      ['Address', co.address||''],
+      ['City', co.city||''],
+      ['State', co.state||''],
+      ['PIN', co.pin||''],
+      ['Phone', co.phone||''],
+      ['Email', co.email||''],
+      ['Website', co.website||''],
+      ['Bank Name', co.bankName||''],
+      ['Account Number', co.bankAccount||''],
+      ['IFSC Code', co.bankIFSC||''],
+      ['Branch', co.bankBranch||''],
+      ['Authorised Signatory', co.signatory||''],
+      ['UPI ID', co.upiId||''],
+      ['Payment Mode', co.paymentMode||''],
+      ['Export Date', new Date().toLocaleString('en-IN')],
+      ['Total Invoices', invoices.length],
+      ['Total Expenses', expenses.length],
+      ['Total POs', pos.length],
+    ];
+    addSheet(wb, coRows, 'Company Info', [28, 40]);
+
+    // ── 2. SALES REGISTER (full line-wise) ──
+    const salesHdr = [
+      'Sl.No','Document Type','Invoice No','Invoice Date','Original Invoice No','Original Invoice Date',
+      'Sent to Customer','Customer Name','Customer GSTIN','Customer State','Bill To Address',
+      'HSN/SAC','Description','Unit','Qty','Rate (Rs.)','Discount %',
+      'Taxable Amount (Rs.)','GST Type','Tax Rate %',
+      'CGST %','CGST Amount (Rs.)','SGST %','SGST Amount (Rs.)','IGST %','IGST Amount (Rs.)',
+      'Total Tax (Rs.)','Invoice Total (Rs.)','Payment Status','Due Date','PO/Reference No','Notes','Created By'
+    ];
+    const salesRows = [salesHdr]; let sl=1;
+    invoices.forEach(inv=>{
+      const items=(inv.items||[]).filter(r=>r.desc);
+      const gt=inv.gstType||'INTRA';
+      const isNG=inv.docType==='NON GST INVOICE';
+      const dt2=inv.isB2C?'TAX INVOICE (B2C)':isNG?'NON-GST TRANSACTION':(inv.docType||'TAX INVOICE');
+      const isCN=inv.docType==='CREDIT NOTE'; const sign=isCN?-1:1;
+      const isCDN=inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE';
+      (items.length?items:[{desc:'—',qty:1,rate:0}]).forEach((r,idx)=>{
+        const tR=isNG?0:(parseFloat(r.taxRate)||0);
+        const tax=isNG?0:(parseFloat(r.taxable)||0);
+        const gst=isNG?0:(parseFloat(r.gstAmt)||0);
+        const lineTotal=isNG?((parseFloat(r.qty)||0)*(parseFloat(r.rate)||0)):(parseFloat(r.total)||0);
+        salesRows.push([
+          idx===0?sl:'', dt2, inv.invNo||'', fmtDate(inv.date)||'',
+          isCDN?(inv.origInvNo||''):'', isCDN?(inv.origInvDate?fmtDate(inv.origInvDate):''):'',
+          inv.sentToCustomer?'Yes':'No', inv.billTo?.name||'',
+          (inv.billTo?.gstin||'').toUpperCase(), stateName(inv.billTo?.gstin)||inv.billTo?.state||'',
+          [inv.billTo?.address,inv.billTo?.city,inv.billTo?.state,inv.billTo?.pin].filter(Boolean).join(', '),
+          isNG?'':(r.hsnCode||''), r.desc||'', isNG?'Nos':(r.unit||'Nos'),
+          r.qty||1, r.rate||0, isNG?0:(r.discount||0),
+          Number(sign*tax).toFixed(2), isNG?'NON-GST':gt, tR,
+          isNG?'':(gt==='INTRA'?tR/2:''), isNG?'':(gt==='INTRA'?Number(sign*gst/2).toFixed(2):''),
+          isNG?'':(gt==='INTRA'?tR/2:''), isNG?'':(gt==='INTRA'?Number(sign*gst/2).toFixed(2):''),
+          isNG?'':(gt!=='INTRA'?tR:''),  isNG?'':(gt!=='INTRA'?Number(sign*gst).toFixed(2):''),
+          isNG?0:Number(sign*gst).toFixed(2),
+          Number(isNG?lineTotal:getGrand(inv)).toFixed(2),
+          inv.status||'', inv.dueDate?fmtDate(inv.dueDate):'', inv.poNo||'', inv.notes||'', inv.createdBy||''
+        ]);
+        if(idx===0) sl++;
+      });
+    });
+    addSheet(wb, salesRows, 'Sales Register',
+      [5,20,16,13,16,16,8,22,20,16,28,12,28,8,7,12,8,18,10,9,8,16,8,16,8,16,14,18,14,13,14,22,20]);
+
+    // ── 3. MONTHLY SALES SUMMARY ──
+    const salesTotals={};
+    invoices.forEach(inv=>{
+      const isCN=inv.docType==='CREDIT NOTE',sign=isCN?-1:1;
+      const isNG=inv.docType==='NON GST INVOICE';
+      const m=inv.date?.substring(0,7)||'Unknown';
+      if(!salesTotals[m])salesTotals[m]={b2b:0,b2c:0,ng:0,dn:0,cn:0,taxable:0,tax:0,total:0};
+      if(isCN)salesTotals[m].cn++;
+      else if(inv.docType==='DEBIT NOTE')salesTotals[m].dn++;
+      else if(isNG)salesTotals[m].ng++;
+      else if(inv.isB2C)salesTotals[m].b2c++;
+      else salesTotals[m].b2b++;
+      const g=getGrand(inv);
+      salesTotals[m].total+=sign*g;
+      (inv.items||[]).filter(r=>r.desc).forEach(r=>{
+        salesTotals[m].taxable+=isNG?0:sign*(parseFloat(r.taxable)||0);
+        salesTotals[m].tax+=isNG?0:sign*(parseFloat(r.gstAmt)||0);
+      });
+    });
+    const mSalesHdr=['Month','B2B','B2C','Non-GST','Debit Notes','Credit Notes','Net Taxable (Rs.)','Net Tax (Rs.)','Net Total (Rs.)'];
+    const mSalesRows=[mSalesHdr,...Object.entries(salesTotals).sort().map(([m,v])=>[
+      m,v.b2b,v.b2c,v.ng,v.dn,v.cn,
+      Number(v.taxable).toFixed(2),Number(v.tax).toFixed(2),Number(v.total).toFixed(2)])];
+    // Totals row
+    const mTot=Object.values(salesTotals).reduce((a,v)=>({b2b:a.b2b+v.b2b,b2c:a.b2c+v.b2c,ng:a.ng+v.ng,dn:a.dn+v.dn,cn:a.cn+v.cn,taxable:a.taxable+v.taxable,tax:a.tax+v.tax,total:a.total+v.total}),{b2b:0,b2c:0,ng:0,dn:0,cn:0,taxable:0,tax:0,total:0});
+    mSalesRows.push(['TOTAL',mTot.b2b,mTot.b2c,mTot.ng,mTot.dn,mTot.cn,mTot.taxable.toFixed(2),mTot.tax.toFixed(2),mTot.total.toFixed(2)]);
+    addSheet(wb, mSalesRows, 'Monthly Sales Summary', [12,8,8,10,12,12,18,16,16]);
+
+    // ── 4. PURCHASE REGISTER ──
+    const purHdr=['Sl.No','Date','Vendor Name','Vendor GSTIN','Vendor State',
+      'Bill No','Bill Date','Category','Description','HSN/SAC','Unit','Qty','Rate (Rs.)',
+      'Taxable (Rs.)','GST Type','Tax Rate %','CGST %','CGST Amt (Rs.)','SGST %','SGST Amt (Rs.)',
+      'IGST %','IGST Amt (Rs.)','Total Tax (Rs.)','Total Amount (Rs.)','Payment Mode','Payment Status','Paid Date','Notes','Recorded By'];
+    const purRows=[purHdr]; let psl=1;
+    expenses.forEach(e=>{
+      const tR=parseFloat(e.taxRate)||0, tax=parseFloat(e.taxable)||0;
+      const gst=parseFloat(e.gstAmt)||0, gt=e.gstType||'INTRA';
+      purRows.push([psl++,e.date||'',e.vendor||'',(e.vendorGSTIN||'').toUpperCase(),e.vendorState||'',
+        e.billNo||'',e.billDate||'',e.category||'',e.description||'',e.hsnCode||'',e.unit||'Nos',
+        parseFloat(e.qty)||1,parseFloat(e.rate)||0,Number(tax).toFixed(2),gt,tR,
+        gt==='INTRA'?tR/2:'', gt==='INTRA'?Number(gst/2).toFixed(2):'',
+        gt==='INTRA'?tR/2:'', gt==='INTRA'?Number(gst/2).toFixed(2):'',
+        gt!=='INTRA'?tR:'',   gt!=='INTRA'?Number(gst).toFixed(2):'',
+        Number(gst).toFixed(2),Number(parseFloat(e.total)||0).toFixed(2),
+        e.payMode||'',e.payStatus||'',e.paidDate||'',e.notes||'',e.createdBy||'']);
+    });
+    addSheet(wb, purRows, 'Purchase Register',
+      [5,12,24,20,14,14,12,16,28,10,8,6,12,16,10,8,8,14,8,14,8,14,14,16,16,14,12,24,20]);
+
+    // ── 5. CATEGORY SUMMARY ──
+    const catMap={};
+    expenses.forEach(e=>{
+      const cat=e.category||'Uncategorized';
+      if(!catMap[cat])catMap[cat]={count:0,taxable:0,tax:0,total:0,paid:0,pending:0};
+      catMap[cat].count++;
+      catMap[cat].taxable+=parseFloat(e.taxable)||0;
+      catMap[cat].tax+=parseFloat(e.gstAmt)||0;
+      catMap[cat].total+=parseFloat(e.total)||0;
+      if((e.payStatus||'').toLowerCase()==='paid') catMap[cat].paid+=parseFloat(e.total)||0;
+      else catMap[cat].pending+=parseFloat(e.total)||0;
+    });
+    const catHdr=['Category','No. of Bills','Taxable (Rs.)','Total Tax (Rs.)','Total Amount (Rs.)','Paid (Rs.)','Pending (Rs.)'];
+    const catRows=[catHdr,...Object.entries(catMap).sort().map(([cat,v])=>[
+      cat,v.count,v.taxable.toFixed(2),v.tax.toFixed(2),v.total.toFixed(2),v.paid.toFixed(2),v.pending.toFixed(2)])];
+    const cTot=Object.values(catMap).reduce((a,v)=>({count:a.count+v.count,taxable:a.taxable+v.taxable,tax:a.tax+v.tax,total:a.total+v.total,paid:a.paid+v.paid,pending:a.pending+v.pending}),{count:0,taxable:0,tax:0,total:0,paid:0,pending:0});
+    catRows.push(['TOTAL',cTot.count,cTot.taxable.toFixed(2),cTot.tax.toFixed(2),cTot.total.toFixed(2),cTot.paid.toFixed(2),cTot.pending.toFixed(2)]);
+    addSheet(wb, catRows, 'Purchase Category Summary', [22,12,16,16,18,16,16]);
+
+    // ── 6. MONTHLY PURCHASE SUMMARY ──
+    const monMap={};
+    expenses.forEach(e=>{
+      const m=e.date?.substring(0,7)||'Unknown';
+      if(!monMap[m])monMap[m]={count:0,taxable:0,tax:0,total:0,paid:0,pending:0};
+      monMap[m].count++;
+      monMap[m].taxable+=parseFloat(e.taxable)||0;
+      monMap[m].tax+=parseFloat(e.gstAmt)||0;
+      monMap[m].total+=parseFloat(e.total)||0;
+      if((e.payStatus||'').toLowerCase()==='paid') monMap[m].paid+=parseFloat(e.total)||0;
+      else monMap[m].pending+=parseFloat(e.total)||0;
+    });
+    const mPurHdr=['Month','No. of Bills','Taxable (Rs.)','Total Tax (Rs.)','Total Amount (Rs.)','Paid (Rs.)','Pending (Rs.)'];
+    const mPurRows=[mPurHdr,...Object.entries(monMap).sort().map(([m,v])=>[
+      m,v.count,v.taxable.toFixed(2),v.tax.toFixed(2),v.total.toFixed(2),v.paid.toFixed(2),v.pending.toFixed(2)])];
+    addSheet(wb, mPurRows, 'Monthly Purchase Summary', [12,12,16,16,18,16,16]);
+
+    // ── 7. PO REGISTER ──
+    const poHdr=['Sl.No','PO Number','PO Date','Delivery By','Status','Vendor Name','Vendor GSTIN',
+      'Vendor Address','Deliver To','Description','HSN/SAC','Qty','Unit','Rate (Rs.)','Line Amount (Rs.)',
+      'Sub Total (Rs.)','Taxes/Freight (Rs.)','Grand Total (Rs.)','Ref No','Notes','Created By'];
+    const poRows=[poHdr]; let poSl=1;
+    pos.forEach(po=>{
+      const items=(po.items||[]).filter(r=>r.desc);
+      const grand=(po.items||[]).reduce((s,r)=>s+(parseFloat(r.qty)||0)*(parseFloat(r.rate)||0),0)+Number(po.taxes||0);
+      (items.length?items:[{desc:'—',qty:'',unit:'',rate:'',hsnCode:''}]).forEach((it,idx)=>{
+        poRows.push([
+          idx===0?poSl:'', idx===0?po.poNo:'', idx===0?fmtDate(po.date):'',
+          idx===0?fmtDate(po.deliveryDate):'', idx===0?(po.status||'Draft'):'',
+          idx===0?(po.vendorTo?.name||''):'', idx===0?((po.vendorTo?.gstin||'').toUpperCase()):'',
+          idx===0?([po.vendorTo?.address,po.vendorTo?.city,po.vendorTo?.state,po.vendorTo?.pin].filter(Boolean).join(', ')):'',
+          idx===0?([po.deliverTo?.name,po.deliverTo?.address,po.deliverTo?.city].filter(Boolean).join(', ')):'',
+          it.desc||'', it.hsnCode||'', it.qty||'', it.unit||'Nos', parseFloat(it.rate)||0,
+          Number((parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)).toFixed(2),
+          idx===0?Number((po.items||[]).reduce((s,r)=>s+(parseFloat(r.qty)||0)*(parseFloat(r.rate)||0),0)).toFixed(2):'',
+          idx===0?Number(po.taxes||0).toFixed(2):'',
+          idx===0?Number(grand).toFixed(2):'',
+          idx===0?(po.refNo||''):'', idx===0?(po.notes||''):'', idx===0?(po.createdBy||''):''
+        ]);
+        if(idx===0) poSl++;
+      });
+    });
+    addSheet(wb, poRows, 'PO Register',
+      [5,16,12,12,10,24,18,30,28,28,12,8,8,14,16,16,14,16,14,24,20]);
+
+    // ── 8. CUSTOMER DATABASE ──
+    const custHdr=['Sl.No','Name','GSTIN','Address','City','State','PIN','Phone','Email','Notes','Created Date'];
+    const custRows=[custHdr,...customers.map((c,i)=>[
+      i+1, c.name||'', (c.gstin||'').toUpperCase(), c.address||'', c.city||'',
+      c.state||'', c.pin||'', c.phone||'', c.email||'', c.notes||'',
+      c.createdAt?new Date(c.createdAt).toLocaleDateString('en-IN'):''
+    ])];
+    addSheet(wb, custRows, 'Customer Database', [5,24,18,28,14,14,8,14,24,24,14]);
+
+    // ── 9. HSN / SAC DATABASE ──
+    const hsnHdr=['Sl.No','Type','Code','Description','Category','GST Rate %','Default Unit'];
+    const hsnRows=[hsnHdr,...hsnList.map((h,i)=>[i+1,h.type||'HSN',h.code||'',h.desc||'',h.category||'',h.taxRate||'',h.unit||'Nos'])];
+    addSheet(wb, hsnRows, 'HSN-SAC Database', [5,8,12,40,18,10,10]);
+
+    // ── 10. PERIOD-WISE P&L SUMMARY ──
+    const allMonths=[...new Set([
+      ...invoices.map(i=>i.date?.substring(0,7)).filter(Boolean),
+      ...expenses.map(e=>e.date?.substring(0,7)).filter(Boolean)
+    ])].sort();
+    const plHdr=['Month','Sales (Rs.)','Total Tax Collected (Rs.)','Purchases/Expenses (Rs.)','Net Profit (Rs.)','Sales Frozen','Expenses Frozen'];
+    const plRows=[plHdr,...allMonths.map(m=>{
+      const mInvs=invoices.filter(i=>i.date?.startsWith(m));
+      const mExps=expenses.filter(e=>e.date?.startsWith(m));
+      const mSales=mInvs.reduce((s,i)=>s+getGrand(i),0);
+      const mTax=mInvs.reduce((s,i)=>s+(parseFloat(i.totalGST)||0),0);
+      const mExp=mExps.reduce((s,e)=>s+(parseFloat(e.total)||0),0);
+      const salesFrz=(freezeD.sales||[]).includes(m)?'Yes':'No';
+      const expFrz=(freezeD.expenses||[]).includes(m)?'Yes':'No';
+      return[m, mSales.toFixed(2), mTax.toFixed(2), mExp.toFixed(2), (mSales-mExp).toFixed(2), salesFrz, expFrz];
+    })];
+    addSheet(wb, plRows, 'Period P&L Summary', [12,16,22,22,16,12,14]);
+
+    // ── 11. FROZEN PERIODS ──
+    const frzHdr=['Month','Sales Frozen','Expenses Frozen'];
+    const frzRows=[frzHdr,...allMonths.map(m=>[
+      m,
+      (freezeD.sales||[]).includes(m)?'❄️ Frozen':'Open',
+      (freezeD.expenses||[]).includes(m)?'❄️ Frozen':'Open'
+    ])];
+    if((freezeD.sales||[]).length>0||(freezeD.expenses||[]).length>0){
+      addSheet(wb, frzRows, 'Frozen Periods', [12,14,16]);
+    }
+
+    // ── 12. AUDIT LOG ──
+    if(auditLogs.length>0){
+      const auditHdr=['Timestamp','Action','Detail','User Name','User Email','Date','Time'];
+      const auditRows=[auditHdr,...(Array.isArray(auditLogs)?auditLogs:Object.values(auditLogs)).map(l=>([
+        new Date(l.ts).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+        (l.action||'').replace(/_/g,' '), l.detail||'', l.userName||'', l.user||'',
+        new Date(l.ts).toLocaleDateString('en-IN'), new Date(l.ts).toLocaleTimeString('en-IN')
+      ]))];
+      addSheet(wb, auditRows, 'Audit Log', [22,20,55,20,30,14,12]);
+
+      // Audit action summary
+      const actCounts={};
+      (Array.isArray(auditLogs)?auditLogs:Object.values(auditLogs)).forEach(l=>{const a=l.action||'UNKNOWN';actCounts[a]=(actCounts[a]||0)+1;});
+      const actRows=[['Action','Count'],...Object.entries(actCounts).sort((a,b)=>b[1]-a[1]).map(([a,c])=>[a.replace(/_/g,' '),c])];
+      addSheet(wb, actRows, 'Audit Summary', [30,10]);
+    }
+
+    // ── 13. TERMS & CONDITIONS ──
+    const termsRows=[['Type','Terms & Conditions'],['Invoice T&C',terms],['PO T&C',poTerms]];
+    addSheet(wb, termsRows, 'Terms & Conditions', [14,80]);
+
+    XLSX.writeFile(wb, `InvoicePrime_FullBackup_${dt}.xlsx`);
+    toast.success(`✅ Full backup downloaded — ${wb.SheetNames.length} sheets, ${invoices.length} invoices, ${expenses.length} expenses, ${pos.length} POs`);
+  } catch(e) {
+    console.error('Full backup error:', e);
+    toast.error('Backup failed: '+(e.message||String(e)));
+  }
+};
+
 const makeExcel = (invoices) => {
   const XLSX = window.XLSX;
   const wb = XLSX.utils.book_new();
@@ -1286,7 +1589,7 @@ const makeExcel = (invoices) => {
     'Bill To Address','HSN/SAC','Description','Unit','Qty','Rate (Rs.)','Discount %',
     'Taxable Amount (Rs.)','GST Type','Tax Rate %','CGST %','CGST Amount (Rs.)','SGST %',
     'SGST Amount (Rs.)','IGST %','IGST Amount (Rs.)','Total Tax (Rs.)','Invoice Total (Rs.)',
-    'PO/Reference No','Notes','Created By'
+    'Payment Status','Due Date','PO/Reference No','Notes','Created By'
   ];
   const rows=[headers];
   let sl=1;
@@ -1332,6 +1635,8 @@ const makeExcel = (invoices) => {
         isNG?'':(gt!=='INTRA'?Number(sign*gst).toFixed(2):''),
         isNG?0:Number(sign*gst).toFixed(2),
         Number(isNG?lineTotal:getGrand(inv)).toFixed(2),
+        inv.status||'Sent',
+        inv.dueDate?fmtDate(inv.dueDate):'',
         inv.poNo||'',
         inv.notes||'',
         inv.createdBy||'',
@@ -1340,7 +1645,7 @@ const makeExcel = (invoices) => {
   });
   const ws = XLSX.utils.aoa_to_sheet(rows);
   // 31 cols: Sl,DocType,InvNo,InvDate,OrigInvNo,OrigInvDate,Sent,CustName,GSTIN,State,Addr,HSN,Desc,Unit,Qty,Rate,Disc,Taxable,GSTType,TaxRate,CGST%,CGSTAmt,SGST%,SGSTAmt,IGST%,IGSTAmt,TotalTax,Total,PO,Notes,CreatedBy
-  ws['!cols']=[{wch:5},{wch:20},{wch:16},{wch:13},{wch:16},{wch:16},{wch:8},{wch:22},{wch:20},{wch:16},{wch:28},{wch:12},{wch:28},{wch:8},{wch:7},{wch:12},{wch:8},{wch:18},{wch:10},{wch:9},{wch:8},{wch:16},{wch:8},{wch:16},{wch:8},{wch:16},{wch:14},{wch:18},{wch:14},{wch:22},{wch:20}];
+  ws['!cols']=[{wch:5},{wch:20},{wch:16},{wch:13},{wch:16},{wch:16},{wch:8},{wch:22},{wch:20},{wch:16},{wch:28},{wch:12},{wch:28},{wch:8},{wch:7},{wch:12},{wch:8},{wch:18},{wch:10},{wch:9},{wch:8},{wch:16},{wch:8},{wch:16},{wch:8},{wch:16},{wch:14},{wch:18},{wch:14},{wch:13},{wch:14},{wch:22},{wch:20}];
   XLSX.utils.book_append_sheet(wb, ws, 'Sales Register');
   // Monthly Summary — CN values reduce totals
   const totals={};
@@ -1631,6 +1936,12 @@ const ExpenseModal = ({onClose, currentUser})=>{
   const saveExp = () => {
     if(!form.vendor){toast.error('Vendor name required');return;}
     if(!form.description&&!form.category){toast.error('Description or Category required');return;}
+    // ── Freeze Guard ──
+    if(!isSuperAdmin(currentUser?.email) && isExpenseFrozen(form)){
+      const ym = (form.date||'').substring(0,7);
+      toast.error(`❄️ ${ym} expenses are frozen. Only Super Admin can edit for this month.`);
+      return;
+    }
     const calc = {...calcExp(form), vendorGSTIN:(form.vendorGSTIN||'').toUpperCase()};
     let updated;
     if(editId){
@@ -1649,8 +1960,12 @@ const ExpenseModal = ({onClose, currentUser})=>{
 
   const delExp = id => {
     if(!isAdmin){toast.error('Only Admin can delete expenses');return;}
-    if(!window.confirm('Delete this expense?'))return;
     const e = expenses.find(x=>x.id===id);
+    if(!isSuperAdmin(currentUser?.email) && isExpenseFrozen(e)){
+      toast.error(`❄️ ${(e?.date||'').substring(0,7)} expenses are frozen. Only Super Admin can delete.`);
+      return;
+    }
+    if(!window.confirm('Delete this expense?'))return;
     const updated = expenses.filter(x=>x.id!==id);
     setExpenses(updated); S.set(SK.EXP,updated);
     logAudit('EXPENSE_DELETED',`${e?.vendor} — ${e?.category} — ₹${e?.total}`,currentUser);
@@ -1732,26 +2047,69 @@ const ExpenseModal = ({onClose, currentUser})=>{
           {filtered.length>0?(
             <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'52vh',overflowY:'auto'}}>
               {/* Header */}
-              <div style={{display:'grid',gridTemplateColumns:'100px 1fr 120px 110px 100px 100px 110px',gap:0,padding:'8px 12px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',position:'sticky',top:0,zIndex:2}}>
-                <span>Date</span><span>Vendor / Description</span><span>Category</span><span>Bill No</span><span>Amount</span><span>Status</span><span>Actions</span>
+              <div style={{display:'grid',gridTemplateColumns:'100px 1fr 150px 120px 120px 100px 130px',
+                gap:0,padding:'9px 16px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',
+                fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',
+                position:'sticky',top:0,zIndex:2}}>
+                <span>Date</span>
+                <span>Vendor / Description</span>
+                <span>Category</span>
+                <span style={{textAlign:'center'}}>Bill No</span>
+                <span style={{textAlign:'right'}}>Amount</span>
+                <span style={{textAlign:'center'}}>Status</span>
+                <span style={{textAlign:'center'}}>Actions</span>
               </div>
               {filtered.map((e,i)=>{
                 const pb=payBadge(e.payStatus);
                 return(
-                <div key={i} style={{display:'grid',gridTemplateColumns:'100px 1fr 120px 110px 100px 100px 110px',gap:0,padding:'10px 12px',borderBottom:'1px solid var(--border)',alignItems:'center'}}>
-                  <div style={{fontSize:12,color:'var(--text3)'}}>{fmtDate(e.date)}</div>
-                  <div>
-                    <div style={{fontWeight:700,color:'var(--text)',fontSize:13}}>{e.vendor}</div>
-                    <div style={{fontSize:11,color:'var(--text3)'}}>{e.description||e.category}</div>
-                    {e.billNo&&<div style={{fontSize:10,color:'var(--gold)',fontFamily:'monospace'}}>Bill: {e.billNo}</div>}
+                <div key={i} style={{display:'grid',gridTemplateColumns:'100px 1fr 150px 120px 120px 100px 130px',
+                  gap:0,padding:'12px 16px',borderBottom:'1px solid var(--border)',alignItems:'center',
+                  transition:'background 0.15s'}}
+                  onMouseEnter={el=>el.currentTarget.style.background='var(--primary-bg)'}
+                  onMouseLeave={el=>el.currentTarget.style.background=''}>
+                  {/* Date */}
+                  <div style={{fontSize:12,color:'var(--text3)',fontWeight:500}}>{fmtDate(e.date)}</div>
+                  {/* Vendor / Description */}
+                  <div style={{minWidth:0}}>
+                    <div style={{fontWeight:700,color:'var(--text)',fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.vendor}</div>
+                    {e.description&&<div style={{fontSize:11,color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.description}</div>}
+                    {e.billNo&&<div style={{fontSize:10,color:'var(--gold)',fontFamily:'monospace',marginTop:2}}>Bill: {e.billNo}</div>}
                   </div>
-                  <div style={{fontSize:11,color:'var(--text2)',background:'var(--card2)',padding:'2px 7px',borderRadius:6,textAlign:'center'}}>{e.category||'—'}</div>
-                  <div style={{fontSize:11,color:'var(--text3)',fontFamily:'monospace'}}>{e.billNo||'—'}</div>
-                  <div style={{fontWeight:700,color:'var(--red)',fontSize:13}}>{fmt(e.total)}</div>
-                  <span style={{padding:'3px 8px',borderRadius:12,fontSize:10,fontWeight:700,background:pb.bg,color:pb.color,textAlign:'center'}}>{e.payStatus||'—'}</span>
-                  <div style={{display:'flex',gap:5}}>
-                    <button className="btn btn-xs btn-outline" onClick={()=>editExp(e)}><Ic n="edit" s={11}/>Edit</button>
-                    {isAdmin&&<button className="btn btn-xs btn-danger" onClick={()=>delExp(e.id)}><Ic n="trash" s={11}/></button>}
+                  {/* Category */}
+                  <div>
+                    <span style={{display:'inline-block',fontSize:11,color:'var(--primary2)',background:'var(--primary-bg)',
+                      padding:'3px 10px',borderRadius:20,border:'1px solid rgba(99,102,241,0.2)',
+                      fontWeight:600,maxWidth:'100%',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      {e.category||'—'}
+                    </span>
+                  </div>
+                  {/* Bill No */}
+                  <div style={{fontSize:11,color:'var(--text3)',fontFamily:'monospace',textAlign:'center',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.billNo||'—'}</div>
+                  {/* Amount */}
+                  <div style={{fontWeight:700,color:'var(--red)',fontSize:13,textAlign:'right'}}>{fmt(e.total)}</div>
+                  {/* Status */}
+                  <div style={{textAlign:'center'}}>
+                    <span style={{display:'inline-block',padding:'3px 10px',borderRadius:20,fontSize:11,
+                      fontWeight:700,background:pb.bg,color:pb.color,border:`1px solid ${pb.color}33`}}>
+                      {e.payStatus||'—'}
+                    </span>
+                  </div>
+                  {/* Actions */}
+                  <div style={{display:'flex',gap:5,justifyContent:'center',alignItems:'center'}}>
+                    {(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(e))&&
+                      <span title="Month frozen" style={{fontSize:13}}>❄️</span>}
+                    <button className="btn btn-xs btn-outline"
+                      onClick={()=>{
+                        if(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(e)){
+                          toast.error(`❄️ ${(e.date||'').substring(0,7)} expenses are frozen.`);
+                        }
+                        editExp(e);
+                      }}
+                      style={{padding:'4px 10px',opacity:(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(e))?0.6:1}}
+                      title={(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(e))?'Month frozen — view only':'Edit expense'}>
+                      <Ic n="edit" s={11}/> Edit
+                    </button>
+                    {isAdmin&&<button className="btn btn-xs btn-danger btn-icon" onClick={()=>delExp(e.id)}><Ic n="trash" s={11}/></button>}
                   </div>
                 </div>);
               })}
@@ -1765,9 +2123,30 @@ const ExpenseModal = ({onClose, currentUser})=>{
 
         {/* ── ADD / EDIT TAB ── */}
         {tab==='add'&&<div>
+          {/* Freeze banner */}
+          {isExpenseFrozen(form)&&!isSuperAdmin(currentUser?.email)&&(
+            <div className="alert" style={{background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.3)',color:'var(--primary2)',marginBottom:12}}>
+              <span style={{fontSize:18}}>❄️</span>
+              <span><strong>{(form.date||'').substring(0,7)} expenses are frozen.</strong> Contact Super Admin to unfreeze before editing.</span>
+            </div>
+          )}
           {/* Row 1: Date, Vendor, GSTIN, State */}
           <div className="g4" style={{marginBottom:4}}>
-            <div className="field"><label className="field-label">Date *</label><input type="date" className="field-input" value={form.date} onChange={upF('date')}/></div>
+            <div className="field">
+              <label className="field-label">Date *</label>
+              <input type="date" className="field-input" value={form.date}
+                onChange={e=>{
+                  const newDate=e.target.value;
+                  if(!isSuperAdmin(currentUser?.email) && isMonthFrozen(newDate,'expenses')){
+                    toast.error(`❄️ ${newDate.substring(0,7)} expenses are frozen. Cannot add/edit entries for this month.`);
+                    return;
+                  }
+                  upF('date')(e);
+                }}
+                style={{borderColor:(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form))?'var(--red)':''}}/>
+              {(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form))&&
+                <div style={{fontSize:10,color:'var(--red)',marginTop:3}}>❄️ This month is frozen</div>}
+            </div>
             <div className="field"><label className="field-label">Vendor / Supplier Name *</label><input className="field-input" value={form.vendor} onChange={upF('vendor')} placeholder="Supplier name"/></div>
             <div className="field"><label className="field-label">Vendor GSTIN</label><input className="field-input" value={form.vendorGSTIN||''} onChange={e=>setForm(p=>calcExp({...p,vendorGSTIN:e.target.value.toUpperCase()}))} placeholder="29XXXXX0000X1Z5" maxLength={15} style={{textTransform:'uppercase'}}/></div>
             <div className="field"><label className="field-label">Vendor State</label><input className="field-input" value={form.vendorState||''} onChange={upF('vendorState')} placeholder="e.g. Karnataka"/></div>
@@ -1846,7 +2225,10 @@ const ExpenseModal = ({onClose, currentUser})=>{
         {tab==='list'&&<button className="btn btn-primary" onClick={onClose}>Close</button>}
         {tab==='add'&&<>
           <button className="btn btn-outline" onClick={()=>{setForm(blankExp(currentUser));setEditId(null);setTab('list');}}>Cancel</button>
-          <button className="btn btn-primary" onClick={saveExp}><Ic n="save"/>{editId?'Update Expense':'Save Expense'}</button>
+          <button className="btn btn-primary"
+            disabled={!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form)}
+            title={(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form))?`❄️ ${(form.date||'').substring(0,7)} is frozen`:''}
+            onClick={saveExp}><Ic n="save"/>{editId?'Update Expense':'Save Expense'}</button>
         </>}
       </div>
     </div>
@@ -1971,8 +2353,12 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
   const co=S.get(SK.CO,{});
   const isAdmin=currentUser?.role==='admin'||currentUser?.role==='superadmin';
   const del=id=>{
-    if(!window.confirm('Delete this invoice permanently?'))return;
     const inv=invs.find(i=>i.invNo===id);
+    if(!isSuperAdmin(currentUser?.email) && isSalesFrozen(inv)){
+      toast.error(`❄️ ${(inv?.date||'').substring(0,7)} is frozen. Only Super Admin can delete invoices for this month.`);
+      return;
+    }
+    if(!window.confirm('Delete this invoice permanently?'))return;
     const u=invs.filter(i=>i.invNo!==id);setInvs(u);S.set(SK.INV,u);
     logAudit('INVOICE_DELETED',`${inv?.invNo} — ${inv?.billTo?.name} — ₹${Math.abs(getGrand(inv||{}))||0}`,currentUser);
     toast.info('Invoice deleted');
@@ -2010,21 +2396,21 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
           style={{marginBottom:12,fontSize:13}}/>
         {sorted.length>0?(
           <div className="hist-table-wrap" style={{maxHeight:'58vh',overflowY:'auto'}}>
-            <table style={{width:'100%',borderCollapse:'collapse',tableLayout:'fixed'}}>
+            <table style={{width:'100%',borderCollapse:'collapse',tableLayout:'fixed',minWidth:780}}>
               <colgroup>
-                <col style={{width:50}}/>{/* Type */}
-                <col style={{width:145}}/>{/* Invoice No */}
+                <col style={{width:48}}/>{/* Type */}
+                <col style={{width:140}}/>{/* Invoice No */}
                 <col/>{/* Customer — flex */}
-                <col style={{width:92}}/>{/* Date */}
-                <col style={{width:88}}/>{/* Status */}
-                <col style={{width:38}}/>{/* Sent */}
-                <col style={{width:115}}/>{/* Amount */}
-                <col style={{width:isAdmin?160:120}}/>{/* Actions */}
+                <col style={{width:90}}/>{/* Date */}
+                <col style={{width:90}}/>{/* Status */}
+                <col style={{width:32}}/>{/* Sent icon */}
+                <col style={{width:110}}/>{/* Amount */}
+                <col style={{width:isAdmin?178:138}}/>{/* Actions */}
               </colgroup>
               <thead>
                 <tr style={{background:'var(--card2)',borderBottom:'2px solid var(--border2)',position:'sticky',top:0,zIndex:2}}>
                   {['Type','Invoice No.','Customer','Date','Status','📤','Amount','Actions'].map((h,i)=>(
-                    <th key={i} style={{padding:'9px 10px',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',textAlign:i>=6?'right':i===5?'center':'left',whiteSpace:'nowrap'}}>{h}</th>
+                    <th key={i} style={{padding:'9px 8px',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',textAlign:i===6?'right':i===7?'center':i===5?'center':'left',whiteSpace:'nowrap'}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -2062,18 +2448,27 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
                     <td style={{padding:'10px 6px',textAlign:'center',fontSize:14}}>
                       {inv.sentToCustomer?'📤':'—'}
                     </td>
-                    <td style={{padding:'10px 10px',textAlign:'right',fontWeight:700,color:isCN?'var(--red)':'var(--text)',fontSize:13,whiteSpace:'nowrap'}}>
+                    <td style={{padding:'10px 8px',textAlign:'right',fontWeight:700,color:isCN?'var(--red)':'var(--text)',fontSize:13,whiteSpace:'nowrap'}}>
                       {isCN&&<span style={{color:'var(--red)'}}>−</span>}{fmt(Math.abs(getGrand(inv)||0))}
                     </td>
-                    <td style={{padding:'8px 6px'}}>
-                      <div style={{display:'flex',gap:3,justifyContent:'flex-end',alignItems:'center'}}>
-                        <button className="btn btn-sm btn-outline-primary" style={{padding:'4px 8px',fontSize:11}} onClick={()=>{onLoad(inv);onClose();}}>Load</button>
+                    <td style={{padding:'6px 4px'}}>
+                      <div style={{display:'flex',gap:3,justifyContent:'center',alignItems:'center',flexWrap:'nowrap'}}>
+                        <button className="btn btn-sm btn-outline-primary" style={{padding:'4px 8px',fontSize:11,
+                          opacity:(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?0.6:1}}
+                          title={(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?`❄️ ${(inv.date||'').substring(0,7)} is frozen — you can view but cannot save changes`:'Load invoice'}
+                          onClick={()=>{
+                            if(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv)){
+                              toast.error(`❄️ ${(inv.date||'').substring(0,7)} is frozen. You can view but changes cannot be saved. Contact Super Admin to unfreeze.`);
+                            }
+                            onLoad(inv);onClose();
+                          }}>Load</button>
                         <button className="btn btn-sm btn-outline btn-icon" style={{width:28,height:28}} title="Duplicate" onClick={()=>{
-                          const dup={...inv,invNo:genInvNo(inv.docType),date:today(),dueDate:'',status:'Draft',sentToCustomer:false,paidDate:'',time:nowTime()};
+                          const dup={...inv,invNo:genInvNo(inv.docType),date:today(),dueDate:'',status:'Sent',sentToCustomer:true,paidDate:'',time:nowTime()};
                           onLoad(dup);onClose();toast.success('Invoice duplicated — edit and save!');
                         }}>📋</button>
                         <button className="btn btn-sm btn-outline btn-icon" style={{width:28,height:28}} title="Download PDF" onClick={()=>makePDF(inv,co,S.get(SK.TERMS,DEFAULT_TERMS))}><Ic n="pdf" s={12}/></button>
-                        {isAdmin&&<button className="btn btn-sm btn-danger btn-icon" style={{width:28,height:28}} title="Delete" onClick={()=>del(inv.invNo)}><Ic n="trash" s={12}/></button>}
+                        {isSalesFrozen(inv)&&<span title="This month is frozen" style={{fontSize:14,padding:'0 4px'}}>❄️</span>}
+                        {isAdmin&&<button className="btn btn-sm btn-danger btn-icon" style={{width:28,height:28,opacity:(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?0.4:1}} title={(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?"Month frozen — Super Admin only":"Delete"} onClick={()=>del(inv.invNo)}><Ic n="trash" s={12}/></button>}
                       </div>
                     </td>
                   </tr>);
@@ -2338,6 +2733,202 @@ const NonGSTRow = ({row,idx,onChange,onDelete,hsnList})=>{
 };
 
 
+/* ── FREEZE TAB ── Proper React component (hooks must not be inside IIFE in JSX) */
+const FreezeTab = ({invs, isSuper, currentUser})=>{
+  const [freezeData, setFreezeData] = useState(()=>getFreezeData());
+  const [selMonth, setSelMonth] = useState(()=>{
+    const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  });
+
+  const saveFreeze = (updated) => {
+    // Use S.set so _cache stays consistent for all guards (isSalesFrozen reads S.get)
+    S.set(SK.FREEZE, updated);
+    setFreezeData({...updated});
+  };
+
+  const toggleSales = (ym) => {
+    if(!isSuper){toast.error('Only Super Admin can freeze/unfreeze periods');return;}
+    const cur = getFreezeData();
+    const nowFrozen = !cur.sales.includes(ym);  // true = we are freezing, false = unfreezing
+    const arr = nowFrozen ? [...cur.sales,ym].sort() : cur.sales.filter(x=>x!==ym);
+    const updated = {...cur, sales:arr};
+    saveFreeze(updated);
+    logAudit(nowFrozen?'PERIOD_FROZEN':'PERIOD_UNFROZEN',
+      `Sales ${ym} ${nowFrozen?'frozen':'unfrozen'} by ${currentUser?.name||''}`,currentUser);
+    toast.success(nowFrozen?`❄️ Sales ${ym} frozen! No edits allowed for non-admins.`:`🔓 Sales ${ym} unfrozen!`);
+  };
+
+  const toggleExp = (ym) => {
+    if(!isSuper){toast.error('Only Super Admin can freeze/unfreeze periods');return;}
+    const cur = getFreezeData();
+    const nowFrozen = !cur.expenses.includes(ym);
+    const arr = nowFrozen ? [...cur.expenses,ym].sort() : cur.expenses.filter(x=>x!==ym);
+    const updated = {...cur, expenses:arr};
+    saveFreeze(updated);
+    logAudit(nowFrozen?'PERIOD_FROZEN':'PERIOD_UNFROZEN',
+      `Expenses ${ym} ${nowFrozen?'frozen':'unfrozen'} by ${currentUser?.name||''}`,currentUser);
+    toast.success(nowFrozen?`❄️ Expenses ${ym} frozen! No edits allowed for non-admins.`:`🔓 Expenses ${ym} unfrozen!`);
+  };
+
+  // Build list of months that have invoices or expenses
+  const invMonths  = [...new Set(invs.map(i=>(i.date||'').substring(0,7)).filter(Boolean))].sort().reverse();
+  const expMonths  = [...new Set((S.get(SK.EXP,[])).map(e=>(e.date||'').substring(0,7)).filter(Boolean))].sort().reverse();
+  const allMonths  = [...new Set([...invMonths,...expMonths])].sort().reverse();
+
+  return (
+    <div>
+      {/* Info banner */}
+      <div className="alert alert-info" style={{marginBottom:20}}>
+        <span style={{fontSize:18}}>❄️</span>
+        <div>
+          <strong>Period Lock</strong> — Freeze a month to prevent any edits to invoices or expenses for that period.
+          Once frozen, <strong>only Super Admin</strong> can edit or unfreeze.
+          {!isSuper&&<span style={{color:'var(--gold)',marginLeft:6,fontWeight:600}}>⚠️ View only — Super Admin required to change locks.</span>}
+        </div>
+      </div>
+
+      {/* Quick freeze: pick any month */}
+      {isSuper&&(
+        <div className="card" style={{marginBottom:18,padding:'16px 20px'}}>
+          <div style={{fontWeight:700,color:'var(--primary2)',fontSize:13,marginBottom:12}}>🔒 Lock a Specific Month</div>
+          <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
+            <input type="month" className="field-input" value={selMonth}
+              onChange={e=>setSelMonth(e.target.value)}
+              style={{maxWidth:180,fontFamily:'monospace',fontWeight:600}}/>
+            <button className="btn btn-outline-primary"
+              onClick={()=>toggleSales(selMonth)}
+              style={{
+                background:freezeData.sales.includes(selMonth)?'rgba(239,68,68,0.08)':'',
+                borderColor:freezeData.sales.includes(selMonth)?'var(--red)':'',
+                color:freezeData.sales.includes(selMonth)?'var(--red)':''}}>
+              {freezeData.sales.includes(selMonth)?'🔓 Unfreeze Sales':'❄️ Freeze Sales'}
+            </button>
+            <button className="btn btn-outline"
+              onClick={()=>toggleExp(selMonth)}
+              style={{
+                background:freezeData.expenses.includes(selMonth)?'rgba(239,68,68,0.08)':'',
+                borderColor:freezeData.expenses.includes(selMonth)?'var(--red)':'',
+                color:freezeData.expenses.includes(selMonth)?'var(--red)':''}}>
+              {freezeData.expenses.includes(selMonth)?'🔓 Unfreeze Expenses':'❄️ Freeze Expenses'}
+            </button>
+          </div>
+          <div style={{fontSize:11,color:'var(--text3)',marginTop:8}}>
+            💡 Use the table below to toggle individual months, or pick any month above including future months.
+          </div>
+        </div>
+      )}
+
+      {/* Month-by-month table */}
+      <div style={{fontWeight:700,color:'var(--text)',fontSize:13,marginBottom:12}}>📅 All Months with Activity</div>
+      {allMonths.length===0?(
+        <div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>
+          <div style={{fontSize:32,marginBottom:8}}>📭</div>
+          <div>No invoices or expenses recorded yet.</div>
+          <div style={{fontSize:12,marginTop:6}}>Use the picker above to lock future months proactively.</div>
+        </div>
+      ):(
+        <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',marginBottom:16}}>
+          {/* Header */}
+          <div style={{display:'grid',gridTemplateColumns:`130px 1fr 140px 140px${isSuper?' 160px':''}`,gap:0,
+            padding:'9px 16px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',
+            fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',position:'sticky',top:0,zIndex:1}}>
+            <span>Month</span>
+            <span>Activity</span>
+            <span style={{textAlign:'center'}}>Sales Lock</span>
+            <span style={{textAlign:'center'}}>Expenses Lock</span>
+            {isSuper&&<span style={{textAlign:'center'}}>Actions</span>}
+          </div>
+          {allMonths.map((ym,i)=>{
+            const mInvs = invs.filter(x=>(x.date||'').startsWith(ym));
+            const mExps = (S.get(SK.EXP,[])).filter(x=>(x.date||'').startsWith(ym));
+            const mRev  = mInvs.reduce((s,x)=>s+getGrand(x),0);
+            const mExp  = mExps.reduce((s,x)=>s+(parseFloat(x.total)||0),0);
+            const salesFrz = freezeData.sales.includes(ym);
+            const expFrz   = freezeData.expenses.includes(ym);
+            return(
+            <div key={ym} style={{display:'grid',gridTemplateColumns:`130px 1fr 140px 140px${isSuper?' 160px':''}`,gap:0,
+              padding:'11px 16px',borderBottom:i<allMonths.length-1?'1px solid var(--border)':'none',
+              alignItems:'center',
+              background:salesFrz&&expFrz?'rgba(239,68,68,0.04)':salesFrz||expFrz?'rgba(99,102,241,0.03)':''}}>
+              {/* Month */}
+              <div style={{fontFamily:'monospace',fontWeight:700,fontSize:13,color:'var(--gold)'}}>{ym}</div>
+              {/* Activity summary */}
+              <div style={{fontSize:12}}>
+                {mInvs.length>0&&<span style={{color:'var(--green)',marginRight:10}}>📄 {mInvs.length} · {fmt(mRev)}</span>}
+                {mExps.length>0&&<span style={{color:'var(--red)'}}>🧾 {mExps.length} · {fmt(mExp)}</span>}
+                {mInvs.length===0&&mExps.length===0&&<span style={{color:'var(--text3)',fontSize:11}}>No activity</span>}
+              </div>
+              {/* Sales status badge */}
+              <div style={{textAlign:'center'}}>
+                <span style={{display:'inline-flex',alignItems:'center',gap:4,padding:'3px 10px',
+                  borderRadius:20,fontSize:11,fontWeight:700,
+                  background:salesFrz?'rgba(239,68,68,0.1)':'rgba(15,217,138,0.08)',
+                  color:salesFrz?'var(--red)':'var(--green)',
+                  border:`1px solid ${salesFrz?'rgba(239,68,68,0.25)':'rgba(15,217,138,0.2)'}`}}>
+                  {salesFrz?'❄️ Frozen':'✓ Open'}
+                </span>
+              </div>
+              {/* Expenses status badge */}
+              <div style={{textAlign:'center'}}>
+                <span style={{display:'inline-flex',alignItems:'center',gap:4,padding:'3px 10px',
+                  borderRadius:20,fontSize:11,fontWeight:700,
+                  background:expFrz?'rgba(239,68,68,0.1)':'rgba(15,217,138,0.08)',
+                  color:expFrz?'var(--red)':'var(--green)',
+                  border:`1px solid ${expFrz?'rgba(239,68,68,0.25)':'rgba(15,217,138,0.2)'}`}}>
+                  {expFrz?'❄️ Frozen':'✓ Open'}
+                </span>
+              </div>
+              {/* Actions — Super Admin only */}
+              {isSuper&&(
+                <div style={{display:'flex',gap:5,justifyContent:'center',flexWrap:'wrap'}}>
+                  <button onClick={()=>toggleSales(ym)}
+                    style={{fontSize:10,padding:'4px 10px',
+                      background:salesFrz?'rgba(239,68,68,0.08)':'rgba(99,102,241,0.08)',
+                      color:salesFrz?'var(--red)':'var(--primary2)',
+                      border:`1px solid ${salesFrz?'rgba(239,68,68,0.3)':'rgba(99,102,241,0.25)'}`,
+                      borderRadius:6,cursor:'pointer',fontWeight:600,whiteSpace:'nowrap',fontFamily:'inherit'}}>
+                    {salesFrz?'🔓 Sales':'❄️ Sales'}
+                  </button>
+                  <button onClick={()=>toggleExp(ym)}
+                    style={{fontSize:10,padding:'4px 10px',
+                      background:expFrz?'rgba(239,68,68,0.08)':'rgba(245,166,35,0.08)',
+                      color:expFrz?'var(--red)':'var(--gold)',
+                      border:`1px solid ${expFrz?'rgba(239,68,68,0.3)':'rgba(245,166,35,0.25)'}`,
+                      borderRadius:6,cursor:'pointer',fontWeight:600,whiteSpace:'nowrap',fontFamily:'inherit'}}>
+                    {expFrz?'🔓 Exp':'❄️ Exp'}
+                  </button>
+                </div>
+              )}
+            </div>);
+          })}
+        </div>
+      )}
+
+      {/* Currently frozen summary chips */}
+      {(freezeData.sales.length>0||freezeData.expenses.length>0)&&(
+        <div style={{padding:'14px 16px',background:'rgba(239,68,68,0.04)',
+          border:'1px solid rgba(239,68,68,0.15)',borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:700,color:'var(--red)',marginBottom:8}}>❄️ Currently Frozen Periods</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+            {freezeData.sales.map(ym=>(
+              <span key={'s'+ym} style={{padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:700,
+                background:'rgba(239,68,68,0.1)',color:'var(--red)',border:'1px solid rgba(239,68,68,0.25)'}}>
+                📄 {ym} Sales
+              </span>
+            ))}
+            {freezeData.expenses.map(ym=>(
+              <span key={'e'+ym} style={{padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:700,
+                background:'rgba(245,158,11,0.1)',color:'var(--gold)',border:'1px solid rgba(245,158,11,0.25)'}}>
+                🧾 {ym} Expenses
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ── ADMIN PANEL ── */
 const AdminPanel = ({currentUser,onClose})=>{
   const [tab,setTab]=useState('dashboard');
@@ -2368,21 +2959,28 @@ const AdminPanel = ({currentUser,onClose})=>{
   const [auditData,setAuditData]=useState(()=>S.get(SK.AUDIT,[]));
   const modalBodyRef=useRef();
 
-  // Auto-refresh audit log every 10 minutes
+  // Refresh audit from cache whenever tab changes to 'audit' or every 10 min
   useEffect(()=>{
-    const refresh=()=>{
-      const fresh=S.get(SK.AUDIT,[]);
-      setAuditData(fresh);
-    };
-    refresh(); // initial load
-    const timer=setInterval(()=>{
-      // Re-pull from Firebase cache
+    if(tab==='audit'){
+      // Always pull fresh from cache first (instant)
+      setAuditData(S.get(SK.AUDIT,[]));
+      // Then sync from Firebase in background
       getDb().ref('invoicepro/'+SK.AUDIT).once('value').then(snap=>{
         const val=snap.val();
-        if(val){_cache[SK.AUDIT]=val;setAuditData(val);}
+        if(val){_cache[SK.AUDIT]=val;setAuditData(Array.isArray(val)?val:Object.values(val));}
+      }).catch(()=>{});
+    }
+  },[tab]);
+
+  // Auto-refresh audit log every 10 minutes
+  useEffect(()=>{
+    const timer=setInterval(()=>{
+      getDb().ref('invoicepro/'+SK.AUDIT).once('value').then(snap=>{
+        const val=snap.val();
+        if(val){_cache[SK.AUDIT]=val;setAuditData(Array.isArray(val)?val:Object.values(val));}
         else{setAuditData(S.get(SK.AUDIT,[]));}
       }).catch(()=>setAuditData(S.get(SK.AUDIT,[])));
-    },10*60*1000); // 10 minutes
+    },10*60*1000);
     return()=>clearInterval(timer);
   },[]);
   const invs=S.get(SK.INV,[]);
@@ -2482,7 +3080,7 @@ const AdminPanel = ({currentUser,onClose})=>{
       </div>
       <div className="modal-body" ref={modalBodyRef}>
         <div className="admin-tabs">
-          {[['dashboard','Dashboard'],['users','Users'],['invoices','All Invoices'],['audit','Audit Log'],['export','Export Data']].map(([k,l])=>(
+          {[['dashboard','Dashboard'],['users','Users'],['invoices','All Invoices'],['audit','Audit Log'],['export','Export Data'],['freeze','❄️ Period Lock']].map(([k,l])=>(
             <button key={k} className={`admin-tab${tab===k?' active':''}`} onClick={()=>setTab(k)}>{l}</button>))}
         </div>
 
@@ -2581,11 +3179,17 @@ const AdminPanel = ({currentUser,onClose})=>{
               <span style={{color:'var(--text2)',fontSize:13,fontWeight:600}}>📋 Audit Log — {auditLogs.length} entries <span style={{fontSize:10,color:'var(--text3)',fontWeight:400}}>(auto-refreshes every 10 min)</span></span>
               <div style={{display:'flex',gap:8}}>
                 <button className="btn btn-sm btn-outline-primary" onClick={()=>{
+                  // Instant refresh from local cache
+                  const localLogs = S.get(SK.AUDIT,[]);
+                  setAuditData(localLogs);
+                  // Then fetch from Firebase
                   getDb().ref('invoicepro/'+SK.AUDIT).once('value').then(snap=>{
                     const val=snap.val();
-                    if(val){_cache[SK.AUDIT]=val;setAuditData(val);toast.success('Audit log refreshed!');}
-                    else{const d=S.get(SK.AUDIT,[]);setAuditData(d);toast.info('No new entries');}
-                  }).catch(()=>{setAuditData(S.get(SK.AUDIT,[]));toast.info('Refreshed from cache');});
+                    if(val){
+                      const arr=Array.isArray(val)?val:Object.values(val);
+                      _cache[SK.AUDIT]=arr; setAuditData(arr); toast.success(`Audit log refreshed — ${arr.length} entries`);
+                    } else { toast.info(`Showing ${localLogs.length} local entries`); }
+                  }).catch(()=>{ toast.info(`Showing ${localLogs.length} local entries`); });
                 }}><Ic n="refresh" s={12}/>Refresh Now</button>
                 {isSuper&&<button className="btn btn-sm btn-success" onClick={()=>makeAuditExcel(auditLogs.length>0?auditLogs:auditData)}><Ic n="xlsx" s={12}/>Export Excel</button>}
                 {isSuper&&<button className="btn btn-sm btn-danger" onClick={()=>{if(window.confirm('Clear all audit logs?')){S.set(SK.AUDIT,[]);setAuditData([]);toast.info('Audit log cleared');}}}>🗑️ Clear</button>}
@@ -2598,7 +3202,7 @@ const AdminPanel = ({currentUser,onClose})=>{
                   <span>Action</span><span>Detail</span><span>By</span><span>When</span>
                 </div>
                 {auditLogs.map((l,i)=>{
-                  const aColor={INVOICE_CREATED:'#166534',INVOICE_EDITED:'#1D4ED8',USER_CREATED:'#6D28D9',USER_EDITED:'#0369A1',USER_DELETED:'#DC2626',USER_TOGGLED:'#B45309'}[l.action]||'var(--text3)';
+                  const aColor={INVOICE_CREATED:'#166534',INVOICE_EDITED:'#1D4ED8',INVOICE_DELETED:'#DC2626',USER_CREATED:'#6D28D9',USER_EDITED:'#0369A1',USER_DELETED:'#DC2626',USER_TOGGLED:'#B45309',USER_LOGIN:'#0E7490',EXPENSE_ADDED:'#065F46',EXPENSE_EDITED:'#0369A1',EXPENSE_DELETED:'#DC2626',PO_CREATED:'#92400E',PO_EDITED:'#B45309',PO_DELETED:'#DC2626',PERIOD_FROZEN:'#1E40AF',PERIOD_UNFROZEN:'#065F46'}[l.action]||'var(--text3)';
                   return(
                   <div key={i} style={{display:'grid',gridTemplateColumns:'120px 1fr 130px 150px',gap:0,padding:'9px 14px',borderBottom:'1px solid var(--border)',alignItems:'start'}}>
                     <span style={{fontSize:10,fontWeight:700,color:aColor,background:aColor+'22',padding:'2px 7px',borderRadius:8,display:'inline-block'}}>{l.action.replace(/_/g,' ')}</span>
@@ -2671,21 +3275,52 @@ const AdminPanel = ({currentUser,onClose})=>{
                 <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>All Purchase Orders with vendor details, items, delivery dates and status.</div>
                 <button className="btn btn-outline-primary" onClick={()=>makePOExcel(S.get(SK.PO,[]))}><Ic n="xlsx"/>Download ({S.get(SK.PO,[]).length} POs)</button>
               </div>
-              <div className="card" style={{textAlign:'center',padding:24}}>
-                <div style={{fontSize:40,marginBottom:10}}>💾</div>
-                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:8}}>Full Data Backup</div>
-                <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>Export everything as JSON for backup or migration.</div>
-                <button className="btn btn-outline" onClick={()=>{
-                  const data={company:S.get(SK.CO,{}),hsn:S.get(SK.HSN,[]),invoices:S.get(SK.INV,[]),terms:S.get(SK.TERMS,''),expenses:S.get(SK.EXP,[]),purchaseOrders:S.get(SK.PO,[])};
-                  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-                  const url=URL.createObjectURL(blob);const a=document.createElement('a');
-                  a.href=url;a.download='InvoicePrime_Backup.json';a.click();
-                  toast.success('Full backup downloaded!');
-                }}><Ic n="save"/>Download JSON Backup</button>
+              <div className="card" style={{textAlign:'center',padding:24,gridColumn:'1/-1',background:'linear-gradient(135deg,rgba(99,102,241,0.04),var(--card))'}}>
+                <div style={{fontSize:40,marginBottom:10}}>📦</div>
+                <div style={{fontWeight:800,color:'var(--text)',fontSize:16,marginBottom:6}}>Full Data Backup — Excel</div>
+                <div style={{color:'var(--text2)',fontSize:12,marginBottom:4}}>
+                  Downloads a <strong>single Excel workbook</strong> with <strong>13 sheets</strong> covering everything:
+                </div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center',marginBottom:16}}>
+                  {['Company Info','Sales Register','Monthly Sales','Purchase Register','Category Summary','Monthly Purchases','PO Register','Customer DB','HSN/SAC DB','Period P&L','Frozen Periods','Audit Log','Audit Summary'].map(s=>(
+                    <span key={s} style={{fontSize:10,padding:'2px 8px',borderRadius:10,background:'var(--primary-bg)',color:'var(--primary2)',border:'1px solid rgba(99,102,241,0.2)',fontWeight:600}}>{s}</span>
+                  ))}
+                </div>
+                <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
+                  <button className="btn btn-primary" style={{padding:'10px 24px'}} onClick={()=>makeFullExcel()}>
+                    <Ic n="xlsx" s={16}/>⬇️ Download Full Excel Backup
+                  </button>
+                  <button className="btn btn-outline" onClick={()=>{
+                    const data={
+                      exportDate: new Date().toISOString(),
+                      company:S.get(SK.CO,{}),
+                      hsn:S.get(SK.HSN,[]),
+                      invoices:S.get(SK.INV,[]),
+                      expenses:S.get(SK.EXP,[]),
+                      purchaseOrders:S.get(SK.PO,[]),
+                      customers:S.get(SK.CUST,[]),
+                      products:S.get(SK.PRODUCTS,[]),
+                      terms:S.get(SK.TERMS,''),
+                      poTerms:S.get(SK.PO_TERMS,''),
+                      auditLog:S.get(SK.AUDIT,[]),
+                      frozenPeriods:S.get(SK.FREEZE,{sales:[],expenses:[]}),
+                    };
+                    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+                    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+                    a.href=url;a.download=`InvoicePrime_Backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
+                    URL.revokeObjectURL(url);
+                    toast.success(`JSON backup downloaded — ${(data.invoices||[]).length} invoices, ${(data.expenses||[]).length} expenses`);
+                  }}>
+                    <Ic n="save"/>JSON Backup
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
+
+        {tab==='freeze'&&<FreezeTab invs={invs} isSuper={isSuper} currentUser={currentUser}/>}
+
       </div>
     </div>
   </div>;
@@ -2770,7 +3405,7 @@ const newInvoice = (user,docType)=>({invNo:genInvNo(docType||'TAX INVOICE'),date
   shipTo:{name:'',address:'',city:'',state:'',pin:''},
   sameAddress:true,items:[docType==='NON GST INVOICE'?newNonGSTItem():newItem()],
   notes:'',gstType:'INTRA',docType:docType||'TAX INVOICE',isB2C:false,
-  status:'Draft',sentToCustomer:false,paidDate:'',
+  status:'Sent',sentToCustomer:true,paidDate:'',
   origInvNo:'',origInvDate:'',
   subtotal:0,taxBreakdown:{},totalGST:0,roundOff:0,grand:0,
   createdBy:user?.email||'',time:nowTime()
@@ -2873,7 +3508,13 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
 
   const save=(autoNew=false)=>{
     if(!inv.billTo?.name){toast.error('Customer name required');return;}
-    const isCN = inv.docType==='CREDIT NOTE';
+    // ── Freeze Guard ──
+    const isSuperUser = isSuperAdmin(currentUser?.email);
+    if(!isSuperUser && isSalesFrozen(inv)){
+      const ym = (inv.date||'').substring(0,7);
+      toast.error(`❄️ ${ym} is frozen. Only Super Admin can edit invoices for this month.`);
+      return;
+    }    const isCN = inv.docType==='CREDIT NOTE';
     const isNG = inv.docType==='NON GST INVOICE';
     // For NonGST: recompute grand from items directly to avoid stale state
     const computedGrand = isNG
@@ -2918,6 +3559,13 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     </div>
 
     {!co.name&&<div className="alert alert-warn"><span>⚠️</span><span>Please configure <strong>Company Details</strong> before creating invoices.</span></div>}
+    {/* Freeze banner */}
+    {isSalesFrozen(inv)&&!isSuperAdmin(currentUser?.email)&&(
+      <div className="alert" style={{background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.3)',color:'var(--primary2)',marginBottom:12}}>
+        <span style={{fontSize:18}}>❄️</span>
+        <span><strong>{(inv.date||'').substring(0,7)} is frozen.</strong> This month's sales are locked. Contact Super Admin to unfreeze.</span>
+      </div>
+    )}
 
     {/* Invoice Meta */}
     <div className="card" style={{marginBottom:16}}>
@@ -3081,7 +3729,19 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
         </div>
         <div className="field">
           <label className="field-label">Invoice Date</label>
-          <input type="date" className="field-input" value={inv.date} onChange={upF('date')}/>
+          <input type="date" className="field-input" value={inv.date}
+            onChange={e=>{
+              const newDate=e.target.value;
+              const isSuperUser=isSuperAdmin(currentUser?.email);
+              if(!isSuperUser && isMonthFrozen(newDate,'sales')){
+                toast.error(`❄️ ${newDate.substring(0,7)} sales are frozen. Cannot create/edit invoices for this month.`);
+                return; // block the date change
+              }
+              upF('date')(e);
+            }}
+            style={{borderColor: (!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?'var(--red)':''}}/>
+          {(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))&&
+            <div style={{fontSize:10,color:'var(--red)',marginTop:3}}>❄️ This month is frozen</div>}
         </div>
         <div className="field">
           <label className="field-label">Due Date</label>
@@ -3370,15 +4030,27 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
           </span>
         );})()}
         {inv.sentToCustomer&&<span style={{fontSize:11,color:'#1D4ED8',background:'#EFF6FF',padding:'4px 10px',borderRadius:20,border:'1px solid #BFDBFE'}}>📤 Sent to Customer</span>}
+        {/* Freeze indicator in action bar */}
+        {!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv)&&(
+          <span style={{fontSize:11,color:'var(--red)',background:'rgba(239,68,68,0.08)',padding:'4px 10px',borderRadius:20,border:'1px solid rgba(239,68,68,0.25)',fontWeight:700}}>
+            ❄️ {(inv.date||'').substring(0,7)} Frozen — Save disabled
+          </span>
+        )}
       </div>
       <div style={{display:'flex',gap:8}}>
         <button className="btn btn-outline" onClick={()=>{if(window.confirm('Start new invoice?'))setInv(newInvoice(currentUser));}}><Ic n="new" s={14}/>New Invoice</button>
-        <button className="btn btn-outline-primary" onClick={()=>save(false)}><Ic n="save" s={14}/>Save</button>
+        <button className="btn btn-outline-primary"
+          disabled={!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv)}
+          title={(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?'Month frozen — Super Admin only':undefined}
+          onClick={()=>save(false)}><Ic n="save" s={14}/>Save</button>
         <button className="btn btn-outline" style={{borderColor:'#1D4ED8',color:'#1D4ED8'}}
           onClick={()=>setInv(p=>({...p,sentToCustomer:true,status:p.status==='Draft'?'Sent':p.status}))}>
           📤 Mark Sent
         </button>
-        <button className="btn btn-gold" onClick={()=>{save(true);makePDF(inv,co,terms);}}>
+        <button className="btn btn-gold"
+          disabled={!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv)}
+          title={(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?'Month frozen — Super Admin only':undefined}
+          onClick={()=>{save(true);makePDF(inv,co,terms);}}>
           <Ic n="pdf" s={15}/>Download PDF + New
         </button>
         <button title="Share on WhatsApp with PDF" style={{padding:'9px 14px',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',background:'#25D366',color:'#fff',border:'none',display:'inline-flex',alignItems:'center',gap:6,boxShadow:'0 4px 14px rgba(37,211,102,0.35)'}}
