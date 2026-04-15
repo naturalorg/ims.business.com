@@ -18,17 +18,17 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 [data-theme="dark"]{
-  --bg:#06051A;--surface:#0A0930;--card:#0F0E38;--card2:#151345;--card3:#1A1850;
-  --border:#1C1A45;--border2:#28265E;--border3:#343275;
-  --primary:#4338CA;--primary2:#818CF8;--primary-dark:#3730A3;--primary-bg:rgba(99,102,241,0.1);
+  --bg:#080B0F;--surface:#0D1117;--card:#161B22;--card2:#1C2333;--card3:#21262D;
+  --border:#21262D;--border2:#30363D;--border3:#3D444D;
+  --primary:#6366F1;--primary2:#818CF8;--primary-dark:#4338CA;--primary-bg:rgba(99,102,241,0.12);
   --gold:#F5A623;--gold2:#FFD166;--gold-bg:rgba(245,166,35,0.1);--gold-bg2:rgba(245,166,35,0.18);
-  --text:#F0EFFF;--text2:#C4C9FF;--text3:#8B8FC8;
-  --green:#0FD98A;--red:#FF4D6A;--blue:#4F8EF7;--cyan:#00D4FF;--purple:#A78BFA;
+  --text:#F0F6FC;--text2:#8B949E;--text3:#6E7681;
+  --green:#3FB950;--red:#F85149;--blue:#58A6FF;--cyan:#39D353;--purple:#D2A8FF;
   --shadow:0 16px 56px rgba(0,0,0,0.8);--shadow2:0 4px 24px rgba(0,0,0,0.6);
-  --glass:rgba(8,13,26,0.9);
+  --glass:rgba(15,17,23,0.92);
   --glow-blue:0 0 28px rgba(99,102,241,0.2);--glow-gold:0 0 28px rgba(245,166,35,0.18);
-  --accent-grad:linear-gradient(135deg,#4338CA,#6366F1);
-  --card-grad:linear-gradient(160deg,#141240,#181845);
+  --accent-grad:linear-gradient(135deg,#6366F1,#818CF8);
+  --card-grad:linear-gradient(160deg,#1C2333,#21262D);
 }
 [data-theme="light"]{
   --bg:#F0F0FF;--surface:#FFFFFF;--card:#FFFFFF;--card2:#F5F4FF;--card3:#ECEAFF;
@@ -55,28 +55,206 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 [data-theme="dark"] .login-bg::after{content:'';position:absolute;width:500px;height:500px;background:radial-gradient(circle,rgba(99,102,241,0.08),transparent);bottom:-150px;right:-100px;border-radius:50%}
 [data-theme="light"] .login-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(37,99,235,0.12) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 100%,rgba(124,58,237,0.08) 0%,transparent 60%)}
 .login-card{background:var(--card);border:1px solid var(--border2);border-radius:24px;width:100%;max-width:420px;padding:40px;box-shadow:var(--shadow);position:relative;z-index:1;animation:slideUp 0.4s ease}
-[data-theme="dark"] .login-card{background:linear-gradient(160deg,#0F0E38,#0A0930);border-color:rgba(129,140,248,0.2);box-shadow:0 0 0 1px rgba(129,140,248,0.1),0 24px 64px rgba(0,0,0,0.8)}
+[data-theme="dark"] .login-card{background:#0D1117;border-color:#30363D;box-shadow:0 8px 48px rgba(0,0,0,0.8)}
 .login-logo{font-family:'Sora',serif;font-size:28px;font-weight:800;background:var(--accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
 .login-sub{color:var(--text3);font-size:13px;margin-bottom:32px}
 .login-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
 .login-desc{font-size:13px;color:var(--text2);margin-bottom:24px}
 
-/* HEADER */
-.app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow2);gap:12px}
-[data-theme="dark"] .app-header{background:linear-gradient(180deg,rgba(7,6,24,0.99),rgba(6,5,22,0.98));border-bottom-color:rgba(129,140,248,0.2);box-shadow:0 1px 0 rgba(129,140,248,0.12),0 4px 24px rgba(0,0,0,0.7),0 4px 32px rgba(0,0,0,0.6)}
-.app-brand{font-family:'Sora',sans-serif;font-size:20px;font-weight:800;background:var(--accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap;flex-shrink:0}
-.app-brand-sub{font-size:10px;color:var(--text3);font-weight:400;font-family:'Plus Jakarta Sans',sans-serif;margin-left:6px;letter-spacing:0;white-space:nowrap}
-.header-right{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;flex-shrink:1;min-width:0;overflow:hidden}
-.mob-header-right{display:none!important}
-.user-pill{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--card2);border:1px solid var(--border);border-radius:50px;font-size:12px;color:var(--text2);white-space:nowrap;flex-shrink:0;max-width:140px;overflow:hidden}
-.user-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent-grad);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;box-shadow:0 2px 8px rgba(99,102,241,0.4);flex-shrink:0}
+/* ══ MAXTON-STYLE SIDEBAR LAYOUT ══ */
+:root{--sidebar-w:258px;--topbar-h:60px}
 
-/* LAYOUT */
-.app-body{padding:24px;max-width:1440px;margin:0 auto}
-[data-theme="dark"] .app-body{background:radial-gradient(ellipse 80% 50% at 50% -5%,rgba(99,102,241,0.08) 0%,transparent 55%)}
+/* Sidebar */
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;z-index:200;
+  display:flex;flex-direction:column;overflow:hidden;transition:width 0.25s ease,transform 0.25s ease}
+[data-theme="dark"] .sidebar{background:#0A0D13;
+  border-right:1px solid #1a1f27;box-shadow:none}
+[data-theme="light"] .sidebar{background:#000000;
+  border-right:1px solid rgba(255,255,255,0.08);box-shadow:4px 0 24px rgba(0,0,0,0.2)}
+.sidebar.collapsed{width:68px}
+
+/* Sidebar logo zone */
+.sidebar-logo{height:var(--topbar-h);display:flex;align-items:center;gap:10px;
+  padding:0 18px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.06);
+  cursor:pointer;transition:all 0.2s;overflow:hidden;white-space:nowrap}
+.sidebar-logo:hover{background:rgba(255,255,255,0.03)}
+.sidebar-brand{font-family:'Sora',sans-serif;font-size:19px;font-weight:800;
+  color:#fff;white-space:nowrap;transition:opacity 0.2s}
+.sidebar-brand span{color:#F5A623}
+.sidebar-sub{font-size:9px;color:rgba(255,255,255,0.45);white-space:nowrap;
+  letter-spacing:1.2px;text-transform:uppercase;margin-top:2px;transition:opacity 0.2s}
+.sidebar.collapsed .sidebar-brand,.sidebar.collapsed .sidebar-sub{opacity:0;width:0;overflow:hidden}
+
+/* Sidebar nav area */
+.sidebar-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 10px;
+  scrollbar-width:thin;scrollbar-color:rgba(99,102,241,0.25) transparent}
+.sidebar-nav::-webkit-scrollbar{width:3px}
+.sidebar-nav::-webkit-scrollbar-thumb{background:rgba(99,102,241,0.25);border-radius:2px}
+.sidebar-section-label{font-size:10px;font-weight:700;letter-spacing:1.2px;
+  text-transform:uppercase;color:rgba(255,255,255,0.25);padding:14px 12px 5px;
+  white-space:nowrap;overflow:hidden;transition:opacity 0.2s}
+.sidebar.collapsed .sidebar-section-label{opacity:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;
+  cursor:pointer;transition:all 0.18s cubic-bezier(0.4,0,0.2,1);position:relative;overflow:hidden;
+  color:rgba(255,255,255,0.5);font-size:13px;font-weight:500;white-space:nowrap;
+  margin-bottom:1px}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.9)}
+.nav-item.active{background:linear-gradient(135deg,rgba(99,102,241,0.35),rgba(99,102,241,0.15));
+  color:#fff;border:1px solid rgba(99,102,241,0.3);box-shadow:0 2px 12px rgba(99,102,241,0.25)}
+.nav-item.active .nav-icon{color:#818CF8}
+.nav-item-gold{color:rgba(245,166,35,0.8)!important}
+.nav-item-gold:hover,.nav-item-gold.active{background:linear-gradient(135deg,rgba(245,166,35,0.2),rgba(245,166,35,0.08))!important;
+  border-color:rgba(245,166,35,0.25)!important;color:#FFD166!important}
+.nav-item-admin{color:rgba(245,166,35,0.85)!important}
+.nav-item-admin.active{background:linear-gradient(135deg,rgba(245,166,35,0.22),rgba(245,166,35,0.1))!important;
+  border-color:rgba(245,166,35,0.3)!important}
+.nav-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-label{flex:1;overflow:hidden;text-overflow:ellipsis;transition:opacity 0.2s,width 0.2s}
+.sidebar.collapsed .nav-label{opacity:0;width:0}
+.nav-badge{background:var(--primary);color:#fff;border-radius:20px;
+  padding:1px 7px;font-size:10px;font-weight:700;flex-shrink:0;transition:opacity 0.2s}
+.nav-badge.red{background:var(--red)}
+.nav-badge.gold{background:var(--gold);color:#000}
+.sidebar.collapsed .nav-badge{opacity:0}
+.nav-sep{height:1px;background:rgba(255,255,255,0.06);margin:8px 4px}
+.sidebar-bottom{padding:12px 10px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+
+/* Top bar */
+.topbar{height:var(--topbar-h);display:flex;align-items:center;gap:10px;
+  padding:0 20px;flex-shrink:0;position:sticky;top:0;z-index:150;
+  background:var(--surface);border-bottom:1px solid var(--border)}
+[data-theme="dark"] .topbar{background:#0A0D13;
+  border-bottom-color:#1a1f27;box-shadow:none}
+.topbar-search{flex:1;max-width:340px;position:relative}
+.topbar-search input{width:100%;background:var(--card2);border:1px solid var(--border2);
+  border-radius:24px;padding:8px 16px 8px 38px;font-size:12.5px;color:var(--text);
+  outline:none;transition:all 0.2s;font-family:'Plus Jakarta Sans',sans-serif}
+[data-theme="dark"] .topbar-search input{background:#0D1117;border-color:#30363D;color:#E6EDF3}
+.topbar-search input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-bg)}
+.topbar-search input::placeholder{color:var(--text3)}
+.topbar-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px}
+.topbar-spacer{flex:1}
+.topbar-icon-btn{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;background:transparent;border:1px solid var(--border);
+  color:var(--text2);transition:all 0.18s;position:relative;flex-shrink:0}
+.topbar-icon-btn:hover{background:var(--card);color:var(--text);border-color:var(--border2)}
+.topbar-notif{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;
+  border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;border:2px solid var(--surface)}
+.topbar-user{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;
+  background:var(--card);border:1px solid var(--border);border-radius:24px;
+  transition:all 0.18s;flex-shrink:0;cursor:default}
+.topbar-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-grad);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;
+  color:white;flex-shrink:0}
+.topbar-user-name{font-size:12px;font-weight:600;color:var(--text);max-width:100px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-user-role{font-size:10px;color:var(--text3)}
+
+/* Main wrapper: sits next to sidebar */
+.main-wrapper{margin-left:var(--sidebar-w);width:calc(100% - var(--sidebar-w));min-height:100vh;display:flex;flex-direction:column;
+  transition:margin-left 0.25s ease,width 0.25s ease;background:var(--bg);overflow-x:hidden}
+.main-wrapper.sidebar-collapsed{margin-left:68px;width:calc(100% - 68px)}
+[data-theme="dark"] .main-wrapper{background:#080B0F}
+
+/* Page content */
+.app-body{padding:20px 24px;flex:1;min-height:calc(100vh - var(--topbar-h));width:100%;max-width:100%;overflow-x:hidden;box-sizing:border-box}
 .two-col{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
 @media(max-width:1100px){.two-col{grid-template-columns:1fr}}
+
+/* Breadcrumb */
+.breadcrumb{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)}
+.breadcrumb span{color:var(--text2);font-weight:600}
+
+/* User pill kept for backward compat */
+.user-pill{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--card2);
+  border:1px solid var(--border);border-radius:50px;font-size:12px;color:var(--text2);white-space:nowrap}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent-grad);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;
+  color:white;box-shadow:0 2px 8px rgba(99,102,241,0.4);flex-shrink:0}
+.app-brand{font-family:'Sora',sans-serif;font-size:20px;font-weight:800;
+  background:var(--accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;white-space:nowrap;flex-shrink:0}
+.app-brand-sub{font-size:10px;color:var(--text3);font-weight:400;margin-left:6px;white-space:nowrap}
+.header-right{display:none}
+.mob-header-right{display:none!important}
+
+/* Mobile */
+@media(max-width:900px){
+  :root{--sidebar-w:68px}
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.mob-open{transform:translateX(0);width:260px!important}
+  .sidebar.mob-open .sidebar-brand,.sidebar.mob-open .sidebar-sub,
+  .sidebar.mob-open .nav-label,.sidebar.mob-open .nav-badge,
+  .sidebar.mob-open .sidebar-section-label{opacity:1!important;width:auto!important}
+  .main-wrapper{margin-left:0!important;width:100%!important}
+  .topbar{padding:0 16px}
+  .app-body{padding:12px}
+  .sidebar-overlay{display:block!important}
+}
+.sidebar-overlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:199;backdrop-filter:blur(3px)}
+.mob-hamburger{display:none!important}
+@media(max-width:900px){.mob-hamburger{display:flex!important}}
+
+
+
+
+/* Inline page card — replaces overlay/modal when rendered as full page */
+.inline-card{width:100%;animation:fadeIn 0.22s ease}
+.inline-card-inner{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  width:100%;max-width:100%;overflow:hidden;display:flex;flex-direction:column}
+[data-theme="dark"] .inline-card-inner{background:#161B22;border-color:#21262D}
+.inline-card-inner .modal-hdr{border-radius:12px 12px 0 0;position:sticky;top:0;z-index:10;background:#161B22}
+[data-theme="light"] .inline-card-inner .modal-hdr{background:var(--card)}
+.inline-card-inner .modal-body{max-height:none!important;overflow:visible!important;flex:1}
+.inline-card-inner .modal-ftr{border-radius:0 0 12px 12px;position:sticky;bottom:0;z-index:10;background:#161B22}
+[data-theme="light"] .inline-card-inner .modal-ftr{background:var(--card)}
+
+/* Legacy inline-page-wrap kept for HistoryModal */
+.inline-page-wrap{background:var(--card);border-radius:14px;border:1px solid var(--border);
+  overflow:hidden;animation:fadeIn 0.22s ease}
+.inline-page-wrap .modal-hdr{border-radius:0}
+.inline-page-wrap .modal-body{max-height:none;overflow:visible}
+.inline-page-wrap .modal-ftr{border-radius:0}
+
+/* ── ANIMATIONS & TRANSITIONS ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}
+.page-enter{animation:fadeIn 0.22s ease forwards}
+.nav-item{transition:all 0.18s cubic-bezier(0.4,0,0.2,1)}
+.nav-item:hover{transform:translateX(2px)}
+.nav-item.active{transform:translateX(0)}
+.card{transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}
+.btn{transition:all 0.18s cubic-bezier(0.4,0,0.2,1)}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(0.98)}
+.topbar-icon-btn{transition:all 0.15s cubic-bezier(0.4,0,0.2,1)}
+.topbar-icon-btn:hover{transform:translateY(-1px)}
+.stat-card{transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}
+.stat-card:hover{transform:translateY(-2px)}
+/* Skeleton loading shimmer for cards */
+.skeleton{background:linear-gradient(90deg,var(--card2) 25%,var(--card3) 50%,var(--card2) 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+/* Page title */
+.page-title{font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:var(--text);
+  letter-spacing:-0.3px;display:flex;align-items:center;gap:10px}
+.page-subtitle{font-size:13px;color:var(--text2);margin-top:2px}
+/* Topbar notification dot pulse */
+.topbar-notif.pulse{animation:pulse 1.5s ease infinite}
+/* Nav active indicator bar */
+.nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;
+  width:3px;border-radius:0 3px 3px 0;background:var(--primary)}
+/* Sidebar section label fade */
+.sidebar-section-label{transition:opacity 0.2s,padding 0.2s}
+/* Smooth page content fade */
+.app-body{animation:fadeIn 0.25s ease}
+/* Compact page header inside content */
+.content-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.content-header-left{display:flex;flex-direction:column;gap:3px}
 
 /* BUTTONS */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;white-space:nowrap;letter-spacing:0.2px}
@@ -108,24 +286,24 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 /* CARDS */
 .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:border-color 0.2s,box-shadow 0.2s}
 .card:hover{border-color:var(--border2)}
-[data-theme="dark"] .card{background:var(--card-grad);box-shadow:0 4px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(165,180,252,0.06)}
-[data-theme="dark"] .card:hover{border-color:rgba(99,102,241,0.22);box-shadow:0 4px 24px rgba(0,0,0,0.5),0 0 0 1px rgba(99,102,241,0.08)}
+[data-theme="dark"] .card{background:#161B22;border-color:#21262D;box-shadow:0 1px 4px rgba(0,0,0,0.3)}
+[data-theme="dark"] .card:hover{border-color:#30363D}
 .card-sm{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px}
-[data-theme="dark"] .card-sm{background:#151345;border-color:#28265E}
+[data-theme="dark"] .card-sm{background:#21262D;border-color:#30363D}
 
 /* SECTION TITLE */
 .section-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
-[data-theme="dark"] .section-title{color:#C7D2FE}
+[data-theme="dark"] .section-title{color:#E6EDF3}
 .section-title .dot{width:7px;height:7px;border-radius:50%;background:var(--accent-grad);flex-shrink:0;box-shadow:0 0 8px rgba(99,102,241,0.45)}
 
 /* INPUTS */
 .field{margin-bottom:14px}
 .field-label{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px}
-[data-theme="dark"] .field-label{color:#818CF8}
+[data-theme="dark"] .field-label{color:#8B949E}
 .field-input{width:100%;background:var(--card2);border:1.5px solid var(--border);border-radius:9px;color:var(--text);padding:9px 12px;outline:none;transition:all 0.2s;font-size:13px}
 .field-input:focus{border-color:var(--primary);background:var(--surface);box-shadow:0 0 0 3px var(--primary-bg)}
-[data-theme="dark"] .field-input{background:#0E0D2E;border-color:#2A2860}
-[data-theme="dark"] .field-input:focus{background:#13124A;box-shadow:0 0 0 3px rgba(99,102,241,0.2)}
+[data-theme="dark"] .field-input{background:#080B0F;border-color:#30363D;color:#E6EDF3}
+[data-theme="dark"] .field-input:focus{background:#0D1117;box-shadow:0 0 0 3px rgba(99,102,241,0.2)}
 .field-input::placeholder{color:var(--text3)}
 textarea.field-input{resize:vertical;min-height:72px}
 select.field-input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238B9CC4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
@@ -135,25 +313,19 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
 @media(max-width:1024px){
-  .header-right{display:none!important}
-  .mob-header-right{display:flex!important}
-  .app-header{padding:0 16px;height:52px}
-  .app-brand-sub{display:none}
-  .app-brand{font-size:18px}
+  .two-col{grid-template-columns:1fr}
 }
 @media(max-width:768px){
   /* Grids */
   .g3,.g4{grid-template-columns:1fr 1fr}
   .g3.stack,.g4.stack,.g2.stack{grid-template-columns:1fr}
   /* App shell */
-  .app-header{padding:0 14px;height:52px}
-  .app-brand{font-size:17px}
   .app-body{padding:10px 8px}
   .card{padding:12px 10px}
   /* Invoice header */
   .inv-header-left{min-width:0;flex:1;overflow:hidden}
   .inv-title{font-size:19px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-[data-theme="dark"] .inv-title{color:#C7D2FE!important;text-shadow:0 0 32px rgba(165,180,252,0.3)}
+[data-theme="dark"] .inv-title{color:#E6EDF3!important}
   .inv-co-row{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px!important}
   .inv-no-badge{white-space:nowrap;font-size:11px!important;padding:5px 8px!important;max-width:130px;text-align:center}
   /* Bill To / Ship To stacks on mobile */
@@ -212,6 +384,12 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
   .cust-grid-row>div:nth-child(2),.cust-grid-row>div:nth-child(3),.cust-grid-row>div:nth-child(4){display:none}
   /* Drawer */
   .mob-drawer{display:flex!important}
+  /* Modal responsiveness */
+  .modal{max-width:100%!important;margin:0;border-radius:12px!important}
+  .modal-body{padding:16px!important}
+  .modal-ftr{padding:12px 16px!important}
+  /* Inline cards */
+  .inline-card-inner{border-radius:8px!important}
 }
 /* Mobile drawer — hidden on desktop */
 .mob-drawer{display:none;position:fixed;inset:0;z-index:2000;flex-direction:column;}
@@ -225,14 +403,14 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 .mob-nav-sep{height:1px;background:var(--border);margin:6px 0}
 
 /* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:10px;animation:fadeIn 0.2s}
-.modal{background:var(--card);border:1px solid var(--border2);border-radius:16px;width:100%;max-height:96vh;overflow-y:auto;box-shadow:var(--shadow);animation:slideUp 0.3s}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:10px;animation:fadeIn 0.2s}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:96%;max-height:96vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.9);animation:slideUp 0.3s}
 .modal::-webkit-scrollbar{width:4px}
 .modal::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 .modal-hdr{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:2}
-.modal-title{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:var(--text)}
+.modal-title{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:10px}
 .modal-body{padding:24px}
-.modal-ftr{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--card);z-index:2}
+.modal-ftr{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--card);z-index:2;flex-wrap:wrap}
 .close-btn{background:none;border:none;color:var(--text3);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;transition:all 0.2s;font-size:18px}
 .close-btn:hover{background:var(--card2);color:var(--text)}
 
@@ -246,10 +424,10 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 
 /* PRODUCT TABLE */
 .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
-[data-theme="dark"] .table-wrap{border-color:rgba(99,102,241,0.12)}
+[data-theme="dark"] .table-wrap{border-color:#30363D}
 .ptable{width:100%;border-collapse:collapse;min-width:900px}
 .ptable th{background:var(--card2);border-bottom:2px solid var(--border2);padding:10px 8px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px;white-space:nowrap}
-[data-theme="dark"] .ptable th{background:linear-gradient(135deg,#1A1848,#151340);color:#A5B4FC}
+[data-theme="dark"] .ptable th{background:#21262D;color:#8B949E}
 .ptable th.r{text-align:right}
 .ptable td{border-bottom:1px solid var(--border);padding:5px 6px;vertical-align:middle}
 .ptable tr:last-child td{border-bottom:none}
@@ -276,7 +454,7 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 
 /* TAX SUMMARY */
 .tax-box{background:var(--card2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-[data-theme="dark"] .tax-box{background:linear-gradient(160deg,#0A0930,#0F0E38);border-color:rgba(129,140,248,0.18)}
+[data-theme="dark"] .tax-box{background:#1C2333;border-color:#30363D}
 .tax-row{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid var(--border);font-size:13px}
 .tax-row:last-child{border-bottom:none}
 .tax-row.total-row{background:linear-gradient(135deg,var(--primary-bg),var(--gold-bg));border-top:2px solid var(--border2)}
@@ -287,7 +465,7 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 
 /* STAT CARDS */
 .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px}
-[data-theme="dark"] .stat-card{background:var(--card-grad);box-shadow:0 2px 16px rgba(0,0,0,0.4);border-color:rgba(99,102,241,0.1)}
+[data-theme="dark"] .stat-card{background:#1C2333;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-color:#30363D}
 .stat-val{font-family:'Sora',sans-serif;font-size:24px;font-weight:800;color:var(--text)}
 .stat-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:3px}
 .stat-change{font-size:11px;color:var(--green);margin-top:4px;font-weight:600}
@@ -301,11 +479,11 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 /* DATA TABLE */
 .dt{width:100%;border-collapse:collapse}
 .dt th{background:var(--card2);border-bottom:2px solid var(--border2);padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px}
-[data-theme="dark"] .dt th{background:linear-gradient(135deg,#1A1848,#151340);color:#A5B4FC}
+[data-theme="dark"] .dt th{background:#21262D;color:#8B949E}
 .dt td{border-bottom:1px solid var(--border);padding:10px 12px;font-size:13px}
 .dt tr:hover td{background:var(--primary-bg)}
 .dt-wrap{border:1px solid var(--border);border-radius:12px;overflow:hidden;max-height:420px;overflow-y:auto}
-[data-theme="dark"] .dt-wrap{border-color:rgba(99,102,241,0.12)}
+[data-theme="dark"] .dt-wrap{border-color:#30363D}
 .dt-wrap::-webkit-scrollbar{width:4px}
 .dt-wrap::-webkit-scrollbar-thumb{background:var(--border2)}
 
@@ -321,7 +499,7 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 
 /* AMOUNT IN WORDS */
 .amt-words{background:linear-gradient(135deg,var(--gold-bg),rgba(245,166,35,0.03));border:1px solid rgba(245,166,35,0.18);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--gold2);font-style:italic;margin-top:8px}
-[data-theme="dark"] .amt-words{background:linear-gradient(135deg,rgba(99,102,241,0.07),rgba(99,102,241,0.02))}
+[data-theme="dark"] .amt-words{background:#21262D}
 
 /* GSTIN VALID */
 .gstin-wrap{position:relative}
@@ -364,6 +542,84 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 .scroll-y{overflow-y:auto;max-height:380px}
 .scroll-y::-webkit-scrollbar{width:4px}
 .scroll-y::-webkit-scrollbar-thumb{background:var(--border2)}
+
+/* ══════════════════════════════════════════════════════════════
+   COMPREHENSIVE RESPONSIVE & ALIGNMENT IMPROVEMENTS
+   ══════════════════════════════════════════════════════════════ */
+
+/* Mobile (up to 768px) */
+@media(max-width:768px){
+  .field-group{flex-direction:column!important}
+  .g2,.g3,.g4{grid-template-columns:1fr!important}
+  .modal-body{padding:16px!important}
+  .section-title{font-size:14px!important}
+  /* Ensure all tab containers wrap */
+  [style*="display:'flex'"][style*="gap:8"]{flex-wrap:wrap!important}
+  /* Stack form groups */
+  .bill-ship-grid,.contact-grid{grid-template-columns:1fr!important}
+  /* Better button spacing */
+  .btn{font-size:12px!important;padding:7px 14px!important}
+}
+
+/* Small mobile (up to 480px) */
+@media(max-width:480px){
+  .topbar-search{display:none!important}
+  .breadcrumb{display:none!important}
+  .modal{border-radius:8px!important;padding:0!important}
+  .modal-hdr{padding:14px 16px!important;gap:10px!important}
+  .modal-title{font-size:15px!important}
+  /* Ensure header buttons wrap */
+  .modal-hdr>div{flex-wrap:wrap!important;gap:6px!important}
+  /* Stack all action button groups */
+  .inv-actions,.modal-ftr{flex-direction:column!important;align-items:stretch!important}
+  .inv-actions>*,.modal-ftr>*{width:100%!important}
+  /* Tab buttons smaller */
+  .modal-body button{font-size:11px!important;padding:6px 12px!important}
+}
+
+/* Tablet landscape (769px to 1024px) */
+@media(min-width:769px) and (max-width:1024px){
+  .g4{grid-template-columns:repeat(2,1fr)!important}
+  .g3{grid-template-columns:repeat(2,1fr)!important}
+}
+
+/* Desktop (above 900px) */
+@media(min-width:901px){
+  .inline-card-inner{max-width:none;width:100%}
+  .modal{max-width:min(95vw,1200px);margin:0 auto}
+  .app-body{max-width:none;width:100%;padding:20px 32px;box-sizing:border-box}
+  .overlay{padding:20px}
+}
+
+/* Prevent horizontal overflow everywhere */
+body,html{overflow-x:hidden;max-width:100vw;box-sizing:border-box}
+*,*::before,*::after{box-sizing:border-box}
+.app-body,.inline-card,.inline-card-inner,.modal{
+  overflow-x:hidden;max-width:100%;box-sizing:border-box
+}
+
+/* Ensure proper flex wrapping for all button groups */
+.modal-hdr,.modal-ftr,.inv-actions{flex-wrap:wrap!important}
+
+
+/* Force full width for inline sections */
+.inline-card-inner .modal-body{padding:20px 24px!important}
+.inline-card-inner .card{margin-bottom:16px}
+
+/* Ensure cards inside inline sections don't have excessive margins */
+@media(min-width:901px){
+  .inline-card-inner{max-width:none!important;width:100%!important}
+  .inline-card-inner .modal-body{max-width:none!important;width:100%!important}
+}
+
+/* Better spacing for inline content */
+.inline-card-inner .table-wrap,
+.inline-card-inner .dt-wrap,
+.inline-card-inner .hist-table-wrap{
+  width:100%;
+  max-width:100%;
+}
+
 </style>
 </head>
 <body>
@@ -372,7 +628,7 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ── CONSTANTS ── */
-const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze' };
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series' };
 const UNITS = ['Nos','Pcs','Kg','Gm','Ltr','Ml','Mtr','Cm','Sqft','Box','Set','Pair','Roll','Pack','Bag','Bottle','Can','Sheet','Hour','Month'];
 const TAX_RATES = ['0','0.1','0.25','1','1.5','3','5','6','7.5','9','12','14','18','28'];
 const DEFAULT_TERMS = `1. Payment is due within 30 days from the date of invoice.
@@ -391,7 +647,7 @@ const DEFAULT_PO_TERMS = `1. Prices quoted are firm and not subject to any escal
 const STATE_CODES = {'01':'Jammu & Kashmir','02':'Himachal Pradesh','03':'Punjab','04':'Chandigarh','05':'Uttarakhand','06':'Haryana','07':'Delhi','08':'Rajasthan','09':'Uttar Pradesh','10':'Bihar','11':'Sikkim','12':'Arunachal Pradesh','13':'Nagaland','14':'Manipur','15':'Mizoram','16':'Tripura','17':'Meghalaya','18':'Assam','19':'West Bengal','20':'Jharkhand','21':'Odisha','22':'Chhattisgarh','23':'Madhya Pradesh','24':'Gujarat','27':'Maharashtra','29':'Karnataka','30':'Goa','32':'Kerala','33':'Tamil Nadu','36':'Telangana','37':'Andhra Pradesh'};
 
 /* ══════════════════════════════════════════════════════════════
-   🔥 FIREBASE CONFIG — CHANGE THESE VALUES FOR EACH CUSTOMER
+   FIREBASE CONFIG — CHANGE THESE VALUES FOR EACH CUSTOMER
    ══════════════════════════════════════════════════════════════
    Where to get these values:
    1. Go to console.firebase.google.com
@@ -410,7 +666,7 @@ const FIREBASE_CONFIG = {
 };
 
 /* ══════════════════════════════════════════════════════════════
-   👑 SUPER ADMIN EMAILS — CHANGE FOR EACH CUSTOMER
+   <Ic n="crown" s={16}/> SUPER ADMIN EMAILS — CHANGE FOR EACH CUSTOMER
    These emails get Super Admin access automatically on first load
    ══════════════════════════════════════════════════════════════ */
 const SUPER_ADMINS = ['adithya@business.com','invoice@business.com'];
@@ -508,13 +764,39 @@ const validateGSTIN = g=>/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{
 const stateCode = g=>g&&g.length>=2?g.substring(0,2):null;
 const stateName = g=>g&&g.length>=2?(STATE_CODES[g.substring(0,2)]||'Other State'):'';
 const getFY = ()=>{const d=new Date(),y=d.getFullYear(),m=d.getMonth()+1;return m>=4?y:y-1;};
+// getFYShort: returns e.g. "2526" for FY 2025-26 (startYY + endYY)
+const getFYShort = ()=>{const y=getFY(); return String(y).slice(2)+String(y+1).slice(2);};
+// getMonthCode: returns current month as 2-digit string "04","05",...
+const getMonthCode = ()=>String(new Date().getMonth()+1).padStart(2,'0');
+
+/* ── SERIES HELPERS ──
+   Each type has an alpha-only prefix (default INV/INVDN/INVCN/INVNG).
+   genInvNo appends: FYSHORT + MM + NNNN automatically.
+   e.g. INV + 2526 + 04 + 0001 = INV202604​0001
+   User can override only the alpha prefix letters in the Series tab.
+*/
+const SERIES_TYPES=[
+  {id:'INV',   label:'Tax Invoice (B2B & B2C)', defLetters:'INV'},
+  {id:'INVDN', label:'Debit Note',               defLetters:'INVDN'},
+  {id:'INVCN', label:'Credit Note',              defLetters:'INVCN'},
+  {id:'INVNG', label:'Non-GST Invoice',          defLetters:'INVNG'},
+];
+const getSeriesCfg=()=>S.get(SK.SERIES,{});
+// Returns only the letters part of the prefix (user-configurable)
+const getSeriesLetters=(id)=>{
+  const cfg=getSeriesCfg();
+  return (cfg[id]&&cfg[id].letters)||SERIES_TYPES.find(s=>s.id===id)?.defLetters||id;
+};
+// Builds the full prefix = letters + FYshort + MM
+const buildSeriesPrefix=(id)=>`${getSeriesLetters(id)}${getFYShort()}${getMonthCode()}`;
 const genInvNo = (docType)=>{
-  const fy=getFY();
-  const prefix = docType==='DEBIT NOTE'?'INVDN':docType==='CREDIT NOTE'?'INVCN':docType==='NON GST INVOICE'?'INVNG':'INV';
-  const key=SK.CTR+'_'+prefix+'_'+fy;
-  let c=S.get(key,1);
-  const no=`${prefix}-${fy}-${String(c).padStart(4,'0')}`;
-  S.set(key,c+1);
+  const typeId = docType==='DEBIT NOTE'?'INVDN':docType==='CREDIT NOTE'?'INVCN':docType==='NON GST INVOICE'?'INVNG':'INV';
+  const prefix = buildSeriesPrefix(typeId);
+  // Counter key by typeId + FY + month so resets monthly/yearly
+  const key = SK.CTR+'_'+typeId+'_'+getFY()+'_'+getMonthCode();
+  let c = S.get(key, 1);
+  const no = `${prefix}${String(c).padStart(4,'0')}`;
+  S.set(key, c+1);
   return no;
 };
 
@@ -571,7 +853,7 @@ const Toast = ()=>{
   useEffect(()=>{_toast=(msg,type)=>{const id=Date.now();setList(p=>[...p,{id,msg,type}]);setTimeout(()=>setList(p=>p.filter(x=>x.id!==id)),3500);};},[]);
   return <div className="toast-wrap">{list.map(t=>(
     <div key={t.id} className={`toast toast-${t.type}`}>
-      <span>{t.type==='success'?'✓':t.type==='error'?'✗':'ℹ'}</span><span>{t.msg}</span>
+      <span>{t.type==='success'?'':t.type==='error'?'✗':'ℹ'}</span><span>{t.msg}</span>
     </div>))}</div>;
 };
 
@@ -580,6 +862,13 @@ const Ic = ({n,s=15})=>{
   const p={stroke:'currentColor',strokeWidth:'1.8',fill:'none',width:s,height:s,viewBox:'0 0 24 24'};
   const icons = {
     building:<svg {...p}><path d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M8 10v2m0 4v2M12 10v2m0 4v2M16 10v2m0 4v2"/></svg>,
+    chart:<svg {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+    cart:<svg {...p}><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.99-1.61L23 6H6"/></svg>,
+    receipt:<svg {...p}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+    shield:<svg {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+    file:<svg {...p}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>,
+    bell:<svg {...p}><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
+    plus2:<svg {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
     tag:<svg {...p}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82zM7 7h.01"/></svg>,
     history:<svg {...p}><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4H1"/><polyline points="1 3 1 7 5 7"/></svg>,
     plus:<svg {...p} strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>,
@@ -608,8 +897,24 @@ const Ic = ({n,s=15})=>{
   };
   return icons[n]||null;
 };
-const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width="WSIZE" height="HSIZE"><defs><linearGradient id="lg" x1="0" y1="0" x2="56" y2="56" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#4338CA"/><stop offset="100%" stop-color="#6366F1"/></linearGradient></defs><path d="M28 4L8 12V28C8 39.5 17 49.5 28 52C39 49.5 48 39.5 48 28V12L28 4Z" fill="url(#lg)"/><rect x="19" y="18" width="18" height="2.5" rx="1.25" fill="white" fill-opacity="0.95"/><rect x="19" y="23" width="14" height="2.5" rx="1.25" fill="white" fill-opacity="0.75"/><rect x="19" y="28" width="16" height="2.5" rx="1.25" fill="white" fill-opacity="0.75"/><path d="M28 34.5L29.8 37.2L33 36.3L31.5 39.2L33.5 41.5L30.2 41.3L28 44L25.8 41.3L22.5 41.5L24.5 39.2L23 36.3L26.2 37.2Z" fill="#FCD34D" fill-opacity="0.97"/></svg>`;
-const LogoIcon = ({size=32})=><span style={{display:'inline-flex',alignItems:'center',flexShrink:0}} dangerouslySetInnerHTML={{__html:LOGO_SVG.replace(/WSIZE/g,size).replace(/HSIZE/g,size)}}/>;
+const LogoIcon = ({size=32})=>{
+  const id = `ip-grad-${size}-${Math.random().toString(36).slice(2,7)}`;
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width={size} height={size} style={{flexShrink:0,display:'block'}}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#4338CA"/>
+          <stop offset="100%" stopColor="#6366F1"/>
+        </linearGradient>
+      </defs>
+      <path d="M28 4L8 12V28C8 39.5 17 49.5 28 52C39 49.5 48 39.5 48 28V12L28 4Z" fill={`url(#${id})`}/>
+      <rect x="19" y="18" width="18" height="2.5" rx="1.25" fill="white" fillOpacity="0.95"/>
+      <rect x="19" y="23" width="14" height="2.5" rx="1.25" fill="white" fillOpacity="0.75"/>
+      <rect x="19" y="28" width="16" height="2.5" rx="1.25" fill="white" fillOpacity="0.75"/>
+      <path d="M28 34.5L29.8 37.2L33 36.3L31.5 39.2L33.5 41.5L30.2 41.3L28 44L25.8 41.3L22.5 41.5L24.5 39.2L23 36.3L26.2 37.2Z" fill="#FCD34D" fillOpacity="0.97"/>
+    </svg>
+  );
+};
 
 
 /* ── PDF GENERATOR (Redesigned) ── */
@@ -879,7 +1184,14 @@ const makePDF = (inv, co, terms) => {
   }
 
   doc.setDrawColor(...XGRAY);doc.setLineWidth(0.5);doc.line(ML,Y,PW-MR,Y);Y+=5;
-  if(Y+90>PH-22){doc.addPage();drawPageFrame(false);Y=32;}
+  // Smart bottom section: estimate total height needed for payment+terms+sig
+  {const _pm=co.paymentMode||'netbanking';
+  const _sb=(_pm==='netbanking'||_pm==='both');
+  const _su=(_pm==='upi'||_pm==='both');
+  const _hasQR=!!(_su&&co.upiQR);
+  const _payH=(_sb||_su)?(_hasQR?52:24):0;
+  const _botH=_payH+54;
+  if(Y+_botH>PH-22){doc.addPage();drawPageFrame(false);Y=32;}}
 
   // ══ TOP ROW: PAYMENT DETAILS (full width) ══
   // Decide what to show based on company payment mode
@@ -1041,7 +1353,7 @@ const autoSavePDF = async (doc, inv) => {
     const pdfBlob = doc.output('blob');
     await writable.write(pdfBlob);
     await writable.close();
-    toast.success(`📁 Auto-saved to ${folderName}/${fileName}`);
+    toast.success(`<Ic n="folder" s={16}/> Auto-saved to ${folderName}/${fileName}`);
   } catch(e) {
     console.warn('Auto-save failed:', e.message);
   }
@@ -1294,7 +1606,7 @@ const makeAuditExcel = (logs) => {
 };
 
 /* ══════════════════════════════════════════════════════════════
-   📦 FULL EXCEL BACKUP — All data in one workbook, every sheet
+   <Ic n="package" s={16}/> FULL EXCEL BACKUP — All data in one workbook, every sheet
    Sheets: Company Info, Sales Register, Monthly Sales Summary,
            Purchase Register, Category Summary, Monthly Purchase Summary,
            PO Register, Customer Database, HSN Database,
@@ -1543,8 +1855,8 @@ const makeFullExcel = () => {
     const frzHdr=['Month','Sales Frozen','Expenses Frozen'];
     const frzRows=[frzHdr,...allMonths.map(m=>[
       m,
-      (freezeD.sales||[]).includes(m)?'❄️ Frozen':'Open',
-      (freezeD.expenses||[]).includes(m)?'❄️ Frozen':'Open'
+      (freezeD.sales||[]).includes(m)?' Frozen':'Open',
+      (freezeD.expenses||[]).includes(m)?' Frozen':'Open'
     ])];
     if((freezeD.sales||[]).length>0||(freezeD.expenses||[]).length>0){
       addSheet(wb, frzRows, 'Frozen Periods', [12,14,16]);
@@ -1678,8 +1990,8 @@ const makeExcel = (invoices) => {
 };
 
 /* ── MODALS ── */
-const CompanyModal = ({onClose, currentUser})=>{
-  const [d,setD]=useState(S.get(SK.CO,{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',website:'',logo:'',bankName:'',bankAccount:'',bankIFSC:'',bankBranch:'',signatory:'',panNo:'',paymentMode:'netbanking',upiId:'',upiQR:''}));
+const CompanyModal = ({onClose, currentUser, inline=false})=>{
+  const [d,setD]=useState(S.get(SK.CO,{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',website:'',logo:'',bankName:'',bankAccount:'',bankIFSC:'',bankBranch:'',signatory:'',panNo:'',paymentMode:'netbanking',upiId:'',upiQR:'',waEnabled:false}));
   const [waNum,setWaNum]=useState(S.get(SK.WA,''));
   const [prev,setPrev]=useState(d.logo||'');
   const [upiQRPrev,setUpiQRPrev]=useState(d.upiQR||'');
@@ -1695,9 +2007,9 @@ const CompanyModal = ({onClose, currentUser})=>{
   };
   const handleLogo=e=>{const f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){toast.error('Max 2MB');return;}const r=new FileReader();r.onload=ev=>{const b=ev.target.result;setD(p=>({...p,logo:b}));setPrev(b);};r.readAsDataURL(f);};
   const handleUpiQR=e=>{const f=e.target.files[0];if(!f)return;if(f.size>1*1024*1024){toast.error('Max 1MB for QR');return;}const r=new FileReader();r.onload=ev=>{const b=ev.target.result;setD(p=>({...p,upiQR:b}));setUpiQRPrev(b);};r.readAsDataURL(f);};
-  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:860,width:"95vw"}}>
-      <div className="modal-hdr"><span className="modal-title">🏢 Company Details</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
+  return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
+    <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(860px, 95vw)',width:'100%'})}}>
+      <div className="modal-hdr"><span className="modal-title"><Ic n="building" s={16}/> Company Details</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>
       <div className="modal-body">
         <div style={{display:'flex',gap:16,alignItems:'flex-start',marginBottom:18}}>
           <div>
@@ -1737,12 +2049,24 @@ const CompanyModal = ({onClose, currentUser})=>{
           <div className="field"><label className="field-label">Branch Name</label><input className="field-input" value={d.bankBranch} onChange={up('bankBranch')}/></div>
         </div>
         <div className="field" style={{maxWidth:340}}><label className="field-label">Authorised Signatory Name</label><input className="field-input" value={d.signatory} onChange={up('signatory')} placeholder="Proprietor / Director"/></div>
+        <div className="sep-text">WhatsApp Share Button</div>
+        <div style={{display:'flex',alignItems:'center',gap:14,padding:'12px 14px',background:'rgba(37,211,102,0.05)',border:'1px solid rgba(37,211,102,0.2)',borderRadius:10}}>
+          <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',flex:1}}>
+            <div onClick={()=>setD(p=>({...p,waEnabled:!p.waEnabled}))} style={{width:44,height:24,borderRadius:12,background:d.waEnabled?'#25D366':'var(--border2)',position:'relative',transition:'background 0.2s',cursor:'pointer',flexShrink:0}}>
+              <div style={{position:'absolute',top:3,left:d.waEnabled?22:3,width:18,height:18,borderRadius:9,background:'white',transition:'left 0.2s',boxShadow:'0 1px 4px rgba(0,0,0,0.25)'}}/>
+            </div>
+            <div>
+              <div style={{fontWeight:700,color:'var(--text)',fontSize:13}}>{d.waEnabled?'✅ WhatsApp button enabled':'⬜ WhatsApp button disabled'}</div>
+              <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{d.waEnabled?'Button visible on invoice form — sends PDF + message to customer':'Button hidden. Enable to allow sharing invoices via WhatsApp.'}</div>
+            </div>
+          </label>
+        </div>
 
         <div className="sep-text">Payment Method on Invoice</div>
         <div style={{marginBottom:14}}>
           <div className="field-label" style={{marginBottom:8}}>Show in PDF Invoice</div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-            {[['netbanking','🏦 Net Banking Only'],['upi','📱 UPI Only'],['both','🏦 + 📱 Both']].map(([v,l])=>(
+            {[['netbanking','Net Banking Only'],['upi','UPI Only'],['both','Both']].map(([v,l])=>(
               <label key={v} style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',padding:'7px 14px',borderRadius:8,border:`2px solid ${d.paymentMode===v?'var(--primary)':'var(--border2)'}`,background:d.paymentMode===v?'var(--primary-bg)':'transparent',fontSize:12,fontWeight:d.paymentMode===v?700:500,color:d.paymentMode===v?'var(--primary2)':'var(--text2)',transition:'all 0.2s'}}>
                 <input type="radio" name="paymode" value={v} checked={d.paymentMode===v} onChange={up('paymentMode')} style={{display:'none'}}/>
                 {l}
@@ -1753,7 +2077,7 @@ const CompanyModal = ({onClose, currentUser})=>{
 
         {(d.paymentMode==='upi'||d.paymentMode==='both')&&(
           <div style={{background:'var(--card2)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
-            <div style={{fontWeight:700,color:'var(--primary2)',fontSize:13,marginBottom:12}}>📱 UPI Settings</div>
+            <div style={{fontWeight:700,color:'var(--primary2)',fontSize:13,marginBottom:12}}>UPI Settings</div>
             <div className="g2" style={{alignItems:'start'}}>
               <div>
                 <div className="field"><label className="field-label">UPI ID</label><input className="field-input" value={d.upiId||''} onChange={up('upiId')} placeholder="yourname@bank or 9876543210@upi"/></div>
@@ -1768,7 +2092,7 @@ const CompanyModal = ({onClose, currentUser})=>{
                   </div>
                   <div>
                     <input ref={upiQRRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleUpiQR}/>
-                    <button className="btn btn-outline-primary btn-sm" onClick={()=>upiQRRef.current.click()}>📷 Upload QR</button>
+                    <button className="btn btn-outline-primary btn-sm" onClick={()=>upiQRRef.current.click()}><Ic n="camera" s={16}/> Upload QR</button>
                     {upiQRPrev&&<button className="btn btn-danger btn-sm" style={{marginTop:6,display:'block'}} onClick={()=>{setUpiQRPrev('');setD(p=>({...p,upiQR:''}));}}>Remove</button>}
                     <div style={{fontSize:10,color:'var(--text3)',marginTop:4}}>PNG/JPG · max 1MB</div>
                   </div>
@@ -1797,13 +2121,14 @@ const CompanyModal = ({onClose, currentUser})=>{
   </div>;
 };
 
-const HSNModal = ({onClose})=>{
+const HSNModal = ({onClose, inline=false, searchQuery=''})=>{
   const [activeTab,setActiveTab]=useState('hsn');
   // ── HSN/SAC tab state ──
   const [list,setList]=useState(S.get(SK.HSN,[]));
   const [form,setForm]=useState({code:'',desc:'',taxRate:'18',unit:'Nos',type:'HSN',category:''});
   const [editing,setEditing]=useState(null);
-  const [q,setQ]=useState('');
+  const [q,setQ]=useState(searchQuery);
+  useEffect(()=>{if(searchQuery!==undefined)setQ(searchQuery);},[searchQuery]);
   const up=k=>e=>setForm(p=>({...p,[k]:e.target.value}));
   const filtered=list.filter(h=>h.code.includes(q)||h.desc.toLowerCase().includes(q.toLowerCase())||(h.category||'').toLowerCase().includes(q.toLowerCase()));
   const save=()=>{
@@ -1818,16 +2143,16 @@ const HSNModal = ({onClose})=>{
   const editE=i=>{setForm({...list[i]});setEditing(i);};
 
 
-  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:1060,width:"96vw"}}>
+  return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
+    <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1060px, 95vw)',width:'100%'})}}>
       <div className="modal-hdr">
-        <span className="modal-title">🏷️ HSN / SAC Database</span>
+        <span className="modal-title"><Ic n="tag" s={16}/>️ HSN / SAC Database</span>
         <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
       </div>
       <div className="modal-body">
         <>
           <div className="card" style={{marginBottom:18}}>
-            <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editing!==null?'✏️ Edit Entry':'➕ Add HSN/SAC Code'}</div>
+            <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editing!==null?'✏️ Edit Entry':' Add HSN/SAC Code'}</div>
             <div className="g4">
               <div className="field"><label className="field-label">Type</label><select className="field-input" value={form.type} onChange={up('type')}><option value="HSN">HSN (Goods)</option><option value="SAC">SAC (Services)</option></select></div>
               <div className="field"><label className="field-label">Code *</label><input className="field-input" value={form.code} onChange={up('code')} placeholder="e.g. 8471" maxLength={8}/></div>
@@ -1845,7 +2170,10 @@ const HSNModal = ({onClose})=>{
           </div>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
             <span style={{color:'var(--text2)',fontSize:13}}>{list.length} entries</span>
-            <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 Search..." style={{maxWidth:260}}/>
+            <div style={{position:'relative',maxWidth:260}}>
+              <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
+              <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search..." style={{paddingLeft:38,width:'100%'}}/>
+            </div>
           </div>
           {filtered.length>0?(<div className="dt-wrap"><table className="dt" style={{width:'100%'}}><thead><tr><th>Type</th><th>Code</th><th>Description</th><th>Category</th><th>Rate</th><th>Unit</th><th style={{width:80}}>Actions</th></tr></thead>
           <tbody>{filtered.map((h,i)=>{const idx=list.indexOf(h);return(<tr key={i}><td><span className={`badge ${h.type==='SAC'?'badge-blue':'badge-gold'}`}>{h.type}</span></td><td style={{fontWeight:700,color:'var(--gold)',fontFamily:'monospace'}}>{h.code}</td><td style={{maxWidth:250}}>{h.desc}</td><td style={{color:'var(--text3)',fontSize:12}}>{h.category||'—'}</td><td><span className="badge badge-green">{h.taxRate}%</span></td><td style={{color:'var(--text2)'}}>{h.unit}</td><td><div style={{display:'flex',gap:5}}><button className="btn btn-sm btn-outline btn-icon" onClick={()=>editE(idx)}><Ic n="edit" s={12}/></button><button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(idx)}><Ic n="trash" s={12}/></button></div></td></tr>);})}</tbody>
@@ -1858,7 +2186,7 @@ const HSNModal = ({onClose})=>{
   </div>;
 };
 
-const TermsModal = ({onClose})=>{
+const TermsModal = ({onClose, inline=false})=>{
   const [tab,setTab]=useState('invoice');
   const [t,setT]=useState(S.get(SK.TERMS,DEFAULT_TERMS));
   const [pt,setPt]=useState(S.get(SK.PO_TERMS,DEFAULT_PO_TERMS));
@@ -1868,15 +2196,15 @@ const TermsModal = ({onClose})=>{
     toast.success('Terms saved!');
     onClose();
   };
-  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:760,width:"95vw"}}>
+  return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
+    <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(760px, 95vw)',width:'100%'})}}>
       <div className="modal-hdr">
-        <span className="modal-title">📋 Terms & Conditions</span>
+        <span className="modal-title"><Ic n="file" s={20}/> Terms & Conditions</span>
         <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
       </div>
       <div className="modal-body">
         <div style={{display:'flex',background:'var(--card2)',border:'1px solid var(--border)',borderRadius:8,padding:3,gap:3,marginBottom:16}}>
-          {[['invoice','📄 Invoice T&C'],['po','🛒 PO T&C']].map(([k,l])=>(
+          {[['invoice','Invoice T&C'],['po','PO T&C']].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)}
               style={{flex:1,padding:'7px 0',borderRadius:6,fontSize:12,fontWeight:tab===k?700:500,cursor:'pointer',
                 border:'none',background:tab===k?'var(--primary)':'transparent',
@@ -1915,12 +2243,13 @@ const blankExp = (user) => ({
   notes:'', createdBy: user?.email||''
 });
 
-const ExpenseModal = ({onClose, currentUser})=>{
+const ExpenseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
   const [expenses, setExpenses] = useState(S.get(SK.EXP,[]));
   const [form, setForm] = useState(()=>blankExp(currentUser));
   const [tab, setTab] = useState('list');
   const [editId, setEditId] = useState(null);
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState(searchQuery);
+  useEffect(()=>{if(searchQuery!==undefined){setQ(searchQuery);setTab('list');}},[searchQuery]);
   const [filterCat, setFilterCat] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const isAdmin = currentUser?.role==='admin'||currentUser?.role==='superadmin';
@@ -1939,7 +2268,7 @@ const ExpenseModal = ({onClose, currentUser})=>{
     // ── Freeze Guard ──
     if(!isSuperAdmin(currentUser?.email) && isExpenseFrozen(form)){
       const ym = (form.date||'').substring(0,7);
-      toast.error(`❄️ ${ym} expenses are frozen. Only Super Admin can edit for this month.`);
+      toast.error(` ${ym} expenses are frozen. Only Super Admin can edit for this month.`);
       return;
     }
     const calc = {...calcExp(form), vendorGSTIN:(form.vendorGSTIN||'').toUpperCase()};
@@ -1962,7 +2291,7 @@ const ExpenseModal = ({onClose, currentUser})=>{
     if(!isAdmin){toast.error('Only Admin can delete expenses');return;}
     const e = expenses.find(x=>x.id===id);
     if(!isSuperAdmin(currentUser?.email) && isExpenseFrozen(e)){
-      toast.error(`❄️ ${(e?.date||'').substring(0,7)} expenses are frozen. Only Super Admin can delete.`);
+      toast.error(` ${(e?.date||'').substring(0,7)} expenses are frozen. Only Super Admin can delete.`);
       return;
     }
     if(!window.confirm('Delete this expense?'))return;
@@ -1988,11 +2317,11 @@ const ExpenseModal = ({onClose, currentUser})=>{
 
   const payBadge = s => s==='Paid'?{bg:'#F0FDF4',color:'#166534'}:s==='Pending'?{bg:'#FEF2F2',color:'#DC2626'}:{bg:'#FEF3C7',color:'#92400E'};
 
-  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:1100,width:'96vw'}}>
+  return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
+    <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1260px, 95vw)',width:'100%'})}}>
       <div className="modal-hdr">
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <span className="modal-title">🧾 Expense / Purchase Tracker</span>
+          <span className="modal-title"><Ic n="receipt" s={20}/> Expense / Purchase Tracker</span>
           <span style={{fontSize:11,color:'var(--text3)',background:'var(--card2)',padding:'3px 10px',borderRadius:20,border:'1px solid var(--border)'}}>
             {expenses.length} records
           </span>
@@ -2005,16 +2334,15 @@ const ExpenseModal = ({onClose, currentUser})=>{
 
       <div className="modal-body">
         {/* Tabs */}
-        <div style={{display:'flex',gap:8,marginBottom:16}}>
-          {[['list','📋 All Expenses'],['add', editId?'✏️ Edit Expense':'➕ Add Expense']].map(([k,l])=>(
-            <button key={k} onClick={()=>{setTab(k);if(k==='add'&&!editId)setForm(blankExp(currentUser));}}
-              style={{padding:'7px 18px',borderRadius:8,fontSize:12,fontWeight:tab===k?700:500,cursor:'pointer',
-                border:`2px solid ${tab===k?'var(--primary)':'var(--border2)'}`,
-                background:tab===k?'var(--primary-bg)':'transparent',
-                color:tab===k?'var(--primary2)':'var(--text2)'}}>
-              {l}
-            </button>
-          ))}
+                <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+          <button onClick={()=>{setTab('list');}} className={tab==='list'?'btn btn-sm btn-primary':'btn btn-sm btn-outline'}
+            style={{display:'flex',alignItems:'center',gap:6}}>
+            <Ic n="list" s={14}/> All Expenses
+          </button>
+          <button onClick={()=>{setTab('add');if(!editId)setForm(blankExp(currentUser));}} className={tab==='add'?'btn btn-sm btn-primary':'btn btn-sm btn-outline'}
+            style={{display:'flex',alignItems:'center',gap:6}}>
+            <Ic n={editId?'edit':'plus'} s={14}/> {editId?'Edit Expense':'Add Expense'}
+          </button>
         </div>
 
         {/* ── LIST TAB ── */}
@@ -2029,9 +2357,10 @@ const ExpenseModal = ({onClose, currentUser})=>{
 
           {/* Filters */}
           <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap'}}>
-            <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
-              placeholder="🔍 Search vendor, description, bill no, category..."
-              style={{flex:1,minWidth:200}}/>
+            <div style={{position:'relative',flex:1,minWidth:200}}>
+              <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
+              <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search vendor, description, bill no, category..." style={{paddingLeft:38,width:'100%'}}/>
+            </div>
             <select className="field-input" value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{width:180}}>
               <option value="">All Categories</option>
               {EXP_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
@@ -2097,11 +2426,11 @@ const ExpenseModal = ({onClose, currentUser})=>{
                   {/* Actions */}
                   <div style={{display:'flex',gap:5,justifyContent:'center',alignItems:'center'}}>
                     {(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(e))&&
-                      <span title="Month frozen" style={{fontSize:13}}>❄️</span>}
+                      <span title="Month frozen" style={{fontSize:13}}></span>}
                     <button className="btn btn-xs btn-outline"
                       onClick={()=>{
                         if(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(e)){
-                          toast.error(`❄️ ${(e.date||'').substring(0,7)} expenses are frozen.`);
+                          toast.error(` ${(e.date||'').substring(0,7)} expenses are frozen.`);
                         }
                         editExp(e);
                       }}
@@ -2115,7 +2444,7 @@ const ExpenseModal = ({onClose, currentUser})=>{
               })}
             </div>
           ):<div style={{textAlign:'center',padding:'50px',color:'var(--text3)'}}>
-              <div style={{fontSize:40,marginBottom:10}}>🧾</div>
+              <div style={{fontSize:40,marginBottom:10}}><Ic n="receipt" s={16}/></div>
               <div style={{fontSize:14}}>No expenses recorded yet.</div>
               <div style={{fontSize:12,marginTop:4}}>Click "Add Expense" to start tracking purchases.</div>
             </div>}
@@ -2126,7 +2455,7 @@ const ExpenseModal = ({onClose, currentUser})=>{
           {/* Freeze banner */}
           {isExpenseFrozen(form)&&!isSuperAdmin(currentUser?.email)&&(
             <div className="alert" style={{background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.3)',color:'var(--primary2)',marginBottom:12}}>
-              <span style={{fontSize:18}}>❄️</span>
+              <span style={{fontSize:18}}></span>
               <span><strong>{(form.date||'').substring(0,7)} expenses are frozen.</strong> Contact Super Admin to unfreeze before editing.</span>
             </div>
           )}
@@ -2138,14 +2467,14 @@ const ExpenseModal = ({onClose, currentUser})=>{
                 onChange={e=>{
                   const newDate=e.target.value;
                   if(!isSuperAdmin(currentUser?.email) && isMonthFrozen(newDate,'expenses')){
-                    toast.error(`❄️ ${newDate.substring(0,7)} expenses are frozen. Cannot add/edit entries for this month.`);
+                    toast.error(` ${newDate.substring(0,7)} expenses are frozen. Cannot add/edit entries for this month.`);
                     return;
                   }
                   upF('date')(e);
                 }}
                 style={{borderColor:(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form))?'var(--red)':''}}/>
               {(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form))&&
-                <div style={{fontSize:10,color:'var(--red)',marginTop:3}}>❄️ This month is frozen</div>}
+                <div style={{fontSize:10,color:'var(--red)',marginTop:3}}> This month is frozen</div>}
             </div>
             <div className="field"><label className="field-label">Vendor / Supplier Name *</label><input className="field-input" value={form.vendor} onChange={upF('vendor')} placeholder="Supplier name"/></div>
             <div className="field"><label className="field-label">Vendor GSTIN</label><input className="field-input" value={form.vendorGSTIN||''} onChange={e=>setForm(p=>calcExp({...p,vendorGSTIN:e.target.value.toUpperCase()}))} placeholder="29XXXXX0000X1Z5" maxLength={15} style={{textTransform:'uppercase'}}/></div>
@@ -2212,7 +2541,7 @@ const ExpenseModal = ({onClose, currentUser})=>{
               <select className="field-input" value={form.payStatus||'Paid'} onChange={upF('payStatus')}>
                 <option value="Paid">✅ Paid</option>
                 <option value="Pending">⏳ Pending</option>
-                <option value="Partial">🔶 Partial</option>
+                <option value="Partial"> Partial</option>
               </select>
             </div>
             <div className="field"><label className="field-label">Paid Date</label><input type="date" className="field-input" value={form.paidDate||''} onChange={upF('paidDate')}/></div>
@@ -2227,7 +2556,7 @@ const ExpenseModal = ({onClose, currentUser})=>{
           <button className="btn btn-outline" onClick={()=>{setForm(blankExp(currentUser));setEditId(null);setTab('list');}}>Cancel</button>
           <button className="btn btn-primary"
             disabled={!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form)}
-            title={(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form))?`❄️ ${(form.date||'').substring(0,7)} is frozen`:''}
+            title={(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form))?` ${(form.date||'').substring(0,7)} is frozen`:''}
             onClick={saveExp}><Ic n="save"/>{editId?'Update Expense':'Save Expense'}</button>
         </>}
       </div>
@@ -2235,12 +2564,13 @@ const ExpenseModal = ({onClose, currentUser})=>{
   </div>;
 };
 
-const CustomerModal = ({onClose, onSelect})=>{
+const CustomerModal = ({onClose, onSelect, inline=false, searchQuery=''})=>{
   const blank={name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',notes:''};
   const [list,setList]=useState(S.get(SK.CUST,[]));
   const [form,setForm]=useState(blank);
   const [editing,setEditing]=useState(null);
-  const [q,setQ]=useState('');
+  const [q,setQ]=useState(searchQuery);
+  useEffect(()=>{if(searchQuery!==undefined){setQ(searchQuery);setTab('list');}},[searchQuery]);
   const [tab,setTab]=useState(onSelect?'search':'list');
 
   const save=()=>{
@@ -2259,20 +2589,21 @@ const CustomerModal = ({onClose, onSelect})=>{
   const edit=i=>{setForm({...list[i]});setEditing(i);setTab('add');};
   const filtered=list.filter(c=>!q||c.name.toLowerCase().includes(q.toLowerCase())||c.gstin?.includes(q)||c.city?.toLowerCase().includes(q.toLowerCase()));
 
-  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:1060,width:"96vw"}}>
+  return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
+    <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1200px, 95vw)',width:'100%'})}}>
       <div className="modal-hdr">
-        <span className="modal-title">👥 Customer Database</span>
+        <span className="modal-title"><Ic n="users" s={20}/> Customer Database</span>
         <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
       </div>
       <div className="modal-body">
-        <div style={{display:'flex',gap:8,marginBottom:16}}>
-          {[['list',`📋 All Customers (${list.length})`],['add',editing!==null?'✏️ Edit Customer':'➕ Add Customer']].map(([k,l])=>(
+        <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+          {[['list',`All Customers (${list.length})`],['add',editing!==null?'Edit Customer':'Add Customer']].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)}
               style={{padding:'7px 18px',borderRadius:8,fontSize:12,fontWeight:tab===k?700:500,cursor:'pointer',
                 border:`2px solid ${tab===k?'var(--primary)':'var(--border2)'}`,
                 background:tab===k?'var(--primary-bg)':'transparent',
-                color:tab===k?'var(--primary2)':'var(--text2)'}}>
+                color:tab===k?'var(--primary2)':'var(--text2)',display:'flex',alignItems:'center',gap:6}}>
+              <Ic n={k==='list'?'list':(editing!==null?'edit':'plus')} s={14}/>
               {l}
             </button>
           ))}
@@ -2280,7 +2611,10 @@ const CustomerModal = ({onClose, onSelect})=>{
 
         {tab==='list'&&(
           <>
-            <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 Search by name, GSTIN, city..." style={{marginBottom:12}}/>
+            <div style={{position:'relative',marginBottom:12}}>
+              <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
+              <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search by name, GSTIN, city..." style={{paddingLeft:38,width:'100%'}}/>
+            </div>
             {filtered.length>0?(
               <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'50vh',overflowY:'auto'}}>
                 <div className="cust-grid-hdr" style={{display:'grid',gridTemplateColumns:'1fr 130px 110px 120px auto',gap:0,padding:'8px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>
@@ -2304,7 +2638,7 @@ const CustomerModal = ({onClose, onSelect})=>{
                 ))}
               </div>
             ):<div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>
-                <div style={{fontSize:36,marginBottom:8}}>👥</div>
+                <div style={{fontSize:36,marginBottom:8}}><Ic n="users" s={36}/></div>
                 <div>No customers yet. Add your first customer!</div>
               </div>}
           </>
@@ -2347,15 +2681,16 @@ const docBadge=(dt,isB2C)=>{
   return {label:'B2B',bg:'var(--primary-bg)',color:'var(--primary2)'};
 };
 
-const HistoryModal = ({onClose,onLoad,currentUser})=>{
+const HistoryModal = ({onClose,onLoad,currentUser,inline=false,searchQuery=''})=>{
   const [invs,setInvs]=useState(S.get(SK.INV,[]));
-  const [q,setQ]=useState('');
+  const [q,setQ]=useState(searchQuery);
+  useEffect(()=>{if(searchQuery!==undefined)setQ(searchQuery);},[searchQuery]);
   const co=S.get(SK.CO,{});
   const isAdmin=currentUser?.role==='admin'||currentUser?.role==='superadmin';
   const del=id=>{
     const inv=invs.find(i=>i.invNo===id);
     if(!isSuperAdmin(currentUser?.email) && isSalesFrozen(inv)){
-      toast.error(`❄️ ${(inv?.date||'').substring(0,7)} is frozen. Only Super Admin can delete invoices for this month.`);
+      toast.error(` ${(inv?.date||'').substring(0,7)} is frozen. Only Super Admin can delete invoices for this month.`);
       return;
     }
     if(!window.confirm('Delete this invoice permanently?'))return;
@@ -2366,11 +2701,11 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
   const sorted=[...invs].filter(i=>!q||i.invNo?.toLowerCase().includes(q.toLowerCase())||i.billTo?.name?.toLowerCase().includes(q.toLowerCase())||(i.docType||'').toLowerCase().includes(q.toLowerCase())||(i.isB2C?'b2c':'b2b').includes(q.toLowerCase())).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
   const total=invs.reduce((s,i)=>s+getGrand(i),0);
   const mn=new Date(),mInvs=invs.filter(i=>{const d=new Date(i.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();});
-  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:1100,width:'95vw'}}>
+  if(inline) return <div className="inline-card">
+    <div className="inline-card-inner">
       <div className="modal-hdr">
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <span className="modal-title">📂 Invoice History</span>
+          <span className="modal-title"><Ic n="folder-open" s={16}/> Invoice History</span>
           <span style={{fontSize:11,color:'var(--text3)',background:'var(--card2)',padding:'3px 10px',borderRadius:20,border:'1px solid var(--border)'}}>
             {sorted.length} of {invs.length} records
           </span>
@@ -2380,7 +2715,7 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
             <button className="btn btn-outline-primary btn-sm" onClick={()=>makeGSTR1(invs)}><Ic n="xlsx" s={13}/>GSTR-1</button>
             <button className="btn btn-success btn-sm" onClick={()=>makeExcel(invs)}><Ic n="xlsx" s={13}/>Sales Register</button>
           </>}
-          <button className="btn btn-outline btn-sm" onClick={pickSaveFolder} title="Set folder for auto-saving PDFs">📁 Save Folder</button>
+          <button className="btn btn-outline btn-sm" onClick={pickSaveFolder} title="Set folder for auto-saving PDFs"><Ic n="folder" s={16}/> Save Folder</button>
           <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
         </div>
       </div>
@@ -2391,9 +2726,12 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
           <div className="stat-card"><div className="stat-val">{mInvs.length}</div><div className="stat-lbl">This Month</div></div>
           <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{fmt(mInvs.reduce((s,i)=>s+getGrand(i),0))}</div><div className="stat-lbl">Month Revenue</div></div>
         </div>
-        <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
-          placeholder="🔍 Search by invoice no., customer name, type (B2B / B2C / Debit / Credit)..."
-          style={{marginBottom:12,fontSize:13}}/>
+        <div style={{position:'relative',marginBottom:12}}>
+          <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
+          <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
+            placeholder="Search by invoice no., customer name, type..."
+            style={{paddingLeft:38,fontSize:13,width:'100%'}}/>
+        </div>
         {sorted.length>0?(
           <div className="hist-table-wrap" style={{maxHeight:'58vh',overflowY:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse',tableLayout:'fixed',minWidth:780}}>
@@ -2409,7 +2747,7 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
               </colgroup>
               <thead>
                 <tr style={{background:'var(--card2)',borderBottom:'2px solid var(--border2)',position:'sticky',top:0,zIndex:2}}>
-                  {['Type','Invoice No.','Customer','Date','Status','📤','Amount','Actions'].map((h,i)=>(
+                  {['Type','Invoice No.','Customer','Date','Status','S','Amount','Actions'].map((h,i)=>(
                     <th key={i} style={{padding:'9px 8px',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',textAlign:i===6?'right':i===7?'center':i===5?'center':'left',whiteSpace:'nowrap'}}>{h}</th>
                   ))}
                 </tr>
@@ -2442,11 +2780,11 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
                     </td>
                     <td style={{padding:'10px 6px'}}>
                       <span style={{padding:'3px 8px',borderRadius:20,fontSize:10,fontWeight:700,background:stCfg.bg,color:stCfg.color,whiteSpace:'nowrap',display:'inline-block'}}>
-                        {inv.status==='Draft'?'📝 Draft':inv.status==='Sent'?'📤 Sent':inv.status==='Paid'?'✅ Paid':'⚠️ Overdue'}
+                        {inv.status==='Draft'?'Draft':inv.status==='Sent'?'Sent':inv.status==='Paid'?'Paid':'Overdue'}
                       </span>
                     </td>
                     <td style={{padding:'10px 6px',textAlign:'center',fontSize:14}}>
-                      {inv.sentToCustomer?'📤':'—'}
+                      {inv.sentToCustomer?'S':'—'}
                     </td>
                     <td style={{padding:'10px 8px',textAlign:'right',fontWeight:700,color:isCN?'var(--red)':'var(--text)',fontSize:13,whiteSpace:'nowrap'}}>
                       {isCN&&<span style={{color:'var(--red)'}}>−</span>}{fmt(Math.abs(getGrand(inv)||0))}
@@ -2455,19 +2793,19 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
                       <div style={{display:'flex',gap:3,justifyContent:'center',alignItems:'center',flexWrap:'nowrap'}}>
                         <button className="btn btn-sm btn-outline-primary" style={{padding:'4px 8px',fontSize:11,
                           opacity:(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?0.6:1}}
-                          title={(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?`❄️ ${(inv.date||'').substring(0,7)} is frozen — you can view but cannot save changes`:'Load invoice'}
+                          title={(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?` ${(inv.date||'').substring(0,7)} is frozen — you can view but cannot save changes`:'Load invoice'}
                           onClick={()=>{
                             if(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv)){
-                              toast.error(`❄️ ${(inv.date||'').substring(0,7)} is frozen. You can view but changes cannot be saved. Contact Super Admin to unfreeze.`);
+                              toast.error(` ${(inv.date||'').substring(0,7)} is frozen. You can view but changes cannot be saved. Contact Super Admin to unfreeze.`);
                             }
                             onLoad(inv);onClose();
                           }}>Load</button>
                         <button className="btn btn-sm btn-outline btn-icon" style={{width:28,height:28}} title="Duplicate" onClick={()=>{
                           const dup={...inv,invNo:genInvNo(inv.docType),date:today(),dueDate:'',status:'Sent',sentToCustomer:true,paidDate:'',time:nowTime()};
                           onLoad(dup);onClose();toast.success('Invoice duplicated — edit and save!');
-                        }}>📋</button>
+                        }}><Ic n="list" s={16}/></button>
                         <button className="btn btn-sm btn-outline btn-icon" style={{width:28,height:28}} title="Download PDF" onClick={()=>makePDF(inv,co,S.get(SK.TERMS,DEFAULT_TERMS))}><Ic n="pdf" s={12}/></button>
-                        {isSalesFrozen(inv)&&<span title="This month is frozen" style={{fontSize:14,padding:'0 4px'}}>❄️</span>}
+                        {isSalesFrozen(inv)&&<span title="This month is frozen" style={{fontSize:14,padding:'0 4px'}}></span>}
                         {isAdmin&&<button className="btn btn-sm btn-danger btn-icon" style={{width:28,height:28,opacity:(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?0.4:1}} title={(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?"Month frozen — Super Admin only":"Delete"} onClick={()=>del(inv.invNo)}><Ic n="trash" s={12}/></button>}
                       </div>
                     </td>
@@ -2477,7 +2815,7 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
             </table>
           </div>
         ):<div style={{textAlign:'center',padding:'60px',color:'var(--text3)'}}>
-            <div style={{fontSize:40,marginBottom:12}}>📭</div>
+            <div style={{fontSize:40,marginBottom:12}}><Ic n="inbox" s={16}/></div>
             <div>No records saved yet.</div>
           </div>}
       </div>
@@ -2485,7 +2823,7 @@ const HistoryModal = ({onClose,onLoad,currentUser})=>{
         <span style={{fontSize:12,color:'var(--text3)',display:'flex',alignItems:'center',gap:6}}>
           {isAdmin
             ? <><span style={{color:'var(--green)'}}>✅</span> Admin — full access</>
-            : <><span>👁️</span> Staff — view &amp; download only. Contact admin to delete.</>}
+            : <><span><Ic n="eye" s={16}/>️</span> Staff — view &amp; download only. Contact admin to delete.</>}
         </span>
         <button className="btn btn-primary" onClick={onClose}>Close</button>
       </div>
@@ -2586,7 +2924,7 @@ const ItemRow = ({row, idx, onChange, onDelete, hsnList, gstType, descOnly=false
       boxShadow:'0 8px 40px rgba(0,0,0,0.45)',zIndex:99999,maxHeight:300,overflowY:'auto'}}>
       <div style={{padding:'6px 12px',fontSize:10,color:'var(--text3)',borderBottom:'1px solid var(--border)',
         fontWeight:600,background:'var(--card2)',borderRadius:'10px 10px 0 0'}}>
-        🔍 {items.length} match{items.length!==1?'es':''} — {label}
+        {items.length} match{items.length!==1?'es':''} — {label}
       </div>
       {items.map((h,j)=>(
         <div key={j} className="hsn-opt" onMouseDown={e=>{e.preventDefault();onSel(h);}}>
@@ -2755,7 +3093,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
     saveFreeze(updated);
     logAudit(nowFrozen?'PERIOD_FROZEN':'PERIOD_UNFROZEN',
       `Sales ${ym} ${nowFrozen?'frozen':'unfrozen'} by ${currentUser?.name||''}`,currentUser);
-    toast.success(nowFrozen?`❄️ Sales ${ym} frozen! No edits allowed for non-admins.`:`🔓 Sales ${ym} unfrozen!`);
+    toast.success(nowFrozen?` Sales ${ym} frozen! No edits allowed for non-admins.`:`UNLOCK Sales ${ym} unfrozen!`);
   };
 
   const toggleExp = (ym) => {
@@ -2767,7 +3105,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
     saveFreeze(updated);
     logAudit(nowFrozen?'PERIOD_FROZEN':'PERIOD_UNFROZEN',
       `Expenses ${ym} ${nowFrozen?'frozen':'unfrozen'} by ${currentUser?.name||''}`,currentUser);
-    toast.success(nowFrozen?`❄️ Expenses ${ym} frozen! No edits allowed for non-admins.`:`🔓 Expenses ${ym} unfrozen!`);
+    toast.success(nowFrozen?` Expenses ${ym} frozen! No edits allowed for non-admins.`:`UNLOCK Expenses ${ym} unfrozen!`);
   };
 
   // Build list of months that have invoices or expenses
@@ -2779,7 +3117,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
     <div>
       {/* Info banner */}
       <div className="alert alert-info" style={{marginBottom:20}}>
-        <span style={{fontSize:18}}>❄️</span>
+        <span style={{fontSize:18}}></span>
         <div>
           <strong>Period Lock</strong> — Freeze a month to prevent any edits to invoices or expenses for that period.
           Once frozen, <strong>only Super Admin</strong> can edit or unfreeze.
@@ -2790,7 +3128,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
       {/* Quick freeze: pick any month */}
       {isSuper&&(
         <div className="card" style={{marginBottom:18,padding:'16px 20px'}}>
-          <div style={{fontWeight:700,color:'var(--primary2)',fontSize:13,marginBottom:12}}>🔒 Lock a Specific Month</div>
+          <div style={{fontWeight:700,color:'var(--primary2)',fontSize:13,marginBottom:12}}>LOCK Lock a Specific Month</div>
           <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
             <input type="month" className="field-input" value={selMonth}
               onChange={e=>setSelMonth(e.target.value)}
@@ -2801,7 +3139,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
                 background:freezeData.sales.includes(selMonth)?'rgba(239,68,68,0.08)':'',
                 borderColor:freezeData.sales.includes(selMonth)?'var(--red)':'',
                 color:freezeData.sales.includes(selMonth)?'var(--red)':''}}>
-              {freezeData.sales.includes(selMonth)?'🔓 Unfreeze Sales':'❄️ Freeze Sales'}
+              {freezeData.sales.includes(selMonth)?'UNLOCK Unfreeze Sales':' Freeze Sales'}
             </button>
             <button className="btn btn-outline"
               onClick={()=>toggleExp(selMonth)}
@@ -2809,20 +3147,20 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
                 background:freezeData.expenses.includes(selMonth)?'rgba(239,68,68,0.08)':'',
                 borderColor:freezeData.expenses.includes(selMonth)?'var(--red)':'',
                 color:freezeData.expenses.includes(selMonth)?'var(--red)':''}}>
-              {freezeData.expenses.includes(selMonth)?'🔓 Unfreeze Expenses':'❄️ Freeze Expenses'}
+              {freezeData.expenses.includes(selMonth)?'UNLOCK Unfreeze Expenses':' Freeze Expenses'}
             </button>
           </div>
           <div style={{fontSize:11,color:'var(--text3)',marginTop:8}}>
-            💡 Use the table below to toggle individual months, or pick any month above including future months.
+            <Ic n="info" s={14}/> Use the table below to toggle individual months, or pick any month above including future months.
           </div>
         </div>
       )}
 
       {/* Month-by-month table */}
-      <div style={{fontWeight:700,color:'var(--text)',fontSize:13,marginBottom:12}}>📅 All Months with Activity</div>
+      <div style={{fontWeight:700,color:'var(--text)',fontSize:13,marginBottom:12}}><Ic n="calendar" s={16}/> All Months with Activity</div>
       {allMonths.length===0?(
         <div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>
-          <div style={{fontSize:32,marginBottom:8}}>📭</div>
+          <div style={{fontSize:32,marginBottom:8}}><Ic n="inbox" s={16}/></div>
           <div>No invoices or expenses recorded yet.</div>
           <div style={{fontSize:12,marginTop:6}}>Use the picker above to lock future months proactively.</div>
         </div>
@@ -2854,8 +3192,8 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
               <div style={{fontFamily:'monospace',fontWeight:700,fontSize:13,color:'var(--gold)'}}>{ym}</div>
               {/* Activity summary */}
               <div style={{fontSize:12}}>
-                {mInvs.length>0&&<span style={{color:'var(--green)',marginRight:10}}>📄 {mInvs.length} · {fmt(mRev)}</span>}
-                {mExps.length>0&&<span style={{color:'var(--red)'}}>🧾 {mExps.length} · {fmt(mExp)}</span>}
+                {mInvs.length>0&&<span style={{color:'var(--green)',marginRight:10}}><Ic n="file" s={16}/> {mInvs.length} · {fmt(mRev)}</span>}
+                {mExps.length>0&&<span style={{color:'var(--red)'}}><Ic n="receipt" s={16}/> {mExps.length} · {fmt(mExp)}</span>}
                 {mInvs.length===0&&mExps.length===0&&<span style={{color:'var(--text3)',fontSize:11}}>No activity</span>}
               </div>
               {/* Sales status badge */}
@@ -2865,7 +3203,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
                   background:salesFrz?'rgba(239,68,68,0.1)':'rgba(15,217,138,0.08)',
                   color:salesFrz?'var(--red)':'var(--green)',
                   border:`1px solid ${salesFrz?'rgba(239,68,68,0.25)':'rgba(15,217,138,0.2)'}`}}>
-                  {salesFrz?'❄️ Frozen':'✓ Open'}
+                  {salesFrz?' Frozen':' Open'}
                 </span>
               </div>
               {/* Expenses status badge */}
@@ -2875,7 +3213,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
                   background:expFrz?'rgba(239,68,68,0.1)':'rgba(15,217,138,0.08)',
                   color:expFrz?'var(--red)':'var(--green)',
                   border:`1px solid ${expFrz?'rgba(239,68,68,0.25)':'rgba(15,217,138,0.2)'}`}}>
-                  {expFrz?'❄️ Frozen':'✓ Open'}
+                  {expFrz?' Frozen':' Open'}
                 </span>
               </div>
               {/* Actions — Super Admin only */}
@@ -2887,7 +3225,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
                       color:salesFrz?'var(--red)':'var(--primary2)',
                       border:`1px solid ${salesFrz?'rgba(239,68,68,0.3)':'rgba(99,102,241,0.25)'}`,
                       borderRadius:6,cursor:'pointer',fontWeight:600,whiteSpace:'nowrap',fontFamily:'inherit'}}>
-                    {salesFrz?'🔓 Sales':'❄️ Sales'}
+                    {salesFrz?'UNLOCK Sales':' Sales'}
                   </button>
                   <button onClick={()=>toggleExp(ym)}
                     style={{fontSize:10,padding:'4px 10px',
@@ -2895,7 +3233,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
                       color:expFrz?'var(--red)':'var(--gold)',
                       border:`1px solid ${expFrz?'rgba(239,68,68,0.3)':'rgba(245,166,35,0.25)'}`,
                       borderRadius:6,cursor:'pointer',fontWeight:600,whiteSpace:'nowrap',fontFamily:'inherit'}}>
-                    {expFrz?'🔓 Exp':'❄️ Exp'}
+                    {expFrz?'UNLOCK Exp':' Exp'}
                   </button>
                 </div>
               )}
@@ -2908,18 +3246,18 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
       {(freezeData.sales.length>0||freezeData.expenses.length>0)&&(
         <div style={{padding:'14px 16px',background:'rgba(239,68,68,0.04)',
           border:'1px solid rgba(239,68,68,0.15)',borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:700,color:'var(--red)',marginBottom:8}}>❄️ Currently Frozen Periods</div>
+          <div style={{fontSize:12,fontWeight:700,color:'var(--red)',marginBottom:8}}> Currently Frozen Periods</div>
           <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
             {freezeData.sales.map(ym=>(
               <span key={'s'+ym} style={{padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:700,
                 background:'rgba(239,68,68,0.1)',color:'var(--red)',border:'1px solid rgba(239,68,68,0.25)'}}>
-                📄 {ym} Sales
+                <Ic n="file" s={16}/> {ym} Sales
               </span>
             ))}
             {freezeData.expenses.map(ym=>(
               <span key={'e'+ym} style={{padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:700,
                 background:'rgba(245,158,11,0.1)',color:'var(--gold)',border:'1px solid rgba(245,158,11,0.25)'}}>
-                🧾 {ym} Expenses
+                <Ic n="receipt" s={16}/> {ym} Expenses
               </span>
             ))}
           </div>
@@ -2929,8 +3267,274 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
   );
 };
 
+
+
+/* ── SERIES TAB ── */
+const SeriesTab = ({isSuper})=>{
+  const fy=getFY();
+  const fyS=getFYShort();
+  const mm=getMonthCode();
+  const [cfg,setCfg]=useState(()=>S.get(SK.SERIES,{}));
+  const [editing,setEditing]=useState(null);
+  const [form,setForm]=useState({letters:'',nextNum:1});
+  const [justSaved,setJustSaved]=useState(null);
+
+  const ctrKey=(id)=>SK.CTR+'_'+id+'_'+fy+'_'+mm;
+  const getCounter=(id)=>S.get(ctrKey(id),1);
+  const getLiveLetters=(id)=>(cfg[id]&&cfg[id].letters)||SERIES_TYPES.find(s=>s.id===id)?.defLetters||id;
+  const getFullPrefix=(id,lets)=>`${lets||getLiveLetters(id)}${fyS}${mm}`;
+  const buildNo=(id,n,lets)=>`${getFullPrefix(id,lets)}${String(parseInt(n)||1).padStart(4,'0')}`;
+
+  const startEdit=(id)=>{
+    setForm({letters:getLiveLetters(id), nextNum:getCounter(id)});
+    setEditing(id);setJustSaved(null);
+  };
+  const saveSeries=()=>{
+    if(!form.letters.trim()){toast.error('Letters cannot be empty');return;}
+    if(!/^[A-Za-z]+$/.test(form.letters.trim())){toast.error('Only letters A-Z allowed');return;}
+    const num=parseInt(form.nextNum,10);
+    if(isNaN(num)||num<1){toast.error('Next number must be ≥ 1');return;}
+    const lets=form.letters.trim().toUpperCase();
+    const newCfg={...cfg,[editing]:{letters:lets}};
+    setCfg(newCfg);S.set(SK.SERIES,newCfg);
+    S.set(ctrKey(editing),num);
+    setJustSaved(editing);setEditing(null);
+    toast.success(`Saved! Next: ${buildNo(editing,num,lets)}`);
+  };
+  const resetSeries=(id)=>{
+    if(!window.confirm('Reset to default letters and restart from 0001?'))return;
+    const newCfg={...cfg};delete newCfg[id];
+    setCfg(newCfg);S.set(SK.SERIES,newCfg);
+    S.set(ctrKey(id),1);
+    toast.info(`Reset: ${getFullPrefix(id,SERIES_TYPES.find(s=>s.id===id)?.defLetters)}0001`);
+  };
+
+  return(
+    <div>
+      <div style={{background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.2)',borderRadius:10,padding:'14px 16px',marginBottom:16}}>
+        <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:6}}><Ic n="hash" s={16}/> Invoice Number Format</div>
+        <div style={{fontSize:12,color:'var(--text3)',lineHeight:1.8}}>
+          Format: <span style={{fontFamily:'monospace',color:'var(--gold)',fontWeight:700}}>LETTERS + {fyS} + {mm} + 0001</span>
+          <span style={{fontSize:11,marginLeft:6}}>← FY and Month are automatic</span><br/>
+          Example: <span style={{fontFamily:'monospace',color:'var(--gold)'}}>INV{fyS}{mm}0001 → INV{fyS}{mm}0002 → ...</span><br/>
+          You can only change the <strong style={{color:'var(--text2)'}}>letters part</strong>. FY and month update automatically each month.
+        </div>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:10}}>
+        {SERIES_TYPES.map(st=>{
+          const lets=getLiveLetters(st.id);
+          const ctr=getCounter(st.id);
+          const nextNo=buildNo(st.id,ctr,lets);
+          const isEdit=editing===st.id;
+          const custom=!!(cfg[st.id]&&cfg[st.id].letters);
+          const eLets=(form.letters||'').toUpperCase();
+          return(
+          <div key={st.id} style={{background:'var(--card)',border:`1.5px solid ${isEdit?'var(--primary)':'var(--border)'}`,borderRadius:11,padding:'14px 16px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10}}>
+              <div style={{display:'flex',alignItems:'center',gap:12}}>
+                <div style={{width:38,height:38,borderRadius:9,background:'var(--primary-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'monospace',fontWeight:800,fontSize:13,color:'var(--primary2)',flexShrink:0}}>
+                  {st.id==='INV'?'I':st.id==='INVDN'?'D':st.id==='INVCN'?'C':'N'}
+                </div>
+                <div>
+                  <div style={{fontWeight:700,color:'var(--text)',fontSize:13,display:'flex',alignItems:'center',gap:8}}>
+                    {st.label}
+                    {custom&&<span style={{fontSize:10,padding:'1px 7px',borderRadius:9,background:'rgba(245,166,35,0.12)',color:'var(--gold)',border:'1px solid rgba(245,166,35,0.25)',fontWeight:600}}>Custom</span>}
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginTop:3,flexWrap:'wrap'}}>
+                    <span style={{fontFamily:'monospace',fontSize:12,fontWeight:700,color:'var(--gold)',background:'var(--gold-bg)',padding:'2px 9px',borderRadius:6}}>{nextNo}</span>
+                    <span style={{fontSize:11,color:'var(--text3)'}}>← next</span>
+                    {justSaved===st.id&&<span style={{fontSize:11,color:'var(--green)',fontWeight:700}}>✅ Saved</span>}
+                  </div>
+                </div>
+              </div>
+              {!isEdit&&isSuper&&(
+                <div style={{display:'flex',gap:7}}>
+                  <button className="btn btn-sm btn-outline-primary" onClick={()=>startEdit(st.id)}>✏️ Edit</button>
+                  {custom&&<button onClick={()=>resetSeries(st.id)} style={{fontSize:11,padding:'4px 11px',borderRadius:7,cursor:'pointer',fontWeight:600,background:'rgba(239,68,68,0.06)',color:'var(--red)',border:'1px solid rgba(239,68,68,0.25)',fontFamily:'inherit'}}>↩ Reset</button>}
+                </div>
+              )}
+              {!isEdit&&!isSuper&&<span style={{fontSize:11,color:'var(--text3)',padding:'2px 9px',background:'var(--card2)',borderRadius:8}}>View only</span>}
+            </div>
+            {isEdit&&(
+              <div style={{marginTop:14,paddingTop:14,borderTop:'1px solid var(--border)'}}>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 150px',gap:12,marginBottom:12}}>
+                  <div className="field" style={{margin:0}}>
+                    <label className="field-label">Letters Only <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',letterSpacing:0}}>(A-Z only, no numbers)</span></label>
+                    <input className="field-input" value={form.letters} maxLength={8}
+                      onChange={e=>setForm(p=>({...p,letters:e.target.value.replace(/[^A-Za-z]/g,'').toUpperCase()}))}
+                      placeholder={st.defLetters} style={{fontFamily:'monospace',fontWeight:700,fontSize:16,letterSpacing:2}}/>
+                    <div style={{fontSize:11,color:'var(--text3)',marginTop:3}}>FY <strong>{fyS}</strong> and month <strong>{mm}</strong> are added automatically</div>
+                  </div>
+                  <div className="field" style={{margin:0}}>
+                    <label className="field-label">Next Number</label>
+                    <input className="field-input" type="number" min={1} value={form.nextNum}
+                      onChange={e=>setForm(p=>({...p,nextNum:e.target.value}))}
+                      style={{fontFamily:'monospace',fontWeight:700,fontSize:16}}/>
+                    <div style={{fontSize:11,color:'var(--text3)',marginTop:3}}>Auto 4-digit padded</div>
+                  </div>
+                </div>
+                <div style={{background:'var(--card2)',borderRadius:8,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+                  <span style={{fontSize:12,color:'var(--text3)',fontWeight:600}}>Preview:</span>
+                  <span style={{fontFamily:'monospace',fontWeight:800,fontSize:16,color:'var(--gold)'}}>{buildNo(st.id,form.nextNum,eLets)}</span>
+                  <span style={{fontSize:13,color:'var(--text3)'}}>→</span>
+                  <span style={{fontFamily:'monospace',fontWeight:700,fontSize:14,color:'var(--text2)'}}>{buildNo(st.id,(parseInt(form.nextNum)||1)+1,eLets)}</span>
+                  <span style={{fontSize:13,color:'var(--text3)'}}>→ ...</span>
+                  <span style={{fontSize:11,color:'var(--text3)',marginLeft:'auto'}}>
+                    <strong>{eLets||st.defLetters}</strong> + <strong>{fyS}</strong> + <strong>{mm}</strong> + 4-digits
+                  </span>
+                </div>
+                <div style={{display:'flex',gap:8}}>
+                  <button className="btn btn-primary btn-sm" onClick={saveSeries}><Ic n="save" s={13}/>Save</button>
+                  <button className="btn btn-outline btn-sm" onClick={()=>setEditing(null)}>Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>);
+        })}
+      </div>
+      <div style={{marginTop:14,padding:'11px 14px',background:'rgba(245,166,35,0.06)',border:'1px solid rgba(245,166,35,0.2)',borderRadius:9,fontSize:12,color:'var(--text3)',lineHeight:1.7}}>
+        <Ic n="alert" s={14}/> <strong style={{color:'var(--gold)'}}>Note:</strong> Changes apply to new invoices only. Counters reset on 1st of each month automatically.
+      </div>
+    </div>
+  );
+};
+
+/* ── EXPORT TAB ── */
+const ExportTab = ({invs, isSuper})=>{
+  const fy=getFY();
+  const fyShort=getFYShort();
+  // Build list of all FYs present in data
+  const allInvFYs=[...new Set(invs.map(i=>{const y=parseInt((i.date||'').slice(0,4));const m=parseInt((i.date||'').slice(5,7));return m>=4?y:y-1;}))].sort((a,b)=>b-a);
+  const allExpFYs=[...new Set((S.get(SK.EXP,[])||[]).map(e=>{const y=parseInt((e.date||'').slice(0,4));const m=parseInt((e.date||'').slice(5,7));return m>=4?y:y-1;}))].sort((a,b)=>b-a);
+  const allFYs=[...new Set([...allInvFYs,...allExpFYs,fy])].sort((a,b)=>b-a);
+
+  const [selFY,setSelFY]=useState(fy);
+  const [selMonth,setSelMonth]=useState('all');
+
+  const MONTHS=[['all','All Months'],['04','Apr'],['05','May'],['06','Jun'],['07','Jul'],['08','Aug'],['09','Sep'],['10','Oct'],['11','Nov'],['12','Dec'],['01','Jan'],['02','Feb'],['03','Mar']];
+  const FY_LABEL=(y)=>`FY ${y}-${String(y+1).slice(2)}`;
+
+  // Filter function
+  const filterData=(arr,dateKey='date')=>{
+    return arr.filter(item=>{
+      const d=(item[dateKey]||'');
+      const y=parseInt(d.slice(0,4)),m=parseInt(d.slice(5,7));
+      const itemFY=m>=4?y:y-1;
+      if(itemFY!==selFY)return false;
+      if(selMonth!=='all'&&d.slice(5,7)!==selMonth)return false;
+      return true;
+    });
+  };
+
+  const filteredInvs=filterData(invs);
+  const allExps=S.get(SK.EXP,[])||[];
+  const filteredExps=filterData(allExps);
+  const allPOs=S.get(SK.PO,[])||[];
+  const filteredPOs=filterData(allPOs,'createdAt');
+
+  const periodLabel=selMonth==='all'?FY_LABEL(selFY):`${MONTHS.find(m=>m[0]===selMonth)?.[1]||selMonth} ${selFY}`;
+
+  const CARDS=[
+    {icon:<Ic n='chart' s={20}/>,label:'Sales Register',desc:'Invoices with HSN, tax breakup, customer details',color:'var(--green)',
+     count:filteredInvs.length,unit:'invoices',
+     action:()=>makeExcel(filteredInvs),btnLabel:'Download',btnCls:'btn-success'},
+    {icon:<Ic n='building' s={20}/>,label:'GSTR-1 Report',desc:'B2B, B2C, HSN Summary and CDNR sheets',color:'var(--primary2)',
+     count:filteredInvs.filter(i=>i.docType!=='CREDIT NOTE'&&i.docType!=='DEBIT NOTE').length,unit:'invoices',
+     action:()=>makeGSTR1(filteredInvs),btnLabel:'Download',btnCls:'btn-outline-primary'},
+    {icon:<Ic n='receipt' s={20}/>,label:'Purchase Register',desc:'Expenses and purchase bills with monthly summary',color:'var(--gold)',
+     count:filteredExps.length,unit:'records',
+     action:()=>makePurchaseExcel(filteredExps),btnLabel:'Download',btnCls:'btn-outline'},
+    {icon:<Ic n='cart' s={20}/>,label:'PO Register',desc:'Purchase Orders with vendor, items and status',color:'var(--cyan)',
+     count:filteredPOs.length,unit:'POs',
+     action:()=>makePOExcel(filteredPOs),btnLabel:'Download',btnCls:'btn-outline-primary'},
+  ];
+
+  return(
+    <div>
+      {/* Filter bar */}
+      <div style={{background:'var(--card2)',border:'1px solid var(--border)',borderRadius:12,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+        <span style={{fontSize:12,fontWeight:700,color:'var(--text3)',flexShrink:0}}>Filter:</span>
+        {/* FY selector */}
+        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+          {allFYs.map(y=>(
+            <button key={y} onClick={()=>setSelFY(y)}
+              style={{fontSize:11,padding:'4px 10px',borderRadius:8,cursor:'pointer',fontWeight:600,fontFamily:'inherit',
+                background:selFY===y?'var(--primary)':'transparent',
+                color:selFY===y?'#fff':'var(--text2)',
+                border:`1.5px solid ${selFY===y?'var(--primary)':'var(--border2)'}`,transition:'all 0.15s'}}>
+              {FY_LABEL(y)}
+            </button>
+          ))}
+        </div>
+        <div style={{width:1,height:20,background:'var(--border)',flexShrink:0}}/>
+        {/* Month selector */}
+        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+          {MONTHS.map(([v,l])=>(
+            <button key={v} onClick={()=>setSelMonth(v)}
+              style={{fontSize:11,padding:'4px 10px',borderRadius:8,cursor:'pointer',fontWeight:600,fontFamily:'inherit',
+                background:selMonth===v?'var(--gold)':'transparent',
+                color:selMonth===v?'#fff':'var(--text2)',
+                border:`1.5px solid ${selMonth===v?'var(--gold)':'var(--border2)'}`,transition:'all 0.15s'}}>
+              {l}
+            </button>
+          ))}
+        </div>
+        <div style={{marginLeft:'auto',fontSize:12,color:'var(--text3)',fontWeight:600,flexShrink:0}}>
+          <Ic n="calendar" s={16}/> {periodLabel}
+        </div>
+      </div>
+
+      {/* Export cards — horizontal list, compact */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+        {CARDS.map(c=>(
+          <div key={c.label} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px',display:'flex',alignItems:'center',gap:14}}>
+            <div style={{fontSize:28,flexShrink:0}}>{c.icon}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:700,color:'var(--text)',fontSize:13}}>{c.label}</div>
+              <div style={{fontSize:11,color:'var(--text3)',marginBottom:8,lineHeight:1.4}}>{c.desc}</div>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <button className={`btn btn-sm ${c.btnCls}`} onClick={c.action} disabled={c.count===0} style={{opacity:c.count===0?0.45:1}}>
+                  <Ic n="xlsx" s={12}/>{c.btnLabel}
+                </button>
+                <span style={{fontSize:11,color:c.count>0?c.color:'var(--text3)',fontWeight:600}}>
+                  {c.count} {c.unit}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Full backup row */}
+      <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px',display:'flex',alignItems:'center',gap:14,marginBottom:12}}>
+        <div style={{fontSize:28,flexShrink:0}}><Ic n="package" s={16}/></div>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,color:'var(--text)',fontSize:13,marginBottom:2}}>Full Data Backup</div>
+          <div style={{fontSize:11,color:'var(--text3)',marginBottom:8}}>13-sheet Excel: Company, Sales, Purchases, POs, Customers, HSN, P&L, Audit + JSON backup</div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+            <button className="btn btn-primary btn-sm" onClick={()=>makeFullExcel()}>
+              <Ic n="xlsx" s={12}/>Excel Backup
+            </button>
+            <button className="btn btn-outline btn-sm" onClick={()=>{
+              const data={exportDate:new Date().toISOString(),company:S.get(SK.CO,{}),hsn:S.get(SK.HSN,[]),invoices:S.get(SK.INV,[]),expenses:S.get(SK.EXP,[]),purchaseOrders:S.get(SK.PO,[]),customers:S.get(SK.CUST,[]),products:S.get(SK.PRODUCTS,[]),terms:S.get(SK.TERMS,''),poTerms:S.get(SK.PO_TERMS,''),auditLog:S.get(SK.AUDIT,[]),frozenPeriods:S.get(SK.FREEZE,{sales:[],expenses:[]})};
+              const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+              const url=URL.createObjectURL(blob);const a=document.createElement('a');
+              a.href=url;a.download=`InvoicePrime_Backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
+              URL.revokeObjectURL(url);
+              toast.success(`JSON backup: ${(data.invoices||[]).length} invoices, ${(data.expenses||[]).length} expenses`);
+            }}>
+              <Ic n="save" s={12}/>JSON
+            </button>
+            <span style={{fontSize:11,color:'var(--text3)'}}>Full database backup — not filtered by period</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ── ADMIN PANEL ── */
-const AdminPanel = ({currentUser,onClose})=>{
+const AdminPanel = ({currentUser,onClose,inline=false})=>{
   const [tab,setTab]=useState('dashboard');
   const [users,setUsers]=useState(()=>{
     const u=S.get(SK.USERS,[]);
@@ -3066,11 +3670,11 @@ const AdminPanel = ({currentUser,onClose})=>{
 
   const roleBadge=r=>r==='superadmin'?{cls:'badge-gold',label:'Super Admin'}:r==='admin'?{cls:'badge-primary',label:'Admin'}:{cls:'badge-green',label:'User'};
 
-  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:1100,width:"96vw"}}>
+  return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
+    <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1100px, 95vw)',width:'100%'})}}>
       <div className="modal-hdr">
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <span style={{fontSize:22}}>{isSuper?'👑':'🛡️'}</span>
+          <span style={{fontSize:22}}>{isSuper?<Ic n="crown" s={22}/>:<Ic n="shield" s={22}/>}</span>
           <div>
             <div className="modal-title">{isSuper?'Super Admin Panel':'Admin Panel'}</div>
             <div style={{fontSize:11,color:'var(--text3)'}}>Logged in as: {currentUser.name} {isSuper&&<span style={{color:'var(--gold)',fontWeight:700}}>★ Super Admin</span>}</div>
@@ -3080,8 +3684,18 @@ const AdminPanel = ({currentUser,onClose})=>{
       </div>
       <div className="modal-body" ref={modalBodyRef}>
         <div className="admin-tabs">
-          {[['dashboard','Dashboard'],['users','Users'],['invoices','All Invoices'],['audit','Audit Log'],['export','Export Data'],['freeze','❄️ Period Lock']].map(([k,l])=>(
-            <button key={k} className={`admin-tab${tab===k?' active':''}`} onClick={()=>setTab(k)}>{l}</button>))}
+          {[
+            {k:'dashboard', icon:null, label:'Dashboard'},
+            {k:'users', icon:null, label:'Users'},
+            {k:'invoices', icon:null, label:'All Invoices'},
+            {k:'audit', icon:null, label:'Audit Log'},
+            {k:'export', icon:null, label:'Export Data'},
+            {k:'freeze', icon:'lock', label:'Period Lock'},
+            {k:'series', icon:'hash', label:'Series'}
+          ].map(({k,icon,label})=>(
+            <button key={k} className={`admin-tab${tab===k?' active':''}`} onClick={()=>setTab(k)}>
+              {icon && <Ic n={icon} s={14}/>} {label}
+            </button>))}
         </div>
 
         {tab==='dashboard'&&(
@@ -3111,9 +3725,9 @@ const AdminPanel = ({currentUser,onClose})=>{
         {tab==='users'&&(
           <div>
             <div className="card" style={{marginBottom:18}}>
-              <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editUID?'✏️ Edit User':'➕ Add New User'}</div>
+              <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editUID?'✏️ Edit User':' Add New User'}</div>
               {!isSuper&&<div style={{fontSize:11,color:'#B45309',background:'#FEF3C7',padding:'6px 10px',borderRadius:6,marginBottom:12,border:'1px solid #FDE68A'}}>
-                ℹ️ As Admin you can create and edit users. Only Super Admin can delete users or assign Super Admin role.
+                <Ic n="info" s={14}/> As Admin you can create and edit users. Only Super Admin can delete users or assign Super Admin role.
               </div>}
               <div className="g2">
                 <div className="field"><label className="field-label">Full Name *</label><input className="field-input" value={uForm.name} onChange={e=>setUForm(p=>({...p,name:e.target.value}))} placeholder="Full Name"/></div>
@@ -3176,7 +3790,7 @@ const AdminPanel = ({currentUser,onClose})=>{
         {tab==='audit'&&(
           <div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-              <span style={{color:'var(--text2)',fontSize:13,fontWeight:600}}>📋 Audit Log — {auditLogs.length} entries <span style={{fontSize:10,color:'var(--text3)',fontWeight:400}}>(auto-refreshes every 10 min)</span></span>
+              <span style={{color:'var(--text2)',fontSize:13,fontWeight:600}}>Audit Log — {auditLogs.length} entries <span style={{fontSize:10,color:'var(--text3)',fontWeight:400}}>(auto-refreshes every 10 min)</span></span>
               <div style={{display:'flex',gap:8}}>
                 <button className="btn btn-sm btn-outline-primary" onClick={()=>{
                   // Instant refresh from local cache
@@ -3192,10 +3806,13 @@ const AdminPanel = ({currentUser,onClose})=>{
                   }).catch(()=>{ toast.info(`Showing ${localLogs.length} local entries`); });
                 }}><Ic n="refresh" s={12}/>Refresh Now</button>
                 {isSuper&&<button className="btn btn-sm btn-success" onClick={()=>makeAuditExcel(auditLogs.length>0?auditLogs:auditData)}><Ic n="xlsx" s={12}/>Export Excel</button>}
-                {isSuper&&<button className="btn btn-sm btn-danger" onClick={()=>{if(window.confirm('Clear all audit logs?')){S.set(SK.AUDIT,[]);setAuditData([]);toast.info('Audit log cleared');}}}>🗑️ Clear</button>}
+                {isSuper&&<button className="btn btn-sm btn-danger" onClick={()=>{if(window.confirm('Clear all audit logs?')){S.set(SK.AUDIT,[]);setAuditData([]);toast.info('Audit log cleared');}}}><Ic n="trash" s={16}/>️ Clear</button>}
               </div>
             </div>
-            <input className="field-input" value={auditQ} onChange={e=>setAuditQ(e.target.value)} placeholder="🔍 Search by action, user or detail..." style={{marginBottom:12}}/>
+            <div style={{position:'relative',marginBottom:12}}>
+              <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
+              <input className="field-input" value={auditQ} onChange={e=>setAuditQ(e.target.value)} placeholder="Search by action, user or detail..." style={{paddingLeft:38,width:'100%'}}/>
+            </div>
             {auditLogs.length>0?(
               <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'52vh',overflowY:'auto'}}>
                 <div style={{display:'grid',gridTemplateColumns:'120px 1fr 130px 150px',gap:0,padding:'7px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',position:'sticky',top:0}}>
@@ -3213,7 +3830,7 @@ const AdminPanel = ({currentUser,onClose})=>{
                 })}
               </div>
             ):<div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>
-                <div style={{fontSize:32,marginBottom:8}}>📋</div>
+                <div style={{fontSize:32,marginBottom:8}}><Ic n="list" s={32}/></div>
                 <div>No audit entries yet. Actions will appear here.</div>
               </div>}
           </div>
@@ -3247,79 +3864,10 @@ const AdminPanel = ({currentUser,onClose})=>{
           </div>
         )}
 
-        {tab==='export'&&(
-          <div>
-            <div className="alert alert-info" style={{marginBottom:20}}><Ic n="xlsx" s={16}/><div><strong>Export your data</strong> — Sales Register, GSTR-1, Purchase Register and Purchase Orders in Excel format.</div></div>
-            <div className="g2">
-              <div className="card" style={{textAlign:'center',padding:24}}>
-                <div style={{fontSize:40,marginBottom:10}}>📊</div>
-                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:6}}>Sales Register</div>
-                <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>Line-wise export of all invoices with HSN, tax breakup, customer details.</div>
-                <button className="btn btn-success" onClick={()=>makeExcel(invs)}><Ic n="xlsx"/>Download ({invs.length} invoices)</button>
-              </div>
-              <div className="card" style={{textAlign:'center',padding:24}}>
-                <div style={{fontSize:40,marginBottom:10}}>🏛️</div>
-                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:6}}>GSTR-1 Report</div>
-                <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>GST-compliant export with B2B, B2C, HSN Summary and CDNR sheets.</div>
-                <button className="btn btn-outline-primary" onClick={()=>makeGSTR1(invs)}><Ic n="xlsx"/>Download GSTR-1</button>
-              </div>
-              <div className="card" style={{textAlign:'center',padding:24}}>
-                <div style={{fontSize:40,marginBottom:10}}>🧾</div>
-                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:6}}>Purchase Register</div>
-                <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>All expenses and purchase bills with category and monthly summary sheets.</div>
-                <button className="btn btn-outline" onClick={()=>makePurchaseExcel(S.get(SK.EXP,[]))}><Ic n="xlsx"/>Download ({S.get(SK.EXP,[]).length} records)</button>
-              </div>
-              <div className="card" style={{textAlign:'center',padding:24}}>
-                <div style={{fontSize:40,marginBottom:10}}>🛒</div>
-                <div style={{fontWeight:700,color:'var(--text)',fontSize:15,marginBottom:6}}>PO Register</div>
-                <div style={{color:'var(--text2)',fontSize:12,marginBottom:16}}>All Purchase Orders with vendor details, items, delivery dates and status.</div>
-                <button className="btn btn-outline-primary" onClick={()=>makePOExcel(S.get(SK.PO,[]))}><Ic n="xlsx"/>Download ({S.get(SK.PO,[]).length} POs)</button>
-              </div>
-              <div className="card" style={{textAlign:'center',padding:24,gridColumn:'1/-1',background:'linear-gradient(135deg,rgba(99,102,241,0.04),var(--card))'}}>
-                <div style={{fontSize:40,marginBottom:10}}>📦</div>
-                <div style={{fontWeight:800,color:'var(--text)',fontSize:16,marginBottom:6}}>Full Data Backup — Excel</div>
-                <div style={{color:'var(--text2)',fontSize:12,marginBottom:4}}>
-                  Downloads a <strong>single Excel workbook</strong> with <strong>13 sheets</strong> covering everything:
-                </div>
-                <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center',marginBottom:16}}>
-                  {['Company Info','Sales Register','Monthly Sales','Purchase Register','Category Summary','Monthly Purchases','PO Register','Customer DB','HSN/SAC DB','Period P&L','Frozen Periods','Audit Log','Audit Summary'].map(s=>(
-                    <span key={s} style={{fontSize:10,padding:'2px 8px',borderRadius:10,background:'var(--primary-bg)',color:'var(--primary2)',border:'1px solid rgba(99,102,241,0.2)',fontWeight:600}}>{s}</span>
-                  ))}
-                </div>
-                <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
-                  <button className="btn btn-primary" style={{padding:'10px 24px'}} onClick={()=>makeFullExcel()}>
-                    <Ic n="xlsx" s={16}/>⬇️ Download Full Excel Backup
-                  </button>
-                  <button className="btn btn-outline" onClick={()=>{
-                    const data={
-                      exportDate: new Date().toISOString(),
-                      company:S.get(SK.CO,{}),
-                      hsn:S.get(SK.HSN,[]),
-                      invoices:S.get(SK.INV,[]),
-                      expenses:S.get(SK.EXP,[]),
-                      purchaseOrders:S.get(SK.PO,[]),
-                      customers:S.get(SK.CUST,[]),
-                      products:S.get(SK.PRODUCTS,[]),
-                      terms:S.get(SK.TERMS,''),
-                      poTerms:S.get(SK.PO_TERMS,''),
-                      auditLog:S.get(SK.AUDIT,[]),
-                      frozenPeriods:S.get(SK.FREEZE,{sales:[],expenses:[]}),
-                    };
-                    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-                    const url=URL.createObjectURL(blob);const a=document.createElement('a');
-                    a.href=url;a.download=`InvoicePrime_Backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
-                    URL.revokeObjectURL(url);
-                    toast.success(`JSON backup downloaded — ${(data.invoices||[]).length} invoices, ${(data.expenses||[]).length} expenses`);
-                  }}>
-                    <Ic n="save"/>JSON Backup
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {tab==='export'&&(<ExportTab invs={invs} isSuper={isSuper}/>)}
 
         {tab==='freeze'&&<FreezeTab invs={invs} isSuper={isSuper} currentUser={currentUser}/>}
+        {tab==='series'&&<SeriesTab isSuper={isSuper}/>}
 
       </div>
     </div>
@@ -3380,11 +3928,11 @@ const Login = ({onLogin})=>{
             For login credentials, technical support, or any issues with this application — please contact:
           </div>
           <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 0',borderTop:'1px solid var(--border)'}}>
-            <span style={{fontSize:15}}>📧</span>
+            <span style={{fontSize:15}}><Ic n="mail" s={16}/></span>
             <a href="mailto:contact@business.com" style={{color:'var(--primary2)',fontWeight:600,textDecoration:'none',fontSize:13}}>contact@business.com</a>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 0',borderTop:'1px solid var(--border)'}}>
-            <span style={{fontSize:15}}>📞</span>
+            <span style={{fontSize:15}}><Ic n="phone" s={16}/></span>
             <a href="tel:+918800112233" style={{color:'var(--primary2)',fontWeight:600,textDecoration:'none',fontSize:13}}>+91 8800112233</a>
           </div>
         </div>
@@ -3512,7 +4060,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     const isSuperUser = isSuperAdmin(currentUser?.email);
     if(!isSuperUser && isSalesFrozen(inv)){
       const ym = (inv.date||'').substring(0,7);
-      toast.error(`❄️ ${ym} is frozen. Only Super Admin can edit invoices for this month.`);
+      toast.error(` ${ym} is frozen. Only Super Admin can edit invoices for this month.`);
       return;
     }    const isCN = inv.docType==='CREDIT NOTE';
     const isNG = inv.docType==='NON GST INVOICE';
@@ -3562,7 +4110,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     {/* Freeze banner */}
     {isSalesFrozen(inv)&&!isSuperAdmin(currentUser?.email)&&(
       <div className="alert" style={{background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.3)',color:'var(--primary2)',marginBottom:12}}>
-        <span style={{fontSize:18}}>❄️</span>
+        <span style={{fontSize:18}}></span>
         <span><strong>{(inv.date||'').substring(0,7)} is frozen.</strong> This month's sales are locked. Contact Super Admin to unfreeze.</span>
       </div>
     )}
@@ -3573,15 +4121,17 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
       <div style={{marginBottom:16}}>
         <div className="field-label" style={{marginBottom:8}}>Document Type</div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-          {[['TAX INVOICE','var(--primary)','var(--primary-bg)','var(--primary2)','📄 Tax Invoice (B2B)',false],
-            ['TAX INVOICE','#0369A1','#E0F2FE','#0369A1','🧾 Tax Invoice (B2C)',true],
-            ['DEBIT NOTE','#B45309','#FEF3C7','#92400E','📈 Debit Note',false],
-            ['CREDIT NOTE','#065F46','#D1FAE5','#064E3B','📉 Credit Note',false],
-            ['NON GST INVOICE','#6B21A8','#F3E8FF','#6B21A8','🧾 Non GST Invoice',false]].map(([dt,bc,bg,tc,label,b2c])=>{
+          {[
+            {dt:'TAX INVOICE', bc:'var(--primary)', bg:'var(--primary-bg)', tc:'var(--primary2)', icon:'file', text:'Tax Invoice (B2B)', b2c:false},
+            {dt:'TAX INVOICE', bc:'#0369A1', bg:'#E0F2FE', tc:'#0369A1', icon:'receipt', text:'Tax Invoice (B2C)', b2c:true},
+            {dt:'DEBIT NOTE', bc:'#B45309', bg:'#FEF3C7', tc:'#92400E', icon:'trending-up', text:'Debit Note', b2c:false},
+            {dt:'CREDIT NOTE', bc:'#065F46', bg:'#D1FAE5', tc:'#064E3B', icon:'trending-down', text:'Credit Note', b2c:false},
+            {dt:'NON GST INVOICE', bc:'#6B21A8', bg:'#F3E8FF', tc:'#6B21A8', icon:'receipt', text:'Non GST Invoice', b2c:false}
+          ].map(({dt,bc,bg,tc,icon,text,b2c})=>{
             const isActive = inv.docType===dt && (!!inv.isB2C===b2c);
             return(
-            <button key={label} onClick={()=>{
-              const newNo=genInvNo(dt);
+            <button key={text} onClick={()=>{
+              const newNo=genInvNo(dt,inv.date);
               // Reset orig invoice fields when switching doc types
               const wasNote=(inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE');
               const isNote=(dt==='CREDIT NOTE'||dt==='DEBIT NOTE');
@@ -3598,18 +4148,17 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
             }}
               style={{padding:'7px 18px',borderRadius:8,
                 border:`2px solid ${isActive?bc:'var(--border2)'}`,
-                background:isActive?bg:'transparent',
-                color:isActive?tc:'var(--text2)',
-                fontWeight:isActive?700:500,fontSize:12,cursor:'pointer',transition:'all 0.2s',letterSpacing:'0.3px'}}>
-              {label}
+                background:isActive?bg:'transparent',color:isActive?tc:'var(--text2)',
+                fontWeight:isActive?700:500,cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',gap:6}}>
+              <Ic n={icon} s={16}/> {text}
             </button>);
           })}
         </div>
         {inv.docType==='CREDIT NOTE'&&<div style={{marginTop:8,fontSize:11,color:'#065F46',background:'#D1FAE5',padding:'5px 10px',borderRadius:6}}>
-          ⚠️ Credit Note values will be stored as <strong>negative</strong> and will reduce revenue totals.
+          <Ic n="alert" s={14}/> Credit Note values will be stored as <strong>negative</strong> and will reduce revenue totals.
         </div>}
         {inv.docType==='NON GST INVOICE'&&<div style={{marginTop:8,fontSize:11,color:'#6B21A8',background:'#F3E8FF',padding:'5px 10px',borderRadius:6}}>
-          ℹ️ Non-GST Invoice — <strong>no HSN, tax or GST</strong> applied. Only Description, Rate, Qty and Total. Useful for small/exempt sales.
+          <Ic n="info" s={14}/> Non-GST Invoice — <strong>no HSN, tax or GST</strong> applied. Only Description, Rate, Qty and Total. Useful for small/exempt sales.
         </div>}
         {/* Original Invoice Reference — only for Credit Note & Debit Note */}
         {(inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE')&&(
@@ -3617,7 +4166,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
             {/* Header */}
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
               <div style={{width:28,height:28,borderRadius:8,background:inv.docType==='CREDIT NOTE'?'rgba(16,185,129,0.15)':'rgba(245,158,11,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>
-                {inv.docType==='CREDIT NOTE'?'📉':'📈'}
+                {inv.docType==='CREDIT NOTE'?<Ic n="trending-down" s={16}/>:<Ic n="trending-up" s={16}/>}
               </div>
               <div>
                 <div style={{fontSize:12,fontWeight:700,color:inv.docType==='CREDIT NOTE'?'var(--green)':'var(--gold)',textTransform:'uppercase',letterSpacing:'0.7px'}}>
@@ -3626,7 +4175,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
                 <div style={{fontSize:10,color:'var(--text3)',marginTop:1}}>Required for GST filing — select from your saved invoices</div>
               </div>
               {inv.origInvNo&&<div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:5,padding:'3px 10px',borderRadius:20,background:inv.docType==='CREDIT NOTE'?'rgba(16,185,129,0.1)':'rgba(245,158,11,0.1)',border:`1px solid ${inv.docType==='CREDIT NOTE'?'rgba(16,185,129,0.3)':'rgba(245,158,11,0.3)'}`,fontSize:11,fontWeight:700,color:inv.docType==='CREDIT NOTE'?'var(--green)':'var(--gold)'}}>
-                <span>✓</span><span>Linked</span>
+                <span><Ic n="check" s={12}/></span><span>Linked</span>
               </div>}
             </div>
             <div className="g2">
@@ -3692,7 +4241,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
               <div className="field" style={{marginBottom:0}}>
                 <label className="field-label">
                   Original Invoice Date *
-                  {inv.origInvDate&&<span style={{marginLeft:6,fontSize:10,color:'var(--green)',fontWeight:600}}>✓ Auto-filled</span>}
+                  {inv.origInvDate&&<span style={{marginLeft:6,fontSize:10,color:'var(--green)',fontWeight:600}}> Auto-filled</span>}
                 </label>
                 <input type="date" className="field-input" value={inv.origInvDate||''} onChange={upF('origInvDate')}
                   style={{borderColor: inv.origInvDate ? 'rgba(16,185,129,0.4)' : undefined,
@@ -3734,14 +4283,14 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
               const newDate=e.target.value;
               const isSuperUser=isSuperAdmin(currentUser?.email);
               if(!isSuperUser && isMonthFrozen(newDate,'sales')){
-                toast.error(`❄️ ${newDate.substring(0,7)} sales are frozen. Cannot create/edit invoices for this month.`);
+                toast.error(` ${newDate.substring(0,7)} sales are frozen. Cannot create/edit invoices for this month.`);
                 return; // block the date change
               }
               upF('date')(e);
             }}
             style={{borderColor: (!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?'var(--red)':''}}/>
           {(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))&&
-            <div style={{fontSize:10,color:'var(--red)',marginTop:3}}>❄️ This month is frozen</div>}
+            <div style={{fontSize:10,color:'var(--red)',marginTop:3}}> This month is frozen</div>}
         </div>
         <div className="field">
           <label className="field-label">Due Date</label>
@@ -3782,7 +4331,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
               width:380,background:'var(--card)',border:'1.5px solid var(--border2)',
               borderRadius:10,boxShadow:'0 8px 40px rgba(0,0,0,0.4)',zIndex:99999,maxHeight:220,overflowY:'auto'}}>
               <div style={{padding:'5px 12px',fontSize:10,color:'var(--text3)',borderBottom:'1px solid var(--border)',fontWeight:700,background:'var(--card2)',borderRadius:'10px 10px 0 0'}}>
-                👥 {custMatched.length} customer{custMatched.length!==1?'s':''} found
+                <Ic n="users" s={16}/> {custMatched.length} customer{custMatched.length!==1?'s':''} found
               </div>
               {custMatched.map((c,i)=>(
                 <div key={i} className="hsn-opt" onMouseDown={e=>{e.preventDefault();fillCustomer(c);}}>
@@ -3814,7 +4363,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
               <label className="field-label">Customer GSTIN</label>
               <div style={{position:'relative'}}>
                 <input className="field-input" value={inv.billTo.gstin||''} onChange={e=>setInv(p=>({...p,billTo:{...p.billTo,gstin:e.target.value.toUpperCase()}}))} placeholder="29XXXXX0000X1Z5" maxLength={15} style={{textTransform:'uppercase',paddingRight:72}}/>
-                {inv.billTo.gstin&&<span className="gstin-badge" style={{color:buyerGSTINOK?'var(--green)':'var(--red)'}}>{buyerGSTINOK?'✓ Valid':'✗ Invalid'}</span>}
+                {inv.billTo.gstin&&<span className="gstin-badge" style={{color:buyerGSTINOK?'var(--green)':'var(--red)'}}>{buyerGSTINOK?' Valid':'✗ Invalid'}</span>}
               </div>
             </div>
           )}
@@ -3833,7 +4382,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
         </div>
         {inv.sameAddress?(
           <div style={{textAlign:'center',padding:'32px 0',color:'var(--text3)'}}>
-            <div style={{fontSize:36,marginBottom:8}}>📦</div>
+            <div style={{fontSize:36,marginBottom:8}}><Ic n="package" s={16}/></div>
             <div style={{fontSize:13}}>Shipping address same as billing address</div>
           </div>
         ):(
@@ -3857,7 +4406,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
                   border:`2px solid ${inv.status===st?cfg.color:cfg.border}`,
                   background:inv.status===st?cfg.bg:'transparent',
                   color:inv.status===st?cfg.color:'var(--text3)',transition:'all 0.15s'}}>
-                {st==='Draft'?'📝':st==='Sent'?'📤':st==='Paid'?'✅':'⚠️'} {st}
+                {st==='Draft'?'D':st==='Sent'?'S':st==='Paid'?'P':'O'} {st}
               </button>
             ))}
           </div>
@@ -3871,8 +4420,8 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
             <input type="checkbox" checked={!!inv.sentToCustomer}
               onChange={e=>setInv(p=>({...p,sentToCustomer:e.target.checked,status:e.target.checked&&p.status==='Draft'?'Sent':p.status}))}
               style={{accentColor:'var(--primary)',width:14,height:14}}/>
-            <span style={{color:'var(--text2)'}}>📤 Sent to customer</span>
-            {inv.sentToCustomer&&<span style={{fontSize:10,color:'#1D4ED8',background:'#EFF6FF',padding:'1px 7px',borderRadius:10,border:'1px solid #BFDBFE'}}>✓ Sent</span>}
+            <span style={{color:'var(--text2)'}}>S Sent to customer</span>
+            {inv.sentToCustomer&&<span style={{fontSize:10,color:'#1D4ED8',background:'#EFF6FF',padding:'1px 7px',borderRadius:10,border:'1px solid #BFDBFE'}}> Sent</span>}
           </label>
         </div>
         {/* GST info — hidden for Non-GST invoices */}
@@ -3988,7 +4537,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
             <>
               <div className="tax-row"><span className="tax-label">Total (No GST)</span><span className="tax-val">{fmt(inv.grand)}</span></div>
               <div className="tax-row" style={{padding:'5px 16px',background:'rgba(107,33,168,0.06)',borderRadius:4}}>
-                <span style={{fontSize:11,color:'#6B21A8'}}>ℹ️ Non-GST — no tax applied</span>
+                <span style={{fontSize:11,color:'#6B21A8'}}><Ic n="info" s={14}/> Non-GST — no tax applied</span>
               </div>
               <div className="tax-row total-row" style={{padding:'7px 16px'}}>
                 <span className="tax-label">Grand Total</span>
@@ -4026,14 +4575,14 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
         {inv.status&&(()=>{const cfg=STATUS_CFG[inv.status]||{};return(
           <span style={{padding:'4px 12px',borderRadius:20,fontSize:11,fontWeight:700,
             background:cfg.bg,color:cfg.color,border:`1.5px solid ${cfg.border}`}}>
-            {inv.status==='Draft'?'📝':inv.status==='Sent'?'📤':inv.status==='Paid'?'✅':'⚠️'} {inv.status}
+            {inv.status[0]} {inv.status}
           </span>
         );})()}
-        {inv.sentToCustomer&&<span style={{fontSize:11,color:'#1D4ED8',background:'#EFF6FF',padding:'4px 10px',borderRadius:20,border:'1px solid #BFDBFE'}}>📤 Sent to Customer</span>}
+        {inv.sentToCustomer&&<span style={{fontSize:11,color:'#1D4ED8',background:'#EFF6FF',padding:'4px 10px',borderRadius:20,border:'1px solid #BFDBFE'}}>S Sent to Customer</span>}
         {/* Freeze indicator in action bar */}
         {!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv)&&(
           <span style={{fontSize:11,color:'var(--red)',background:'rgba(239,68,68,0.08)',padding:'4px 10px',borderRadius:20,border:'1px solid rgba(239,68,68,0.25)',fontWeight:700}}>
-            ❄️ {(inv.date||'').substring(0,7)} Frozen — Save disabled
+             {(inv.date||'').substring(0,7)} Frozen — Save disabled
           </span>
         )}
       </div>
@@ -4045,7 +4594,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
           onClick={()=>save(false)}><Ic n="save" s={14}/>Save</button>
         <button className="btn btn-outline" style={{borderColor:'#1D4ED8',color:'#1D4ED8'}}
           onClick={()=>setInv(p=>({...p,sentToCustomer:true,status:p.status==='Draft'?'Sent':p.status}))}>
-          📤 Mark Sent
+          S Mark Sent
         </button>
         <button className="btn btn-gold"
           disabled={!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv)}
@@ -4053,7 +4602,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
           onClick={()=>{save(true);makePDF(inv,co,terms);}}>
           <Ic n="pdf" s={15}/>Download PDF + New
         </button>
-        <button title="Share on WhatsApp with PDF" style={{padding:'9px 14px',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',background:'#25D366',color:'#fff',border:'none',display:'inline-flex',alignItems:'center',gap:6,boxShadow:'0 4px 14px rgba(37,211,102,0.35)'}}
+        {co.waEnabled&&<button title="Share on WhatsApp with PDF" style={{padding:'9px 14px',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',background:'#25D366',color:'#fff',border:'none',display:'inline-flex',alignItems:'center',gap:6,boxShadow:'0 4px 14px rgba(37,211,102,0.35)'}}
           onClick={async ()=>{
             // ── Step 1: Clean & validate phone ──
             let raw=(inv.billTo?.phone||'').replace(/\D/g,'');
@@ -4106,14 +4655,14 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
           }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           WhatsApp
-        </button>
+        </button>}
       </div>
     </div>
   </div>;
 };
 
 /* ════════════════════════════════════════════════════
-   🛒 PURCHASE ORDER (PO) SYSTEM
+   <Ic n="cart" s={16}/> PURCHASE ORDER (PO) SYSTEM
    ════════════════════════════════════════════════════ */
 
 // ── PO PDF Generator ──
@@ -4448,7 +4997,7 @@ const POForm = ({currentUser, initial, onSave})=>{
       <div className="card">
         <div className="section-title" style={{marginBottom:12}}><span className="dot"></span>Deliver To</div>
         <div style={{fontSize:11,color:'var(--text3)',marginBottom:10,background:'var(--card2)',padding:'6px 10px',borderRadius:6}}>
-          📍 Where goods should be delivered (usually your company address)
+          <Ic n="map-pin" s={16}/> Where goods should be delivered (usually your company address)
         </div>
         <div className="field"><label className="field-label">Company / Name</label>
           <input className="field-input" value={po.deliverTo.name||co.name||''} onChange={upD('name')} placeholder={co.name||'Your company name'}/>
@@ -4533,9 +5082,10 @@ const POForm = ({currentUser, initial, onSave})=>{
 };
 
 // ── PO History Modal ──
-const POHistoryModal = ({onClose, onLoad, currentUser, onNewPO})=>{
+const POHistoryModal = ({onClose, onLoad, currentUser, onNewPO, inline=false, searchQuery=''})=>{
   const [orders,setOrders]=useState(S.get(SK.PO,[]));
-  const [q,setQ]=useState('');
+  const [q,setQ]=useState(searchQuery);
+  useEffect(()=>{if(searchQuery!==undefined)setQ(searchQuery);},[searchQuery]);
   const isAdmin=currentUser?.role==='admin'||currentUser?.role==='superadmin';
   const filtered=[...orders].reverse().filter(p=>!q||
     p.poNo?.toLowerCase().includes(q.toLowerCase())||
@@ -4549,54 +5099,72 @@ const POHistoryModal = ({onClose, onLoad, currentUser, onNewPO})=>{
     toast.info('PO deleted');
   };
   const STATUS_COLOR={'Draft':'#6B7280','Sent':'#1D4ED8','Approved':'#065F46','Partially Received':'#B45309','Received':'#15803D','Cancelled':'#991B1B'};
-  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:1060,width:"96vw"}}>
+  return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
+    <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1260px, 95vw)',width:'100%'})}}>
       <div className="modal-hdr">
-        <span className="modal-title">🛒 Purchase Orders ({orders.length})</span>
+        <span className="modal-title"><Ic n="cart" s={20}/> Purchase Orders ({orders.length})</span>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           <button className="btn btn-sm btn-outline-primary" onClick={()=>{onClose();onNewPO&&onNewPO();}}>
-            ➕ New PO
+            <Ic n="plus" s={14}/> New PO
           </button>
           {isAdmin&&orders.length>0&&<button className="btn btn-sm btn-outline" onClick={()=>makePOExcel(orders)}>
-            📊 Excel
+            <Ic n="xlsx" s={14}/> Excel
           </button>}
           <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
         </div>
       </div>
       <div className="modal-body">
-        <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
-          placeholder="🔍 Search by PO number, vendor, ref no..." style={{marginBottom:14}}/>
+        <div style={{position:'relative',marginBottom:14}}>
+          <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
+          <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
+            placeholder="Search by PO number, vendor, ref no..." style={{paddingLeft:38,width:'100%'}}/>
+        </div>
         {filtered.length===0?<div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>
-          <div style={{fontSize:36,marginBottom:8}}>🛒</div>
+          <div style={{fontSize:36,marginBottom:8}}><Ic n="cart" s={36}/></div>
           <div>No purchase orders yet</div>
         </div>:(
           <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden'}}>
-            {filtered.map((p,i)=>{
-              const grand=(p.items||[]).reduce((s,r)=>s+(r.qty||0)*(parseFloat(r.rate)||0),0)+Number(p.taxes||0);
-              const sc=STATUS_COLOR[p.status]||'#6B7280';
-              return(<div key={i} className="hist-row" style={{cursor:'default'}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                    <span style={{fontFamily:'monospace',fontWeight:700,fontSize:13,color:'var(--gold)'}}>{p.poNo}</span>
-                    <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:10,background:sc+'22',color:sc,border:`1px solid ${sc}44`}}>{p.status||'Draft'}</span>
-                    {p.refNo&&<span style={{fontSize:11,color:'var(--text3)'}}>Ref: {p.refNo}</span>}
-                  </div>
-                  <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginTop:2}}>{p.vendorTo?.name||'—'}</div>
-                  <div style={{fontSize:11,color:'var(--text3)',marginTop:1}}>
-                    {fmtDate(p.date)} {p.deliveryDate&&`→ Deliver by: ${fmtDate(p.deliveryDate)}`}
-                  </div>
-                </div>
-                <div style={{textAlign:'right',flexShrink:0}}>
-                  <div style={{fontWeight:700,fontSize:14,color:'var(--primary2)'}}>{fmt(grand)}</div>
-                  <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{(p.items||[]).filter(r=>r.desc).length} items</div>
-                </div>
-                <div style={{display:'flex',gap:5,flexShrink:0,flexWrap:'wrap'}}>
-                  <button className="btn btn-sm btn-outline-primary" onClick={()=>{onLoad(p);}}>✏️ Edit</button>
-                  <button className="btn btn-sm btn-outline" onClick={()=>makePOPDF(p,S.get(SK.CO,{}))}>PDF</button>
-                  <button className="btn btn-sm btn-danger btn-icon" onClick={()=>delPO(p.poNo)}><Ic n="trash" s={11}/></button>
-                </div>
-              </div>);
-            })}
+            <table style={{width:'100%',borderCollapse:'collapse'}}>
+              <thead>
+                <tr style={{background:'var(--card2)',borderBottom:'2px solid var(--border2)'}}>
+                  {['PO No.','Status','Vendor','Date','Delivery','Amount','Items','Actions'].map((h,i)=>(
+                    <th key={i} style={{padding:'10px 12px',fontSize:10,fontWeight:700,color:'var(--text2)',
+                      textTransform:'uppercase',letterSpacing:'0.5px',textAlign:i>=5?'right':i===7?'center':'left',
+                      whiteSpace:'nowrap'}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p,i)=>{
+                  const grand=(p.items||[]).reduce((s,r)=>s+(r.qty||0)*(parseFloat(r.rate)||0),0)+Number(p.taxes||0);
+                  const sc=STATUS_COLOR[p.status]||'#6B7280';
+                  return(
+                  <tr key={i} style={{borderBottom:'1px solid var(--border)',transition:'background 0.12s'}}
+                    onMouseEnter={e=>e.currentTarget.style.background='var(--primary-bg)'}
+                    onMouseLeave={e=>e.currentTarget.style.background=''}>
+                    <td style={{padding:'10px 12px',fontFamily:'monospace',fontWeight:700,fontSize:12,color:'var(--gold)',whiteSpace:'nowrap'}}>{p.poNo}</td>
+                    <td style={{padding:'10px 8px',whiteSpace:'nowrap'}}>
+                      <span style={{fontSize:10,fontWeight:700,padding:'3px 9px',borderRadius:20,
+                        background:sc+'22',color:sc,border:`1px solid ${sc}44`,whiteSpace:'nowrap'}}>
+                        {p.status||'Draft'}
+                      </span>
+                    </td>
+                    <td style={{padding:'10px 12px',fontWeight:600,fontSize:13,color:'var(--text)',maxWidth:180,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.vendorTo?.name||'—'}</td>
+                    <td style={{padding:'10px 12px',fontSize:12,color:'var(--text2)',whiteSpace:'nowrap'}}>{fmtDate(p.date)}</td>
+                    <td style={{padding:'10px 12px',fontSize:12,color:'var(--text2)',whiteSpace:'nowrap'}}>{p.deliveryDate?fmtDate(p.deliveryDate):'—'}</td>
+                    <td style={{padding:'10px 12px',textAlign:'right',fontWeight:700,fontSize:13,color:'var(--primary2)',whiteSpace:'nowrap'}}>{fmt(grand)}</td>
+                    <td style={{padding:'10px 12px',textAlign:'right',fontSize:12,color:'var(--text2)',whiteSpace:'nowrap'}}>{(p.items||[]).filter(r=>r.desc).length}</td>
+                    <td style={{padding:'8px 10px',textAlign:'center',whiteSpace:'nowrap'}}>
+                      <div style={{display:'flex',gap:4,justifyContent:'center',alignItems:'center'}}>
+                        <button className="btn btn-sm btn-outline-primary" style={{padding:'4px 10px',fontSize:11}} onClick={()=>{onLoad(p);}}>Edit</button>
+                        <button className="btn btn-sm btn-outline" style={{padding:'4px 10px',fontSize:11}} onClick={()=>makePOPDF(p,S.get(SK.CO,{}))}>PDF</button>
+                        {isAdmin&&<button className="btn btn-sm btn-danger btn-icon" style={{width:28,height:28}} onClick={()=>delPO(p.poNo)}><Ic n="trash" s={11}/></button>}
+                      </div>
+                    </td>
+                  </tr>);
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -4623,7 +5191,7 @@ const checkOverdue = () => {
   if (changed) {
     S.set(SK.INV, updated);
     const cnt = updated.filter(i=>i.status==='Overdue').length;
-    toast.error(`⚠️ ${cnt} invoice${cnt>1?'s':''} marked Overdue!`);
+    toast.error(`${cnt} invoice${cnt>1?'s':''} marked Overdue!`);
   }
   return updated.filter(i=>i.status==='Overdue').length;
 };
@@ -4661,12 +5229,12 @@ const ProductMasterModal = ({onClose, onSelect})=>{
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal" style={{maxWidth:1060,width:'96vw'}}>
       <div className="modal-hdr">
-        <span className="modal-title">📦 Product / Item Master</span>
+        <span className="modal-title"><Ic n="package" s={16}/> Product / Item Master</span>
         <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
       </div>
       <div className="modal-body">
         <div style={{display:'flex',gap:8,marginBottom:16}}>
-          {[['list',`📋 All Products (${list.length})`],['add',editing!==null?'✏️ Edit':'➕ Add Product']].map(([k,l])=>(
+          {[['list',`<Ic n="list" s={16}/> All Products (${list.length})`],['add',editing!==null?'Edit':'Add Product']].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)}
               style={{padding:'7px 18px',borderRadius:8,fontSize:12,fontWeight:tab===k?700:500,cursor:'pointer',
                 border:`2px solid ${tab===k?'var(--primary)':'var(--border2)'}`,
@@ -4699,7 +5267,10 @@ const ProductMasterModal = ({onClose, onSelect})=>{
 
         {tab==='list'&&(
           <>
-            <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 Search by name, HSN, category..." style={{marginBottom:12}}/>
+            <div style={{position:'relative',marginBottom:12}}>
+              <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
+              <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search by name, HSN, category..." style={{paddingLeft:38,width:'100%'}}/>
+            </div>
             {filtered.length>0?(
               <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'52vh',overflowY:'auto'}}>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 90px 80px 80px 100px auto',gap:0,padding:'8px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>
@@ -4725,9 +5296,9 @@ const ProductMasterModal = ({onClose, onSelect})=>{
                 ))}
               </div>
             ):<div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>
-                <div style={{fontSize:36,marginBottom:8}}>📦</div>
+                <div style={{fontSize:36,marginBottom:8}}><Ic n="package" s={16}/></div>
                 <div style={{marginBottom:12}}>No products yet.</div>
-                <button className="btn btn-primary" onClick={()=>setTab('add')}>➕ Add First Product</button>
+                <button className="btn btn-primary" onClick={()=>setTab('add')}> Add First Product</button>
               </div>}
           </>
         )}
@@ -4740,7 +5311,7 @@ const ProductMasterModal = ({onClose, onSelect})=>{
 /* ══════════════════════════════════════════════════════════════
    ⭐ FEATURE 3: DASHBOARD
    ══════════════════════════════════════════════════════════════ */
-const Dashboard = ({onClose, onLoad})=>{
+const Dashboard = ({onClose, onLoad, inline=false})=>{
   const invs=S.get(SK.INV,[]);
   const exps=S.get(SK.EXP,[]);
   const co=S.get(SK.CO,{});
@@ -4801,11 +5372,11 @@ const Dashboard = ({onClose, onLoad})=>{
     </div>
   );
 
-  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div className="modal" style={{maxWidth:1100,width:'97vw'}}>
+  return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
+    <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1100px, 95vw)',width:'100%'})}}>
       <div className="modal-hdr">
         <div>
-          <span className="modal-title">📊 Dashboard</span>
+          <span className="modal-title"><Ic n="chart" s={20}/> Dashboard</span>
           <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>Welcome back, {S.get(SK.USERS,[])[0]?.name||'Admin'} · {co.name||'Your Company'}</div>
         </div>
         <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
@@ -4815,7 +5386,7 @@ const Dashboard = ({onClose, onLoad})=>{
         {/* ── Overdue Alert ── */}
         {overdueInvs.length>0&&(
           <div className="alert" style={{background:'rgba(255,77,106,0.08)',border:'1px solid rgba(255,77,106,0.25)',color:'var(--red)',marginBottom:16,borderRadius:10}}>
-            <span style={{fontSize:18}}>⚠️</span>
+            <Ic n="alert" s={18}/>
             <div>
               <strong>{overdueInvs.length} overdue invoice{overdueInvs.length>1?'s':''}</strong> totalling <strong>{fmt(overdueAmt)}</strong> — immediate attention required.
               <button className="btn btn-sm btn-danger" style={{marginLeft:12}} onClick={()=>{onClose();/* history will show filtered */}}>View</button>
@@ -4825,16 +5396,16 @@ const Dashboard = ({onClose, onLoad})=>{
 
         {/* ── KPI Cards ── */}
         <div className="g4" style={{marginBottom:20}}>
-          <StatCard icon="💰" label="Net Revenue" value={fmt(totalRev)} sub={`${invs.length} invoices total`} color="var(--green)" bg="linear-gradient(135deg,rgba(15,217,138,0.06),var(--card))"/>
-          <StatCard icon="📅" label="This Month" value={fmt(mRev)} sub={`${mInvs.length} invoices`} color="var(--primary2)" bg="linear-gradient(135deg,rgba(99,102,241,0.06),var(--card))"/>
-          <StatCard icon="💸" label="Outstanding" value={fmt(unpaidAmt)} sub={`${unpaidInvs.length} unpaid`} color="var(--gold)" bg="linear-gradient(135deg,rgba(245,166,35,0.06),var(--card))"/>
-          <StatCard icon={netProfit>=0?"📈":"📉"} label="Net Profit" value={fmt(netProfit)} sub={`Expenses: ${fmt(totalExp)}`} color={netProfit>=0?'var(--green)':'var(--red)'} bg={`linear-gradient(135deg,rgba(${netProfit>=0?'15,217,138':'255,77,106'},0.06),var(--card))`}/>
+          <StatCard icon={<Ic n="dollar" s={20}/>} label="Net Revenue" value={fmt(totalRev)} sub={`${invs.length} invoices total`} color="var(--green)" bg="linear-gradient(135deg,rgba(15,217,138,0.06),var(--card))"/>
+          <StatCard icon={<Ic n="calendar" s={20}/>} label="This Month" value={fmt(mRev)} sub={`${mInvs.length} invoices`} color="var(--primary2)" bg="linear-gradient(135deg,rgba(99,102,241,0.06),var(--card))"/>
+          <StatCard icon={<Ic n="clock" s={20}/>} label="Outstanding" value={fmt(unpaidAmt)} sub={`${unpaidInvs.length} unpaid`} color="var(--gold)" bg="linear-gradient(135deg,rgba(245,166,35,0.06),var(--card))"/>
+          <StatCard icon={<Ic n={netProfit>=0?"trending-up":"trending-down"} s={20}/>} label="Net Profit" value={fmt(netProfit)} sub={`Expenses: ${fmt(totalExp)}`} color={netProfit>=0?'var(--green)':'var(--red)'} bg={`linear-gradient(135deg,rgba(${netProfit>=0?'15,217,138':'255,77,106'},0.06),var(--card))`}/>
         </div>
 
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:16}}>
           {/* ── Revenue Chart ── */}
           <div className="card">
-            <div style={{fontWeight:700,color:'var(--text)',marginBottom:14,fontSize:14}}>📊 Revenue vs Expenses (Last 6 Months)</div>
+            <div style={{fontWeight:700,color:'var(--text)',marginBottom:14,fontSize:14}}>Revenue vs Expenses (Last 6 Months)</div>
             <div style={{display:'flex',alignItems:'flex-end',gap:8,height:120}}>
               {months.map((m,i)=>(
                 <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
@@ -4856,7 +5427,7 @@ const Dashboard = ({onClose, onLoad})=>{
 
           {/* ── Invoice Status Donut-style ── */}
           <div className="card">
-            <div style={{fontWeight:700,color:'var(--text)',marginBottom:14,fontSize:14}}>🍩 Invoice Status</div>
+            <div style={{fontWeight:700,color:'var(--text)',marginBottom:14,fontSize:14}}><Ic n="circle" s={16}/> Invoice Status</div>
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
               {[['Paid','var(--green)'],['Sent','var(--primary)'],['Draft','var(--text3)'],['Overdue','var(--red)']].map(([st,col])=>{
                 const cnt=statusCount[st]||0;
@@ -4887,7 +5458,7 @@ const Dashboard = ({onClose, onLoad})=>{
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
           {/* ── Top 5 Customers ── */}
           <div className="card">
-            <div style={{fontWeight:700,color:'var(--text)',marginBottom:12,fontSize:14}}>🏆 Top 5 Customers by Revenue</div>
+            <div style={{fontWeight:700,color:'var(--text)',marginBottom:12,fontSize:14}}><Ic n="award" s={16}/> Top 5 Customers by Revenue</div>
             {top5.length>0?(
               <div style={{display:'flex',flexDirection:'column',gap:8}}>
                 {top5.map(([name,rev],i)=>(
@@ -4906,7 +5477,7 @@ const Dashboard = ({onClose, onLoad})=>{
 
           {/* ── Recent Invoices ── */}
           <div className="card">
-            <div style={{fontWeight:700,color:'var(--text)',marginBottom:12,fontSize:14}}>🕐 Recent Invoices</div>
+            <div style={{fontWeight:700,color:'var(--text)',marginBottom:12,fontSize:14}}><Ic n="clock" s={16}/> Recent Invoices</div>
             {recent.length>0?(
               <div style={{display:'flex',flexDirection:'column',gap:0}}>
                 {recent.map((inv,i)=>{
@@ -4945,12 +5516,16 @@ const App = ()=>{
   const [user,setUser]=useState(null);
   const [theme,setTheme]=useState('dark');
   const [modal,setModal]=useState(null);
+  const [page,setPage]=useState('invoice'); // 'invoice','history','pohistory','expenses','customers'
   const [loadedInv,setLoadedInv]=useState(null);
   const [loadedPO,setLoadedPO]=useState(null);
   const [formKey,setFormKey]=useState(0);
   const [poKey,setPoKey]=useState(0);
   const [appReady,setAppReady]=useState(false);
   const [loadMsg,setLoadMsg]=useState('Connecting to cloud...');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobSidebarOpen, setMobSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load Firebase cache before anything else
   useEffect(()=>{
@@ -4980,24 +5555,30 @@ const App = ()=>{
     setTimeout(()=>checkOverdue(), 1000);
   };
   const [menuOpen, setMenuOpen] = useState(false);
-  const openModal = (m) => { setModal(m); setMenuOpen(false); };
+  // ALL sections open inline — only 'po' (new PO form) stays as overlay
+  const OVERLAY_ONLY=['po'];
+  const openModal = (m) => {
+    if(OVERLAY_ONLY.includes(m)){setModal(m);}
+    else{setPage(m);setModal(null);}
+    setMenuOpen(false);
+  };
 
   const logout=()=>{setUser(null);toast.info('Logged out');};
-  const loadInv=inv=>{setLoadedInv(inv);setFormKey(k=>k+1);};
+  const loadInv=inv=>{setLoadedInv(inv);setFormKey(k=>k+1);setPage('invoice');setSearchQuery('');};
   const loadPO=po=>{setLoadedPO(po);setPoKey(k=>k+1);setModal('po');};
   const newPOModal=()=>{setLoadedPO(null);setPoKey(k=>k+1);setModal('po');};
 
   // Loading screen
   if(!appReady) return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#06051A',gap:20}}>
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#080B0F',gap:20}}>
       <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:4}}>
         <LogoIcon size={52}/>
         <div style={{fontFamily:'Sora,sans-serif',fontSize:30,fontWeight:800,letterSpacing:-0.5,color:'#E0E7FF'}}>Invoice <span style={{color:'#F5A623'}}>Prime</span></div>
       </div>
-      <div style={{fontSize:13,color:'#818CF8',letterSpacing:1}}>{loadMsg}</div>
-      <div style={{width:48,height:48,border:'4px solid #1C1A45',borderTop:'4px solid #818CF8',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+      <div style={{fontSize:13,color:'#8B949E',letterSpacing:1}}>{loadMsg}</div>
+      <div style={{width:48,height:48,border:'4px solid #21262D',borderTop:'4px solid #6366F1',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{fontSize:11,color:'#4338CA',marginTop:8}}>Powered by Firebase Cloud 🔥</div>
+      <div style={{fontSize:11,color:'#484F58',marginTop:8}}>Powered by Firebase Cloud </div>
     </div>
   );
 
@@ -5007,126 +5588,194 @@ const App = ()=>{
   const overdueCount=(S.get(SK.INV,[])).filter(i=>i.status==='Overdue').length;
   const isAdmin=user.role==='admin'||user.role==='superadmin';
 
-  return <div>
+  const NavItem = ({icon, label, badge, badgeCls, onClick, active, extraCls})=>(
+    <div className={`nav-item${active?' active':''}${extraCls?' '+extraCls:''}`} onClick={()=>{onClick();setMobSidebarOpen(false);setSearchQuery('');}}>
+      <span className="nav-icon">{icon}</span>
+      <span className="nav-label">{label}</span>
+      {badge&&<span className={`nav-badge${badgeCls?' '+badgeCls:''}`}>{badge}</span>}
+    </div>
+  );
+  const poCount=(S.get(SK.PO,[])).length;
+
+  return <div style={{display:'flex',minHeight:'100vh'}}>
     <Toast/>
 
-    {/* ── MOBILE DRAWER ── */}
-    {menuOpen&&<div className="mob-drawer" onClick={e=>{if(e.target===e.currentTarget)setMenuOpen(false)}}>
-      <div className="mob-drawer-backdrop" onClick={()=>setMenuOpen(false)}/>
-      <div className="mob-drawer-panel">
-        {/* User row */}
-        <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 16px 14px',borderBottom:'1px solid var(--border)',marginBottom:8}}>
-          <div className="user-avatar" style={{width:36,height:36,fontSize:14}}>{user.name[0]}</div>
+    {/* ── SIDEBAR OVERLAY (mobile) ── */}
+    {mobSidebarOpen&&<div className="sidebar-overlay" onClick={()=>setMobSidebarOpen(false)}/>}
+
+    {/* ══ SIDEBAR ══ */}
+    <nav className={`sidebar${sidebarCollapsed?' collapsed':''}${mobSidebarOpen?' mob-open':''}`}>
+      {/* Logo / brand */}
+      <div className="sidebar-logo" onClick={()=>setSidebarCollapsed(c=>!c)}>
+        <LogoIcon size={30}/>
+        <div>
+          <div className="sidebar-brand">Invoice <span>Prime</span></div>
+          <div className="sidebar-sub">Smart GST Billing</div>
+        </div>
+      </div>
+
+      {/* Nav items */}
+      <div className="sidebar-nav">
+        <div className="sidebar-section-label">Main</div>
+
+        <NavItem icon={<Ic n="chart" s={17}/>} label="Dashboard"
+          onClick={()=>{setPage('dashboard');setModal(null);setMobSidebarOpen(false);}} active={page==='dashboard'}
+          badge={overdueCount>0?overdueCount:null} badgeCls="red"/>
+
+        <NavItem icon={<Ic n="plus" s={17}/>} label="New Invoice" onClick={()=>{setPage('invoice');setModal(null);setMobSidebarOpen(false);}} active={page==='invoice'&&!modal}/>
+
+        <div className="nav-sep"/>
+        <div className="sidebar-section-label">Records</div>
+
+        <NavItem icon={<Ic n="history" s={17}/>} label="Invoice History"
+          onClick={()=>{setPage('history');setModal(null);setMobSidebarOpen(false);}} active={page==='history'&&!modal}
+          badge={invCount>0?invCount:null}/>
+
+        <NavItem icon={<Ic n="cart" s={17}/>} label="Purchase Orders"
+          onClick={()=>{setPage('pohistory');setModal(null);setMobSidebarOpen(false);}} active={page==='pohistory'&&!modal}
+          badge={poCount>0?poCount:null} badgeCls="gold"/>
+
+        <NavItem icon={<Ic n="receipt" s={17}/>} label="Expenses"
+          onClick={()=>{setPage('expenses');setModal(null);setMobSidebarOpen(false);}} active={page==='expenses'&&!modal}/>
+
+        <NavItem icon={<Ic n="users" s={17}/>} label="Customers"
+          onClick={()=>{setPage('customers');setModal(null);setMobSidebarOpen(false);}} active={page==='customers'&&!modal}/>
+
+        <div className="nav-sep"/>
+        <div className="sidebar-section-label">Settings</div>
+
+        <NavItem icon={<Ic n="building" s={17}/>} label="Company" extraCls="nav-item-gold"
+          onClick={()=>{setPage('company');setModal(null);setMobSidebarOpen(false);}} active={page==='company'}/>
+
+        <NavItem icon={<Ic n="tag" s={17}/>} label="HSN / SAC" extraCls="nav-item-gold"
+          onClick={()=>{setPage('hsn');setModal(null);setMobSidebarOpen(false);}} active={page==='hsn'}/>
+
+        <NavItem icon={<Ic n="file" s={17}/>} label="Terms & Conditions"
+          onClick={()=>{setPage('terms');setModal(null);setMobSidebarOpen(false);}} active={page==='terms'}/>
+
+        {isAdmin&&<>
+          <div className="nav-sep"/>
+          <div className="sidebar-section-label">Administration</div>
+          <NavItem icon={<Ic n="shield" s={17}/>}
+            label={isSuperAdmin(user.email)?'Super Admin':'Admin Panel'}
+            extraCls="nav-item-admin"
+            onClick={()=>{setPage('admin');setModal(null);setMobSidebarOpen(false);}} active={page==='admin'}/>
+        </>}
+      </div>
+
+      {/* Bottom: user + logout */}
+      <div className="sidebar-bottom">
+        <div style={{display:'flex',alignItems:'center',gap:9,padding:'8px 6px',borderRadius:10,
+          background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',marginBottom:8,overflow:'hidden'}}>
+          <div style={{width:30,height:30,borderRadius:'50%',background:'var(--accent-grad)',
+            display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:13,
+            color:'white',flexShrink:0}}>{user.name[0]}</div>
+          <div className="nav-label" style={{minWidth:0}}>
+            <div style={{fontWeight:600,fontSize:12,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.name}</div>
+            <div style={{fontSize:10,color:'rgba(255,255,255,0.45)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.role}</div>
+          </div>
+        </div>
+        <div className="nav-item" onClick={logout} style={{color:'rgba(255,100,100,0.8)'}}>
+          <span className="nav-icon"><Ic n="logout" s={16}/></span>
+          <span className="nav-label">Logout</span>
+        </div>
+      </div>
+    </nav>
+
+    {/* ══ MAIN WRAPPER ══ */}
+    <div className={`main-wrapper${sidebarCollapsed?' sidebar-collapsed':''}`}>
+
+      {/* ── TOP BAR ── */}
+      <div className="topbar">
+        {/* Hamburger — mobile only */}
+        <button onClick={()=>setMobSidebarOpen(o=>!o)}
+          style={{background:'var(--card2)',border:'1px solid var(--border)',borderRadius:9,
+            width:38,height:38,flexDirection:'column',alignItems:'center',
+            justifyContent:'center',gap:4.5,cursor:'pointer',flexShrink:0,
+            display:'none'}} className="mob-hamburger">
+          <div style={{width:16,height:2,borderRadius:2,background:'var(--text2)'}}/>
+          <div style={{width:16,height:2,borderRadius:2,background:'var(--text2)'}}/>
+          <div style={{width:11,height:2,borderRadius:2,background:'var(--text2)'}}/>
+        </button>
+
+        {/* Breadcrumb */}
+        <div className="breadcrumb" style={{flexShrink:0}}>
+          <span style={{color:'var(--text3)'}}>Invoice Prime</span>
+          <span style={{color:'var(--border2)'}}>›</span>
+          <span>{{
+            invoice:'New Invoice',history:'Invoice History',pohistory:'Purchase Orders',
+            expenses:'Expenses & Purchases',customers:'Customer Database',
+            dashboard:'Dashboard',company:'Company Settings',hsn:'HSN / SAC Database',
+            terms:'Terms & Conditions',admin:'Admin Panel'
+          }[page]||'Invoice Prime'}</span>
+        </div>
+
+        {/* Search bar */}
+        <div className="topbar-search" style={{marginLeft:20}}>
+          <span className="topbar-search-icon"><Ic n="search" s={14}/></span>
+          <input
+            placeholder="Search invoices, customers..."
+            value={searchQuery}
+            onChange={e=>setSearchQuery(e.target.value)}
+            onKeyDown={e=>{
+              if(e.key==='Escape'){setSearchQuery('');}
+            }}
+            style={{cursor:'text'}}
+          />
+          {searchQuery&&<span onClick={()=>setSearchQuery('')} style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',cursor:'pointer',color:'var(--text3)',fontSize:16,lineHeight:1}}>×</span>}
+        </div>
+
+        <div className="topbar-spacer"/>
+
+        {/* Theme toggle */}
+        <div className="topbar-icon-btn" title="Toggle theme" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
+          {theme==='dark'?<Ic n="sun" s={15}/>:<Ic n="moon" s={15}/>}
+        </div>
+
+        {/* Overdue alert */}
+        {overdueCount>0&&(
+          <div className="topbar-icon-btn" style={{color:'var(--red)'}} title={`${overdueCount} overdue invoice${overdueCount>1?'s':''}`}
+            onClick={()=>{setPage('history');setModal(null);}}>
+            <Ic n="alert" s={15}/>
+            <span className="topbar-notif">{overdueCount}</span>
+          </div>
+        )}
+
+        {/* Notifications: invoice count */}
+        <div className="topbar-icon-btn" title="Invoice History" onClick={()=>{setPage('history');setModal(null);}}>
+          <Ic n="history" s={15}/>
+          {invCount>0&&<span className="topbar-notif" style={{background:'var(--primary)'}}>{invCount}</span>}
+        </div>
+
+        {/* User pill — shows company name, no click action */}
+        <div className="topbar-user" style={{cursor:'default'}}>
+          <div className="topbar-avatar">{user.name[0]}</div>
           <div>
-            <div style={{fontWeight:700,fontSize:14,color:'var(--text)'}}>{user.name}</div>
-            <div style={{fontSize:11,color:'var(--text3)'}}>{user.email}</div>
-          </div>
-          <div style={{marginLeft:'auto',cursor:'pointer',padding:'6px 12px',background:'var(--card2)',border:'1px solid var(--border)',borderRadius:8,fontSize:12,color:'var(--text2)'}}
-            onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
-            {theme==='dark'?'☀️ Light':'🌙 Dark'}
+            <div className="topbar-user-name">{S.get(SK.CO,{}).name||user.name}</div>
+            <div className="topbar-user-role">{user.name} · {user.role}</div>
           </div>
         </div>
-
-        {/* Nav items */}
-        <div onClick={()=>openModal('dashboard')} className="mob-nav-item" style={{background:'linear-gradient(135deg,rgba(99,102,241,0.08),transparent)',border:'1px solid rgba(99,102,241,0.18)'}}>
-          <span style={{fontSize:18}}>📊</span><span style={{color:'var(--primary2)',fontWeight:700}}>Dashboard</span>
-        </div>
-        <div onClick={()=>openModal('history')} className="mob-nav-item">
-          <span style={{fontSize:18}}>📋</span>
-          <span>Invoice History</span>
-          {invCount>0&&<span style={{marginLeft:'auto',background:'var(--primary)',color:'#fff',borderRadius:20,padding:'1px 8px',fontSize:11,fontWeight:700}}>{invCount}</span>}
-        </div>
-        <div onClick={()=>openModal('pohistory')} className="mob-nav-item">
-          <span style={{fontSize:18}}>🛒</span><span>Purchase Orders</span>
-          {(S.get(SK.PO,[])).length>0&&<span style={{marginLeft:'auto',background:'var(--gold)',color:'#fff',borderRadius:20,padding:'1px 8px',fontSize:11,fontWeight:700}}>{(S.get(SK.PO,[])).length}</span>}
-        </div>
-        <div onClick={()=>openModal('expenses')} className="mob-nav-item">
-          <span style={{fontSize:18}}>🧾</span><span>Expenses / Purchases</span>
-        </div>
-        <div onClick={()=>openModal('customers')} className="mob-nav-item">
-          <span style={{fontSize:18}}>👥</span><span>Customer Database</span>
-        </div>
-        <div className="mob-nav-sep"/>
-        <div onClick={()=>openModal('company')} className="mob-nav-item blue">
-          <span style={{fontSize:18}}>🏢</span><span>Company Settings</span>
-        </div>
-        <div onClick={()=>openModal('hsn')} className="mob-nav-item gold">
-          <span style={{fontSize:18}}>🏷️</span><span>HSN Database</span>
-        </div>
-        <div onClick={()=>openModal('terms')} className="mob-nav-item">
-          <span style={{fontSize:18}}>📄</span><span>Terms & Conditions</span>
-        </div>
-        {isAdmin&&<><div className="mob-nav-sep"/>
-        <div onClick={()=>openModal('admin')} className="mob-nav-item" style={{background:'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(245,158,11,0.04))',border:'1px solid rgba(245,158,11,0.2)'}}>
-          <span style={{fontSize:18}}>🛡️</span>
-          <span style={{color:'var(--gold)',fontWeight:700}}>{isSuperAdmin(user.email)?'👑 Super Admin Panel':'Admin Panel'}</span>
-        </div></>}
-        <div className="mob-nav-sep"/>
-        <div onClick={()=>{logout();setMenuOpen(false);}} className="mob-nav-item" style={{color:'var(--red)'}}>
-          <span style={{fontSize:18}}>🚪</span><span>Logout</span>
-        </div>
-      </div>
-    </div>}
-
-    {/* ── HEADER ── */}
-    <header className="app-header">
-      {/* Left: brand — no wrap */}
-      <div style={{display:'flex',alignItems:'center',flexShrink:0,whiteSpace:'nowrap'}}>
-        <LogoIcon size={28}/>
-        <span className="app-brand">Invoice <span style={{color:'var(--gold)'}}>Prime</span></span>
-        <span className="app-brand-sub"> · Smart GST Billing</span>
       </div>
 
-      {/* Desktop nav — hidden on mobile */}
-      <div className="header-right">
-        <div title="Toggle Theme" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:4,padding:'4px 9px',background:'var(--card2)',border:'1px solid var(--border)',borderRadius:20,flexShrink:0}} onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
-          {theme==='dark'?<Ic n="moon" s={13}/>:<Ic n="sun" s={13}/>}
-          <span style={{fontSize:11,color:'var(--text2)'}}>{theme==='dark'?'Dark':'Light'}</span>
-        </div>
-        <button className="btn btn-outline-primary btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('dashboard')}>📊 Dashboard</button>
-        <button className="btn btn-outline btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('terms')}>📋 Terms</button>
-        <button className="btn btn-outline btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('history')}>
-          🕐 History
-          {invCount>0&&<span style={{background:'var(--primary)',color:'#fff',borderRadius:'50%',width:16,height:16,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,marginLeft:2}}>{invCount}</span>}
-          {overdueCount>0&&<span style={{background:'var(--red)',color:'#fff',borderRadius:'50%',width:14,height:14,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:700,marginLeft:2}}>{overdueCount}</span>}
-        </button>
-        <button className="btn btn-outline btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('pohistory')}>🛒 POs</button>
-        <button className="btn btn-outline btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('expenses')}>🧾 Expenses</button>
-        <button className="btn btn-outline btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('customers')}>👥 Customers</button>
-        <button className="btn btn-outline-gold btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('hsn')}>🏷️ HSN</button>
-        <button className="btn btn-outline-primary btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('company')}>🏢 Company</button>
-        {isAdmin&&<button className="btn btn-gold btn-sm" style={{fontSize:11,padding:'5px 10px'}} onClick={()=>setModal('admin')}>{isSuperAdmin(user.email)?'👑 Super Admin':'🛡️ Admin'}</button>}
-        <div className="user-pill" style={{flexShrink:0}}>
-          <div className="user-avatar">{user.name[0]}</div>
-          <span style={{maxWidth:80,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.name}</span>
-        </div>
-        <button className="btn btn-outline btn-icon" style={{width:30,height:30,padding:0,flexShrink:0}} onClick={logout} title="Logout"><Ic n="logout" s={13}/></button>
+      {/* ── PAGE CONTENT — all sections render inline here ── */}
+      <div className="app-body page-enter" key={page}>
+        {page==='invoice'&&<InvoiceForm key={formKey} currentUser={user} initial={loadedInv} onSave={()=>{}}/>}
+        {page==='history'&&<HistoryModal onClose={()=>setPage('invoice')} onLoad={loadInv} currentUser={user} inline={true} searchQuery={searchQuery}/>}
+        {page==='pohistory'&&<POHistoryModal onClose={()=>setPage('invoice')} onLoad={po=>{setLoadedPO(po);setPoKey(k=>k+1);setModal('po');}} currentUser={user} onNewPO={()=>{setLoadedPO(null);setPoKey(k=>k+1);setModal('po');}} inline={true} searchQuery={searchQuery}/>}
+        {page==='expenses'&&<ExpenseModal onClose={()=>setPage('invoice')} currentUser={user} inline={true} searchQuery={searchQuery}/>}
+        {page==='customers'&&<CustomerModal onClose={()=>setPage('invoice')} inline={true} searchQuery={searchQuery}/>}
+        {page==='dashboard'&&<Dashboard onClose={()=>setPage('invoice')} onLoad={loadInv} inline={true}/>}
+        {page==='company'&&<CompanyModal onClose={()=>setPage('invoice')} currentUser={user} inline={true}/>}
+        {page==='hsn'&&<HSNModal onClose={()=>setPage('invoice')} inline={true} searchQuery={searchQuery}/>}
+        {page==='terms'&&<TermsModal onClose={()=>setPage('invoice')} inline={true}/>}
+        {page==='admin'&&isAdmin&&<AdminPanel currentUser={user} onClose={()=>setPage('invoice')} inline={true}/>}
       </div>
-
-      {/* Mobile right: invoice count + hamburger */}
-      <div style={{display:'flex',alignItems:'center',gap:8,marginLeft:'auto'}}
-           className="mob-header-right">
-        <div style={{textAlign:'right',lineHeight:1.2}}>
-          <div style={{fontSize:11,color:'var(--text3)'}}>Welcome</div>
-          <div style={{fontSize:12,fontWeight:700,color:'var(--text)',maxWidth:90,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.name}</div>
-        </div>
-        <button onClick={()=>setMenuOpen(true)}
-          style={{background:'var(--card2)',border:'1px solid var(--border2)',borderRadius:10,width:40,height:40,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:5,cursor:'pointer',flexShrink:0}}>
-          <div style={{width:18,height:2,borderRadius:2,background:'var(--text2)'}}/>
-          <div style={{width:18,height:2,borderRadius:2,background:'var(--text2)'}}/>
-          <div style={{width:12,height:2,borderRadius:2,background:'var(--text2)'}}/>
-        </button>
-      </div>
-    </header>
-
-    <div className="app-body">
-      <InvoiceForm key={formKey} currentUser={user} initial={loadedInv} onSave={()=>{}}/>
     </div>
 
     {modal==='po'&&<div className="overlay" onClick={e=>e.target===e.currentTarget&&setModal(null)}>
-      <div className="modal" style={{maxWidth:1100,width:'97vw'}}>
+      <div className="modal" style={{maxWidth:'min(1100px, 95vw)',width:'100%'}}>
         <div className="modal-hdr">
-          <span className="modal-title">🛒 New Purchase Order</span>
+          <span className="modal-title"><Ic n="cart" s={20}/> New Purchase Order</span>
           <button className="close-btn" onClick={()=>setModal(null)}><Ic n="x"/></button>
         </div>
         <div className="modal-body">
@@ -5135,16 +5784,9 @@ const App = ()=>{
       </div>
     </div>}
 
-    {modal==='dashboard'&&<Dashboard onClose={()=>setModal(null)} onLoad={loadInv}/>}
+    {/* All sections render inline in app-body above */}
+    {/* Products master modal — stays as overlay */}
     {modal==='products'&&<ProductMasterModal onClose={()=>setModal(null)}/>}
-    {modal==='company'&&<CompanyModal onClose={()=>setModal(null)} currentUser={user}/>}
-    {modal==='hsn'&&<HSNModal onClose={()=>setModal(null)}/>}
-    {modal==='terms'&&<TermsModal onClose={()=>setModal(null)}/>}
-    {modal==='customers'&&<CustomerModal onClose={()=>setModal(null)}/>}
-    {modal==='expenses'&&<ExpenseModal onClose={()=>setModal(null)} currentUser={user}/>}
-    {modal==='history'&&<HistoryModal onClose={()=>setModal(null)} onLoad={loadInv} currentUser={user}/>}
-    {modal==='pohistory'&&<POHistoryModal onClose={()=>setModal(null)} onLoad={loadPO} currentUser={user} onNewPO={newPOModal}/>}
-    {modal==='admin'&&isAdmin&&<AdminPanel currentUser={user} onClose={()=>setModal(null)}/>}
   </div>;
 };
 
