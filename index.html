@@ -62,7 +62,7 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 .login-desc{font-size:13px;color:var(--text2);margin-bottom:24px}
 
 /* ══ MAXTON-STYLE SIDEBAR LAYOUT ══ */
-:root{--sidebar-w:258px;--topbar-h:60px}
+:root{--sidebar-w:258px;--topbar-h:62px}
 
 /* Sidebar */
 .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;z-index:200;
@@ -119,46 +119,83 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 .nav-sep{height:1px;background:rgba(255,255,255,0.06);margin:8px 4px}
 .sidebar-bottom{padding:12px 10px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0}
 
-/* Top bar */
-.topbar{height:var(--topbar-h);display:flex;align-items:center;gap:10px;
-  padding:0 20px;flex-shrink:0;position:sticky;top:0;z-index:150;
-  background:var(--surface);border-bottom:1px solid var(--border)}
-[data-theme="dark"] .topbar{background:#0A0D13;
-  border-bottom-color:#1a1f27;box-shadow:none}
-.topbar-search{flex:1;max-width:340px;position:relative}
-.topbar-search input{width:100%;background:var(--card2);border:1px solid var(--border2);
-  border-radius:24px;padding:8px 16px 8px 38px;font-size:12.5px;color:var(--text);
-  outline:none;transition:all 0.2s;font-family:'Plus Jakarta Sans',sans-serif}
-[data-theme="dark"] .topbar-search input{background:#0D1117;border-color:#30363D;color:#E6EDF3}
-.topbar-search input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-bg)}
-.topbar-search input::placeholder{color:var(--text3)}
-.topbar-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px}
-.topbar-spacer{flex:1}
+/* TOP BAR — Company Command Bar */
+.topbar{height:var(--topbar-h);display:flex;align-items:stretch;gap:0;
+  padding:0;flex-shrink:0;position:sticky;top:0;z-index:150;overflow:hidden}
+[data-theme="dark"] .topbar{background:#0A0D13;border-bottom:1px solid #1a1f27;box-shadow:0 1px 0 rgba(99,102,241,0.08)}
+[data-theme="light"] .topbar{background:#ffffff;border-bottom:1px solid #DDD9FF;box-shadow:0 1px 8px rgba(67,56,202,0.07)}
+/* LEFT zone — company identity */
+.topbar-company{display:flex;align-items:center;gap:11px;padding:0 20px 0 22px;
+  flex-shrink:0;min-width:0;max-width:270px;border-right:1px solid;align-self:stretch}
+[data-theme="dark"] .topbar-company{border-right-color:#1a1f27;background:rgba(99,102,241,0.04)}
+[data-theme="light"] .topbar-company{border-right-color:#DDD9FF;background:rgba(99,102,241,0.03)}
+.topbar-company-info{min-width:0;overflow:hidden}
+.topbar-company-name{font-family:'Sora',sans-serif;font-size:13.5px;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+[data-theme="dark"] .topbar-company-name{color:#E6EDF3}
+[data-theme="light"] .topbar-company-name{color:#0A0828}
+.topbar-company-gstin{font-size:10px;font-weight:500;letter-spacing:0.4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;font-family:monospace}
+[data-theme="dark"] .topbar-company-gstin{color:rgba(99,102,241,0.7)}
+[data-theme="light"] .topbar-company-gstin{color:#6366F1}
+/* CENTER zone — page context */
+.topbar-center{flex:1;display:flex;align-items:center;padding:0 22px;min-width:0}
+.topbar-page-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);flex-shrink:0;
+  box-shadow:0 0 10px rgba(99,102,241,0.7);margin-right:10px}
+.topbar-page-label{font-family:'Sora',sans-serif;font-size:14.5px;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-theme="dark"] .topbar-page-label{color:#E6EDF3}
+[data-theme="light"] .topbar-page-label{color:#0A0828}
+.topbar-page-sep{margin:0 10px;font-size:18px;opacity:0.2;color:var(--text3);flex-shrink:0}
+.topbar-page-sub{font-size:11.5px;font-weight:500;white-space:nowrap;flex-shrink:0}
+[data-theme="dark"] .topbar-page-sub{color:rgba(255,255,255,0.3)}
+[data-theme="light"] .topbar-page-sub{color:#818CF8}
+/* RIGHT zone — actions */
+.topbar-right{display:flex;align-items:center;gap:8px;padding:0 18px;
+  flex-shrink:0;border-left:1px solid;align-self:stretch}
+[data-theme="dark"] .topbar-right{border-left-color:#1a1f27}
+[data-theme="light"] .topbar-right{border-left-color:#DDD9FF}
 .topbar-icon-btn{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;
-  justify-content:center;cursor:pointer;background:transparent;border:1px solid var(--border);
+  justify-content:center;cursor:pointer;background:transparent;border:1px solid;
   color:var(--text2);transition:all 0.18s;position:relative;flex-shrink:0}
-.topbar-icon-btn:hover{background:var(--card);color:var(--text);border-color:var(--border2)}
-.topbar-notif{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;
-  border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;
-  font-size:9px;font-weight:700;border:2px solid var(--surface)}
-.topbar-user{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;
-  background:var(--card);border:1px solid var(--border);border-radius:24px;
-  transition:all 0.18s;flex-shrink:0;cursor:default}
+[data-theme="dark"] .topbar-icon-btn{border-color:#21262D}
+[data-theme="light"] .topbar-icon-btn{border-color:#DDD9FF}
+.topbar-icon-btn:hover{background:var(--card);color:var(--text)}
+[data-theme="dark"] .topbar-icon-btn:hover{background:#161B22;border-color:#30363D}
+[data-theme="light"] .topbar-icon-btn:hover{background:#F5F4FF;border-color:#C4BFFF}
+.topbar-notif{position:absolute;top:-5px;right:-5px;color:#fff;
+  border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;border:2px solid}
+[data-theme="dark"] .topbar-notif{border-color:#0A0D13}
+[data-theme="light"] .topbar-notif{border-color:#ffffff}
+.topbar-notif{background:var(--primary)}
+.topbar-notif.red{background:var(--red)}
+/* USER PILL */
+.topbar-user{display:flex;align-items:center;gap:9px;padding:5px 13px 5px 5px;
+  border-radius:28px;border:1px solid;transition:all 0.18s;flex-shrink:0;cursor:default;margin-left:2px}
+[data-theme="dark"] .topbar-user{background:#161B22;border-color:#30363D}
+[data-theme="light"] .topbar-user{background:#F5F4FF;border-color:#C4BFFF}
 .topbar-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-grad);
   display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;
-  color:white;flex-shrink:0}
-.topbar-user-name{font-size:12px;font-weight:600;color:var(--text);max-width:100px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.topbar-user-role{font-size:10px;color:var(--text3)}
+  color:white;flex-shrink:0;box-shadow:0 0 0 2px rgba(99,102,241,0.35)}
+.topbar-user-name{font-size:12px;font-weight:700;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:110px}
+[data-theme="dark"] .topbar-user-name{color:#E6EDF3}
+[data-theme="light"] .topbar-user-name{color:#0A0828}
+.topbar-user-role{font-size:10px;white-space:nowrap;font-weight:500}
+[data-theme="dark"] .topbar-user-role{color:rgba(255,255,255,0.3)}
+[data-theme="light"] .topbar-user-role{color:#818CF8}
+.topbar-spacer{flex:1}
+.topbar-search{display:none}
 
 /* Main wrapper: sits next to sidebar */
-.main-wrapper{margin-left:var(--sidebar-w);width:calc(100% - var(--sidebar-w));min-height:100vh;display:flex;flex-direction:column;
-  transition:margin-left 0.25s ease,width 0.25s ease;background:var(--bg);overflow-x:hidden}
+.main-wrapper{margin-left:var(--sidebar-w);width:calc(100% - var(--sidebar-w));height:100vh;display:flex;flex-direction:column;
+  transition:margin-left 0.25s ease,width 0.25s ease;background:var(--bg);overflow:hidden}
 .main-wrapper.sidebar-collapsed{margin-left:68px;width:calc(100% - 68px)}
 [data-theme="dark"] .main-wrapper{background:#080B0F}
 
 /* Page content */
-.app-body{padding:20px 24px;flex:1;min-height:calc(100vh - var(--topbar-h));width:100%;max-width:100%;overflow-x:hidden;box-sizing:border-box}
+.app-body{padding:20px 24px;flex:1;width:100%;max-width:100%;overflow-x:hidden;overflow-y:auto;box-sizing:border-box}
 .two-col{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
 @media(max-width:1100px){.two-col{grid-template-columns:1fr}}
 
@@ -187,7 +224,7 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
   .sidebar.mob-open .sidebar-brand,.sidebar.mob-open .sidebar-sub,
   .sidebar.mob-open .nav-label,.sidebar.mob-open .nav-badge,
   .sidebar.mob-open .sidebar-section-label{opacity:1!important;width:auto!important}
-  .main-wrapper{margin-left:0!important;width:100%!important}
+  .main-wrapper{margin-left:0!important;width:100%!important;overflow:hidden}
   .topbar{padding:0 16px}
   .app-body{padding:12px}
   .sidebar-overlay{display:block!important}
@@ -204,13 +241,26 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 .inline-card-inner{background:var(--card);border:1px solid var(--border);border-radius:12px;
   width:100%;max-width:100%;overflow:hidden;display:flex;flex-direction:column}
 [data-theme="dark"] .inline-card-inner{background:#161B22;border-color:#21262D}
-.inline-card-inner .modal-hdr{border-radius:12px 12px 0 0;position:sticky;top:0;z-index:10;background:#161B22}
-[data-theme="light"] .inline-card-inner .modal-hdr{background:var(--card)}
+.inline-card-inner .modal-hdr{border-radius:12px 12px 0 0;position:sticky;top:0;z-index:10;background:var(--card)}
+[data-theme="dark"] .inline-card-inner .modal-hdr{background:#161B22}
+[data-theme="light"] .inline-card-inner .modal-hdr{background:#ffffff}
 .inline-card-inner .modal-body{max-height:none!important;overflow:visible!important;flex:1}
-.inline-card-inner .modal-ftr{border-radius:0 0 12px 12px;position:sticky;bottom:0;z-index:10;background:#161B22}
-[data-theme="light"] .inline-card-inner .modal-ftr{background:var(--card)}
+.inline-card-inner .modal-ftr{border-radius:0 0 12px 12px;position:sticky;bottom:0;z-index:10;background:var(--card)}
+[data-theme="dark"] .inline-card-inner .modal-ftr{background:#161B22}
+[data-theme="light"] .inline-card-inner .modal-ftr{background:#ffffff}
 
-/* Legacy inline-page-wrap kept for HistoryModal */
+/* Search input wrapper — consistent across all sections */
+.search-wrap{position:relative;width:100%}
+.search-wrap .search-ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  color:var(--text3);display:flex;align-items:center;pointer-events:none;z-index:1}
+.search-wrap input{width:100%;padding-left:38px!important}
+
+@media(max-width:900px){
+  .topbar-company{max-width:200px;padding:0 12px}
+  .topbar-center{padding:0 12px}
+  .topbar-page-sep,.topbar-page-sub{display:none}
+  .topbar-right{padding:0 10px;gap:6px}
+}
 .inline-page-wrap{background:var(--card);border-radius:14px;border:1px solid var(--border);
   overflow:hidden;animation:fadeIn 0.22s ease}
 .inline-page-wrap .modal-hdr{border-radius:0}
@@ -587,7 +637,7 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 @media(min-width:901px){
   .inline-card-inner{max-width:none;width:100%}
   .modal{max-width:min(95vw,1200px);margin:0 auto}
-  .app-body{max-width:none;width:100%;padding:20px 32px;box-sizing:border-box}
+  .app-body{max-width:none;width:100%;padding:20px 28px;box-sizing:border-box}
   .overlay{padding:20px}
 }
 
@@ -853,7 +903,7 @@ const Toast = ()=>{
   useEffect(()=>{_toast=(msg,type)=>{const id=Date.now();setList(p=>[...p,{id,msg,type}]);setTimeout(()=>setList(p=>p.filter(x=>x.id!==id)),3500);};},[]);
   return <div className="toast-wrap">{list.map(t=>(
     <div key={t.id} className={`toast toast-${t.type}`}>
-      <span>{t.type==='success'?'':t.type==='error'?'✗':'ℹ'}</span><span>{t.msg}</span>
+      <span>{t.type==='success'?'✓':t.type==='error'?'✗':'i'}</span><span>{t.msg}</span>
     </div>))}</div>;
 };
 
@@ -879,7 +929,6 @@ const Ic = ({n,s=15})=>{
     xlsx:<svg {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12l2 2 4-4M8 8h8M8 16h4"/></svg>,
     x:<svg {...p} strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
     users:<svg {...p}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
-    shield:<svg {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
     sun:<svg {...p}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
     moon:<svg {...p}><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>,
     logout:<svg {...p}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>,
@@ -894,6 +943,28 @@ const Ic = ({n,s=15})=>{
     bank:<svg {...p}><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>,
     upload:<svg {...p}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>,
     refresh:<svg {...p}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
+    search:<svg {...p}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    dollar:<svg {...p}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
+    calendar:<svg {...p}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+    clock:<svg {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+    'trending-up':<svg {...p}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+    'trending-down':<svg {...p}><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>,
+    folder:<svg {...p}><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>,
+    'folder-open':<svg {...p}><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><polyline points="2 10 22 10"/></svg>,
+    alert:<svg {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+    info:<svg {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+    package:<svg {...p}><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+    list:<svg {...p}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+    crown:<svg {...p}><path d="M2 20h20M4 20l2-8 6 4 6-4 2 8"/><polyline points="4 12 12 4 20 12"/></svg>,
+    whatsapp:<svg {...p} fill="none"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>,
+    award:<svg {...p}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>,
+    camera:<svg {...p}><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+    circle:<svg {...p}><circle cx="12" cy="12" r="10"/></svg>,
+    hash:<svg {...p}><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>,
+    inbox:<svg {...p}><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>,
+    mail:<svg {...p}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+    'map-pin':<svg {...p}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+    phone:<svg {...p}><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.64A2 2 0 012 .82h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.58a16 16 0 006.29 6.29l1.42-1.42a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7a2 2 0 011.72 2.02z"/></svg>,
   };
   return icons[n]||null;
 };
@@ -1333,7 +1404,7 @@ const pickSaveFolder = async () => {
       return false;
     }
     _folderHandle = await window.showDirectoryPicker({mode:'readwrite'});
-    toast.success('✅ Save folder set! PDFs will auto-save to B2B / B2C subfolders.');
+    toast.success('Save folder set! PDFs will auto-save to B2B / B2C subfolders.');
     return true;
   } catch(e) {
     if(e.name!=='AbortError') toast.error('Could not set folder: '+e.message);
@@ -1884,7 +1955,7 @@ const makeFullExcel = () => {
     addSheet(wb, termsRows, 'Terms & Conditions', [14,80]);
 
     XLSX.writeFile(wb, `InvoicePrime_FullBackup_${dt}.xlsx`);
-    toast.success(`✅ Full backup downloaded — ${wb.SheetNames.length} sheets, ${invoices.length} invoices, ${expenses.length} expenses, ${pos.length} POs`);
+    toast.success(`Full backup downloaded — ${wb.SheetNames.length} sheets, ${invoices.length} invoices, ${expenses.length} expenses, ${pos.length} POs`);
   } catch(e) {
     console.error('Full backup error:', e);
     toast.error('Backup failed: '+(e.message||String(e)));
@@ -2056,7 +2127,7 @@ const CompanyModal = ({onClose, currentUser, inline=false})=>{
               <div style={{position:'absolute',top:3,left:d.waEnabled?22:3,width:18,height:18,borderRadius:9,background:'white',transition:'left 0.2s',boxShadow:'0 1px 4px rgba(0,0,0,0.25)'}}/>
             </div>
             <div>
-              <div style={{fontWeight:700,color:'var(--text)',fontSize:13}}>{d.waEnabled?'✅ WhatsApp button enabled':'⬜ WhatsApp button disabled'}</div>
+              <div style={{fontWeight:700,color:'var(--text)',fontSize:13}}>{d.waEnabled?'WhatsApp button enabled':'WhatsApp button disabled'}</div>
               <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{d.waEnabled?'Button visible on invoice form — sends PDF + message to customer':'Button hidden. Enable to allow sharing invoices via WhatsApp.'}</div>
             </div>
           </label>
@@ -2112,7 +2183,7 @@ const CompanyModal = ({onClose, currentUser, inline=false})=>{
               <input className="field-input" value={waNum} onChange={e=>setWaNum(e.target.value)} placeholder="9876543210 (10 digits)" maxLength={10} style={{maxWidth:200}}/>
               <span style={{fontSize:11,color:'var(--text3)'}}>Your business WhatsApp number (for reference)</span>
             </div>
-            {waNum&&<div style={{fontSize:11,color:'#16a34a',marginTop:6}}>✅ Saved: +91 {waNum} — Invoice WhatsApp button sends to customer's phone number</div>}
+            {waNum&&<div style={{fontSize:11,color:'#16a34a',marginTop:6}}>Saved: +91 {waNum} — Invoice WhatsApp button sends to customer's phone number</div>}
           </div>
         )}
       </div>
@@ -2146,13 +2217,13 @@ const HSNModal = ({onClose, inline=false, searchQuery=''})=>{
   return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
     <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1060px, 95vw)',width:'100%'})}}>
       <div className="modal-hdr">
-        <span className="modal-title"><Ic n="tag" s={16}/>️ HSN / SAC Database</span>
+        <span className="modal-title"><Ic n="tag" s={16}/> HSN / SAC Database</span>
         <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
       </div>
       <div className="modal-body">
         <>
           <div className="card" style={{marginBottom:18}}>
-            <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editing!==null?'✏️ Edit Entry':' Add HSN/SAC Code'}</div>
+            <div style={{fontWeight:700,color:'var(--primary2)',marginBottom:14,fontSize:13}}>{editing!==null?'Edit Entry':'Add HSN/SAC Code'}</div>
             <div className="g4">
               <div className="field"><label className="field-label">Type</label><select className="field-input" value={form.type} onChange={up('type')}><option value="HSN">HSN (Goods)</option><option value="SAC">SAC (Services)</option></select></div>
               <div className="field"><label className="field-label">Code *</label><input className="field-input" value={form.code} onChange={up('code')} placeholder="e.g. 8471" maxLength={8}/></div>
@@ -2539,7 +2610,7 @@ const ExpenseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
             </div>
             <div className="field"><label className="field-label">Payment Status</label>
               <select className="field-input" value={form.payStatus||'Paid'} onChange={upF('payStatus')}>
-                <option value="Paid">✅ Paid</option>
+                <option value="Paid">Paid</option>
                 <option value="Pending">⏳ Pending</option>
                 <option value="Partial"> Partial</option>
               </select>
@@ -2805,7 +2876,7 @@ const HistoryModal = ({onClose,onLoad,currentUser,inline=false,searchQuery=''})=
                           onLoad(dup);onClose();toast.success('Invoice duplicated — edit and save!');
                         }}><Ic n="list" s={16}/></button>
                         <button className="btn btn-sm btn-outline btn-icon" style={{width:28,height:28}} title="Download PDF" onClick={()=>makePDF(inv,co,S.get(SK.TERMS,DEFAULT_TERMS))}><Ic n="pdf" s={12}/></button>
-                        {isSalesFrozen(inv)&&<span title="This month is frozen" style={{fontSize:14,padding:'0 4px'}}></span>}
+                        {isSalesFrozen(inv)&&<span title="Frozen" style={{fontSize:10,fontWeight:700,color:'var(--gold)',background:'rgba(245,166,35,0.15)',padding:'2px 6px',borderRadius:4}}>FROZEN</span>}
                         {isAdmin&&<button className="btn btn-sm btn-danger btn-icon" style={{width:28,height:28,opacity:(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?0.4:1}} title={(!isSuperAdmin(currentUser?.email)&&isSalesFrozen(inv))?"Month frozen — Super Admin only":"Delete"} onClick={()=>del(inv.invNo)}><Ic n="trash" s={12}/></button>}
                       </div>
                     </td>
@@ -2822,7 +2893,7 @@ const HistoryModal = ({onClose,onLoad,currentUser,inline=false,searchQuery=''})=
       <div className="modal-ftr">
         <span style={{fontSize:12,color:'var(--text3)',display:'flex',alignItems:'center',gap:6}}>
           {isAdmin
-            ? <><span style={{color:'var(--green)'}}>✅</span> Admin — full access</>
+            ? <><span style={{color:'var(--green)'}}>Admin</span> — full access</>
             : <><span><Ic n="eye" s={16}/>️</span> Staff — view &amp; download only. Contact admin to delete.</>}
         </span>
         <button className="btn btn-primary" onClick={onClose}>Close</button>
@@ -3121,7 +3192,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
         <div>
           <strong>Period Lock</strong> — Freeze a month to prevent any edits to invoices or expenses for that period.
           Once frozen, <strong>only Super Admin</strong> can edit or unfreeze.
-          {!isSuper&&<span style={{color:'var(--gold)',marginLeft:6,fontWeight:600}}>⚠️ View only — Super Admin required to change locks.</span>}
+          {!isSuper&&<span style={{color:'var(--gold)',marginLeft:6,fontWeight:600}}>View only — Super Admin required to change locks.</span>}
         </div>
       </div>
 
@@ -3343,7 +3414,7 @@ const SeriesTab = ({isSuper})=>{
                   <div style={{display:'flex',alignItems:'center',gap:8,marginTop:3,flexWrap:'wrap'}}>
                     <span style={{fontFamily:'monospace',fontSize:12,fontWeight:700,color:'var(--gold)',background:'var(--gold-bg)',padding:'2px 9px',borderRadius:6}}>{nextNo}</span>
                     <span style={{fontSize:11,color:'var(--text3)'}}>← next</span>
-                    {justSaved===st.id&&<span style={{fontSize:11,color:'var(--green)',fontWeight:700}}>✅ Saved</span>}
+                    {justSaved===st.id&&<span style={{fontSize:11,color:'var(--green)',fontWeight:700}}> Saved</span>}
                   </div>
                 </div>
               </div>
@@ -4106,7 +4177,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
       <div className="inv-no-badge" style={{flexShrink:0}}>{inv.invNo}</div>
     </div>
 
-    {!co.name&&<div className="alert alert-warn"><span>⚠️</span><span>Please configure <strong>Company Details</strong> before creating invoices.</span></div>}
+    {!co.name&&<div className="alert alert-warn"><span>Alert</span><span>Please configure <strong>Company Details</strong> before creating invoices.</span></div>}
     {/* Freeze banner */}
     {isSalesFrozen(inv)&&!isSuperAdmin(currentUser?.email)&&(
       <div className="alert" style={{background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.3)',color:'var(--primary2)',marginBottom:12}}>
@@ -4194,7 +4265,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
                   />
                   {/* Clear button */}
                   {origInvQ&&<button onClick={()=>{setOrigInvQ('');setInv(p=>({...p,origInvNo:'',origInvDate:''}));}}
-                    style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--text3)',cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',padding:0}}>✕</button>}
+                    style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--text3)',cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',padding:0}}>x</button>}
                 </div>
                 {/* Dropdown */}
                 {showOrigDrop&&origMatched.length>0&&ReactDOM.createPortal(
@@ -4363,7 +4434,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
               <label className="field-label">Customer GSTIN</label>
               <div style={{position:'relative'}}>
                 <input className="field-input" value={inv.billTo.gstin||''} onChange={e=>setInv(p=>({...p,billTo:{...p.billTo,gstin:e.target.value.toUpperCase()}}))} placeholder="29XXXXX0000X1Z5" maxLength={15} style={{textTransform:'uppercase',paddingRight:72}}/>
-                {inv.billTo.gstin&&<span className="gstin-badge" style={{color:buyerGSTINOK?'var(--green)':'var(--red)'}}>{buyerGSTINOK?' Valid':'✗ Invalid'}</span>}
+                {inv.billTo.gstin&&<span className="gstin-badge" style={{color:buyerGSTINOK?'var(--green)':'var(--red)'}}>{buyerGSTINOK?' Valid':'Invalid'}</span>}
               </div>
             </div>
           )}
@@ -5685,76 +5756,76 @@ const App = ()=>{
     {/* ══ MAIN WRAPPER ══ */}
     <div className={`main-wrapper${sidebarCollapsed?' sidebar-collapsed':''}`}>
 
-      {/* ── TOP BAR ── */}
+      {/* ── COMPANY COMMAND BAR ── */}
       <div className="topbar">
+
         {/* Hamburger — mobile only */}
-        <button onClick={()=>setMobSidebarOpen(o=>!o)}
+        <button onClick={()=>setMobSidebarOpen(o=>!o)} className="mob-hamburger"
           style={{background:'var(--card2)',border:'1px solid var(--border)',borderRadius:9,
             width:38,height:38,flexDirection:'column',alignItems:'center',
             justifyContent:'center',gap:4.5,cursor:'pointer',flexShrink:0,
-            display:'none'}} className="mob-hamburger">
+            display:'none',marginLeft:14}}>
           <div style={{width:16,height:2,borderRadius:2,background:'var(--text2)'}}/>
           <div style={{width:16,height:2,borderRadius:2,background:'var(--text2)'}}/>
           <div style={{width:11,height:2,borderRadius:2,background:'var(--text2)'}}/>
         </button>
 
-        {/* Breadcrumb */}
-        <div className="breadcrumb" style={{flexShrink:0}}>
-          <span style={{color:'var(--text3)'}}>Invoice Prime</span>
-          <span style={{color:'var(--border2)'}}>›</span>
-          <span>{{
+        {/* LEFT — Company Identity */}
+        <div className="topbar-company">
+          <LogoIcon size={32}/>
+          <div className="topbar-company-info">
+            <div className="topbar-company-name">{S.get(SK.CO,{}).name||'Invoice Prime'}</div>
+            <div className="topbar-company-gstin">{S.get(SK.CO,{}).gstin?`GSTIN: ${S.get(SK.CO,{}).gstin}`:'Smart GST Billing'}</div>
+          </div>
+        </div>
+
+        {/* CENTER — Page Context */}
+        <div className="topbar-center">
+          <div className="topbar-page-dot"/>
+          <span className="topbar-page-label">{{
             invoice:'New Invoice',history:'Invoice History',pohistory:'Purchase Orders',
             expenses:'Expenses & Purchases',customers:'Customer Database',
             dashboard:'Dashboard',company:'Company Settings',hsn:'HSN / SAC Database',
             terms:'Terms & Conditions',admin:'Admin Panel'
           }[page]||'Invoice Prime'}</span>
+          <span className="topbar-page-sep">|</span>
+          <span className="topbar-page-sub">Invoice Prime</span>
         </div>
 
-        {/* Search bar */}
-        <div className="topbar-search" style={{marginLeft:20}}>
-          <span className="topbar-search-icon"><Ic n="search" s={14}/></span>
-          <input
-            placeholder="Search invoices, customers..."
-            value={searchQuery}
-            onChange={e=>setSearchQuery(e.target.value)}
-            onKeyDown={e=>{
-              if(e.key==='Escape'){setSearchQuery('');}
-            }}
-            style={{cursor:'text'}}
-          />
-          {searchQuery&&<span onClick={()=>setSearchQuery('')} style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',cursor:'pointer',color:'var(--text3)',fontSize:16,lineHeight:1}}>×</span>}
-        </div>
+        {/* RIGHT — Actions */}
+        <div className="topbar-right">
+          {/* Theme toggle */}
+          <div className="topbar-icon-btn" title="Toggle theme" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
+            {theme==='dark'?<Ic n="sun" s={15}/>:<Ic n="moon" s={15}/>}
+          </div>
 
-        <div className="topbar-spacer"/>
+          {/* Overdue alert */}
+          {overdueCount>0&&(
+            <div className="topbar-icon-btn" style={{color:'var(--red)',borderColor:'rgba(248,81,73,0.3)'}}
+              title={`${overdueCount} overdue invoice${overdueCount>1?'s':''}`}
+              onClick={()=>{setPage('history');setModal(null);}}>
+              <Ic n="alert" s={15}/>
+              <span className="topbar-notif red">{overdueCount}</span>
+            </div>
+          )}
 
-        {/* Theme toggle */}
-        <div className="topbar-icon-btn" title="Toggle theme" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
-          {theme==='dark'?<Ic n="sun" s={15}/>:<Ic n="moon" s={15}/>}
-        </div>
-
-        {/* Overdue alert */}
-        {overdueCount>0&&(
-          <div className="topbar-icon-btn" style={{color:'var(--red)'}} title={`${overdueCount} overdue invoice${overdueCount>1?'s':''}`}
+          {/* Invoice count */}
+          <div className="topbar-icon-btn" title="Invoice History"
             onClick={()=>{setPage('history');setModal(null);}}>
-            <Ic n="alert" s={15}/>
-            <span className="topbar-notif">{overdueCount}</span>
+            <Ic n="history" s={15}/>
+            {invCount>0&&<span className="topbar-notif">{invCount}</span>}
           </div>
-        )}
 
-        {/* Notifications: invoice count */}
-        <div className="topbar-icon-btn" title="Invoice History" onClick={()=>{setPage('history');setModal(null);}}>
-          <Ic n="history" s={15}/>
-          {invCount>0&&<span className="topbar-notif" style={{background:'var(--primary)'}}>{invCount}</span>}
-        </div>
-
-        {/* User pill — shows company name, no click action */}
-        <div className="topbar-user" style={{cursor:'default'}}>
-          <div className="topbar-avatar">{user.name[0]}</div>
-          <div>
-            <div className="topbar-user-name">{S.get(SK.CO,{}).name||user.name}</div>
-            <div className="topbar-user-role">{user.name} · {user.role}</div>
+          {/* User pill */}
+          <div className="topbar-user">
+            <div className="topbar-avatar">{user.name[0]}</div>
+            <div>
+              <div className="topbar-user-name">{user.name}</div>
+              <div className="topbar-user-role">{user.role}</div>
+            </div>
           </div>
         </div>
+
       </div>
 
       {/* ── PAGE CONTENT — all sections render inline here ── */}
