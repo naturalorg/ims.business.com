@@ -2473,7 +2473,6 @@ const ExpenseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
                   <div style={{minWidth:0}}>
                     <div style={{fontWeight:700,color:'var(--text)',fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.vendor}</div>
                     {e.description&&<div style={{fontSize:11,color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.description}</div>}
-                    {e.billNo&&<div style={{fontSize:10,color:'var(--gold)',fontFamily:'monospace',marginTop:2}}>Bill: {e.billNo}</div>}
                   </div>
                   {/* Category */}
                   <div>
@@ -3886,13 +3885,13 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
             </div>
             {auditLogs.length>0?(
               <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'52vh',overflowY:'auto'}}>
-                <div style={{display:'grid',gridTemplateColumns:'120px 1fr 130px 150px',gap:0,padding:'7px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',position:'sticky',top:0}}>
+                <div style={{display:'grid',gridTemplateColumns:'160px 1fr 150px 170px',gap:0,padding:'7px 16px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',position:'sticky',top:0}}>
                   <span>Action</span><span>Detail</span><span>By</span><span>When</span>
                 </div>
                 {auditLogs.map((l,i)=>{
                   const aColor={INVOICE_CREATED:'#166534',INVOICE_EDITED:'#1D4ED8',INVOICE_DELETED:'#DC2626',USER_CREATED:'#6D28D9',USER_EDITED:'#0369A1',USER_DELETED:'#DC2626',USER_TOGGLED:'#B45309',USER_LOGIN:'#0E7490',EXPENSE_ADDED:'#065F46',EXPENSE_EDITED:'#0369A1',EXPENSE_DELETED:'#DC2626',PO_CREATED:'#92400E',PO_EDITED:'#B45309',PO_DELETED:'#DC2626',PERIOD_FROZEN:'#1E40AF',PERIOD_UNFROZEN:'#065F46'}[l.action]||'var(--text3)';
                   return(
-                  <div key={i} style={{display:'grid',gridTemplateColumns:'120px 1fr 130px 150px',gap:0,padding:'9px 14px',borderBottom:'1px solid var(--border)',alignItems:'start'}}>
+                  <div key={i} style={{display:'grid',gridTemplateColumns:'160px 1fr 150px 170px',gap:0,padding:'9px 16px',borderBottom:'1px solid var(--border)',alignItems:'start'}}>
                     <span style={{fontSize:10,fontWeight:700,color:aColor,background:aColor+'22',padding:'2px 7px',borderRadius:8,display:'inline-block'}}>{l.action.replace(/_/g,' ')}</span>
                     <span style={{fontSize:12,color:'var(--text)',paddingRight:8,lineHeight:1.5}}>{l.detail}</span>
                     <span style={{fontSize:11,color:'var(--text2)',fontWeight:600}}>{l.userName}</span>
