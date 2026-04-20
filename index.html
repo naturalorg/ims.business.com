@@ -839,16 +839,25 @@ const getSeriesLetters=(id)=>{
 };
 // Builds the full prefix = letters + FYshort + MM
 const buildSeriesPrefix=(id)=>`${getSeriesLetters(id)}${getFYShort()}${getMonthCode()}`;
-const genInvNo = (docType)=>{
+// peekInvNo — returns the NEXT invoice number WITHOUT advancing the counter.
+// Use this when opening/previewing a new invoice form.
+const peekInvNo = (docType)=>{
   const typeId = docType==='DEBIT NOTE'?'INVDN':docType==='CREDIT NOTE'?'INVCN':docType==='NON GST INVOICE'?'INVNG':'INV';
   const prefix = buildSeriesPrefix(typeId);
-  // Counter key by typeId + FY + month so resets monthly/yearly
   const key = SK.CTR+'_'+typeId+'_'+getFY()+'_'+getMonthCode();
-  let c = S.get(key, 1);
-  const no = `${prefix}${String(c).padStart(4,'0')}`;
-  S.set(key, c+1);
-  return no;
+  const c = S.get(key, 1);
+  return `${prefix}${String(c).padStart(4,'0')}`;
 };
+// commitInvNo — advances the counter for the given docType.
+// Call ONLY when a NEW invoice is actually saved for the first time.
+const commitInvNo = (docType)=>{
+  const typeId = docType==='DEBIT NOTE'?'INVDN':docType==='CREDIT NOTE'?'INVCN':docType==='NON GST INVOICE'?'INVNG':'INV';
+  const key = SK.CTR+'_'+typeId+'_'+getFY()+'_'+getMonthCode();
+  const c = S.get(key, 1);
+  S.set(key, c+1);
+};
+// genInvNo — now just a peek (no counter advance). Kept for compatibility.
+const genInvNo = peekInvNo;
 
 const numberToWords = (amount)=>{
   if(!amount||amount===0)return'Zero Rupees Only';
@@ -1255,14 +1264,13 @@ const makePDF = (inv, co, terms) => {
   }
 
   doc.setDrawColor(...XGRAY);doc.setLineWidth(0.5);doc.line(ML,Y,PW-MR,Y);Y+=5;
-  // Smart bottom section: estimate total height needed for payment+terms+sig
+  // Smart bottom section: check payment section fits; if not, new page
   {const _pm=co.paymentMode||'netbanking';
   const _sb=(_pm==='netbanking'||_pm==='both');
   const _su=(_pm==='upi'||_pm==='both');
   const _hasQR=!!(_su&&co.upiQR);
   const _payH=(_sb||_su)?(_hasQR?52:24):0;
-  const _botH=_payH+54;
-  if(Y+_botH>PH-22){doc.addPage();drawPageFrame(false);Y=32;}}
+  if(_payH>0&&Y+_payH>PH-22){doc.addPage();drawPageFrame(false);Y=32;}}
 
   // ══ TOP ROW: PAYMENT DETAILS (full width) ══
   // Decide what to show based on company payment mode
@@ -4279,7 +4287,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     const ex=invs.findIndex(i=>i.invNo===inv.invNo);
     let updated;
     const isEdit = ex>=0;
-    if(isEdit){updated=[...invs];updated[ex]={...toSave};}else{updated=[...invs,{...toSave}];}
+    if(isEdit){updated=[...invs];updated[ex]={...toSave};}else{updated=[...invs,{...toSave}];commitInvNo(inv.docType);}
     S.set(SK.INV,updated);
     logAudit(isEdit?'INVOICE_EDITED':'INVOICE_CREATED', `${inv.docType} ${inv.invNo} — ${inv.billTo?.name} — ₹${Math.abs(grandVal)}`, currentUser);
     if(onSave)onSave(toSave);
