@@ -3479,19 +3479,31 @@ const ExportTab = ({invs, isSuper})=>{
   const allFYs=[...new Set([...allInvFYs,...allExpFYs,fy])].sort((a,b)=>b-a);
 
   const [selFY,setSelFY]=useState(fy);
-  const [selMonth,setSelMonth]=useState('all');
+  const [fromMonth,setFromMonth]=useState('04');
+  const [toMonth,setToMonth]=useState('03');
 
-  const MONTHS=[['all','All Months'],['04','Apr'],['05','May'],['06','Jun'],['07','Jul'],['08','Aug'],['09','Sep'],['10','Oct'],['11','Nov'],['12','Dec'],['01','Jan'],['02','Feb'],['03','Mar']];
+  const MONTHS=[['04','Apr'],['05','May'],['06','Jun'],['07','Jul'],['08','Aug'],['09','Sep'],['10','Oct'],['11','Nov'],['12','Dec'],['01','Jan'],['02','Feb'],['03','Mar']];
   const FY_LABEL=(y)=>`FY ${y}-${String(y+1).slice(2)}`;
 
-  // Filter function
+  // Helper to check if a month is in range (accounting for FY wrap)
+  const isMonthInRange=(month,from,to)=>{
+    const mIdx=MONTHS.findIndex(m=>m[0]===month);
+    const fIdx=MONTHS.findIndex(m=>m[0]===from);
+    const tIdx=MONTHS.findIndex(m=>m[0]===to);
+    if(fIdx===-1||tIdx===-1||mIdx===-1)return true;
+    if(fIdx<=tIdx)return mIdx>=fIdx&&mIdx<=tIdx;
+    return mIdx>=fIdx||mIdx<=tIdx;
+  };
+
+  // Filter function with month range support
   const filterData=(arr,dateKey='date')=>{
     return arr.filter(item=>{
       const d=(item[dateKey]||'');
       const y=parseInt(d.slice(0,4)),m=parseInt(d.slice(5,7));
       const itemFY=m>=4?y:y-1;
       if(itemFY!==selFY)return false;
-      if(selMonth!=='all'&&d.slice(5,7)!==selMonth)return false;
+      const monthStr=d.slice(5,7);
+      if(!isMonthInRange(monthStr,fromMonth,toMonth))return false;
       return true;
     });
   };
@@ -3502,7 +3514,9 @@ const ExportTab = ({invs, isSuper})=>{
   const allPOs=S.get(SK.PO,[])||[];
   const filteredPOs=filterData(allPOs,'createdAt');
 
-  const periodLabel=selMonth==='all'?FY_LABEL(selFY):`${MONTHS.find(m=>m[0]===selMonth)?.[1]||selMonth} ${selFY}`;
+  const fromLabel=MONTHS.find(m=>m[0]===fromMonth)?.[1]||'Apr';
+  const toLabel=MONTHS.find(m=>m[0]===toMonth)?.[1]||'Mar';
+  const periodLabel=fromMonth===toMonth?`${fromLabel} ${selFY}`:fromMonth==='04'&&toMonth==='03'?FY_LABEL(selFY):`${fromLabel} - ${toLabel} ${selFY}`;
 
   const CARDS=[
     {icon:<Ic n='chart' s={20}/>,label:'Sales Register',desc:'Invoices with HSN, tax breakup, customer details',color:'var(--green)',
@@ -3524,32 +3538,151 @@ const ExportTab = ({invs, isSuper})=>{
       {/* Filter bar */}
       <div style={{background:'var(--card2)',border:'1px solid var(--border)',borderRadius:12,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
         <span style={{fontSize:12,fontWeight:700,color:'var(--text3)',flexShrink:0}}>Filter:</span>
-        {/* FY selector */}
-        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-          {allFYs.map(y=>(
-            <button key={y} onClick={()=>setSelFY(y)}
-              style={{fontSize:11,padding:'4px 10px',borderRadius:8,cursor:'pointer',fontWeight:600,fontFamily:'inherit',
-                background:selFY===y?'var(--primary)':'transparent',
-                color:selFY===y?'#fff':'var(--text2)',
-                border:`1.5px solid ${selFY===y?'var(--primary)':'var(--border2)'}`,transition:'all 0.15s'}}>
-              {FY_LABEL(y)}
-            </button>
-          ))}
+        {/* FY selector - Professional Dropdown with BLACK text */}
+        <div style={{position:'relative',minWidth:145}}>
+          <select 
+            value={selFY} 
+            onChange={(e)=>setSelFY(parseInt(e.target.value))}
+            style={{
+              width:'100%',
+              fontSize:12,
+              fontWeight:700,
+              padding:'8px 36px 8px 36px',
+              borderRadius:10,
+              cursor:'pointer',
+              fontFamily:'inherit',
+              background:'linear-gradient(135deg, #E0E7FF, #C7D2FE)',
+              color:'#1E1B4B',
+              border:'2px solid #6366F1',
+              boxShadow:'0 2px 8px rgba(99,102,241,0.25)',
+              outline:'none',
+              appearance:'none',
+              WebkitAppearance:'none',
+              MozAppearance:'none',
+              transition:'all 0.2s ease'
+            }}
+            onMouseEnter={(e)=>{
+              e.target.style.boxShadow='0 4px 16px rgba(99,102,241,0.4)';
+              e.target.style.transform='translateY(-1px)';
+            }}
+            onMouseLeave={(e)=>{
+              e.target.style.boxShadow='0 2px 8px rgba(99,102,241,0.25)';
+              e.target.style.transform='translateY(0)';
+            }}
+          >
+            {allFYs.map(y=>(
+              <option key={y} value={y}>
+                {FY_LABEL(y)}
+              </option>
+            ))}
+          </select>
+          <div style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none',color:'#4338CA'}}>
+            <Ic n="calendar" s={14}/>
+          </div>
+          <div style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none',color:'#4338CA'}}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 8L2 4h8z" fill="currentColor"/>
+            </svg>
+          </div>
         </div>
         <div style={{width:1,height:20,background:'var(--border)',flexShrink:0}}/>
-        {/* Month selector */}
-        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-          {MONTHS.map(([v,l])=>(
-            <button key={v} onClick={()=>setSelMonth(v)}
-              style={{fontSize:11,padding:'4px 10px',borderRadius:8,cursor:'pointer',fontWeight:600,fontFamily:'inherit',
-                background:selMonth===v?'var(--gold)':'transparent',
-                color:selMonth===v?'#fff':'var(--text2)',
-                border:`1.5px solid ${selMonth===v?'var(--gold)':'var(--border2)'}`,transition:'all 0.15s'}}>
-              {l}
-            </button>
-          ))}
+        {/* Month Range Selector - FROM */}
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:11,fontWeight:600,color:'var(--text3)'}}>From:</span>
+          <div style={{position:'relative',minWidth:95}}>
+            <select 
+              value={fromMonth} 
+              onChange={(e)=>setFromMonth(e.target.value)}
+              style={{
+                width:'100%',
+                fontSize:12,
+                fontWeight:700,
+                padding:'7px 28px 7px 10px',
+                borderRadius:9,
+                cursor:'pointer',
+                fontFamily:'inherit',
+                background:'linear-gradient(135deg, #FEF3C7, #FDE68A)',
+                color:'#78350F',
+                border:'2px solid #F59E0B',
+                boxShadow:'0 2px 8px rgba(245,158,11,0.2)',
+                outline:'none',
+                appearance:'none',
+                WebkitAppearance:'none',
+                MozAppearance:'none',
+                transition:'all 0.2s ease'
+              }}
+              onMouseEnter={(e)=>{
+                e.target.style.boxShadow='0 4px 14px rgba(245,158,11,0.35)';
+                e.target.style.transform='translateY(-1px)';
+              }}
+              onMouseLeave={(e)=>{
+                e.target.style.boxShadow='0 2px 8px rgba(245,158,11,0.2)';
+                e.target.style.transform='translateY(0)';
+              }}
+            >
+              {MONTHS.map(([v,l])=>(
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+            <div style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',pointerEvents:'none',color:'#78350F'}}>
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 8L2 4h8z" fill="currentColor"/>
+              </svg>
+            </div>
+          </div>
         </div>
-        <div style={{marginLeft:'auto',fontSize:12,color:'var(--text3)',fontWeight:600,flexShrink:0}}>
+        {/* Arrow indicator */}
+        <div style={{color:'var(--text3)',fontSize:14,fontWeight:700}}>→</div>
+        {/* Month Range Selector - TO */}
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:11,fontWeight:600,color:'var(--text3)'}}>To:</span>
+          <div style={{position:'relative',minWidth:95}}>
+            <select 
+              value={toMonth} 
+              onChange={(e)=>setToMonth(e.target.value)}
+              style={{
+                width:'100%',
+                fontSize:12,
+                fontWeight:700,
+                padding:'7px 28px 7px 10px',
+                borderRadius:9,
+                cursor:'pointer',
+                fontFamily:'inherit',
+                background:'linear-gradient(135deg, #FEF3C7, #FDE68A)',
+                color:'#78350F',
+                border:'2px solid #F59E0B',
+                boxShadow:'0 2px 8px rgba(245,158,11,0.2)',
+                outline:'none',
+                appearance:'none',
+                WebkitAppearance:'none',
+                MozAppearance:'none',
+                transition:'all 0.2s ease'
+              }}
+              onMouseEnter={(e)=>{
+                e.target.style.boxShadow='0 4px 14px rgba(245,158,11,0.35)';
+                e.target.style.transform='translateY(-1px)';
+              }}
+              onMouseLeave={(e)=>{
+                e.target.style.boxShadow='0 2px 8px rgba(245,158,11,0.2)';
+                e.target.style.transform='translateY(0)';
+              }}
+            >
+              {MONTHS.map(([v,l])=>(
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+            <div style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',pointerEvents:'none',color:'#78350F'}}>
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 8L2 4h8z" fill="currentColor"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div style={{marginLeft:'auto',fontSize:12,color:'var(--text3)',fontWeight:600,flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
+          <div style={{background:'var(--primary-bg)',border:'1px solid var(--primary)',borderRadius:8,padding:'4px 10px',fontSize:11,fontWeight:700,color:'var(--primary2)',display:'flex',alignItems:'center',gap:5}}>
+            <Ic n="database" s={13}/>
+            <span>{allFYs.length} Year{allFYs.length>1?'s':''}</span>
+          </div>
           <Ic n="calendar" s={16}/> {periodLabel}
         </div>
       </div>
