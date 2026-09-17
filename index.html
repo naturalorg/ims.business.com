@@ -2,9 +2,9 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Invoice Prime — Smart GST Billing · Your Business, Simplified.</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='56' y2='56' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%234338CA'/%3E%3Cstop offset='100%25' stop-color='%236366F1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M28 4L8 12V28C8 39.5 17 49.5 28 52C39 49.5 48 39.5 48 28V12L28 4Z' fill='url(%23g)'/%3E%3Crect x='19' y='18' width='18' height='2.5' rx='1.25' fill='white' fill-opacity='0.95'/%3E%3Crect x='19' y='23' width='14' height='2.5' rx='1.25' fill='white' fill-opacity='0.75'/%3E%3Crect x='19' y='28' width='16' height='2.5' rx='1.25' fill='white' fill-opacity='0.75'/%3E%3Cpath d='M28 34.5L29.8 37.2L33 36.3L31.5 39.2L33.5 41.5L30.2 41.3L28 44L25.8 41.3L22.5 41.5L24.5 39.2L23 36.3L26.2 37.2Z' fill='%23FCD34D' fill-opacity='0.97'/%3E%3C/svg%3E">
-<meta name="description" content="Invoice Prime — Smart GST Billing for Indian Business. Create GST invoices, purchase orders, manage expenses and generate GSTR-1 reports.">
+<title>BluBills — Smart GST Billing · Your Business, Simplified.</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='56' y2='56' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%234338CA'/%3E%3Cstop offset='100%25' stop-color='%236366F1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M28 4L8 12V28C8 39.5 17 49.5 28 52C39 49.5 48 39.5 48 28V12L28 4Z' fill='url(%23g)'/%3E%3Crect x='18' y='17' width='20' height='3' rx='1.5' fill='white' fill-opacity='0.95'/%3E%3Crect x='18' y='23' width='16' height='3' rx='1.5' fill='white' fill-opacity='0.75'/%3E%3Crect x='18' y='29' width='18' height='3' rx='1.5' fill='white' fill-opacity='0.75'/%3E%3Cpolygon points='28,36 29.8,39.2 33.4,38.2 31.6,41.3 33.8,43.8 30.1,43.5 28,46.5 25.9,43.5 22.2,43.8 24.4,41.3 22.6,38.2 26.2,39.2' fill='%23F59E0B' fill-opacity='0.97'/%3E%3C/svg%3E">
+<meta name="description" content="BluBills — Smart GST Billing for Indian Business. Create GST invoices, purchase orders, manage expenses and generate GSTR-1 reports.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -678,7 +678,15 @@ body,html{overflow-x:hidden;max-width:100vw;box-sizing:border-box}
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ── CONSTANTS ── */
-const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series' };
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series', STOCK:'ip_stock', BANK:'ip_bank' };
+
+/* ── ROLE-BASED PAGE ACCESS — 'user','admin','superadmin' keep full access (unchanged).
+   'sales' and 'accountant' are new, narrower roles — adjust freely later. ── */
+const ROLE_PAGES = {
+  sales:      ['dashboard','invoice','history','customers'],
+  accountant: ['dashboard','invoice','history','pohistory','expenses','customers','inventory','aging','bankrecon','terms'],
+};
+const canSee = (role,key) => !ROLE_PAGES[role] || ROLE_PAGES[role].includes(key);
 const UNITS = ['Nos','Pcs','Kg','Gm','Ltr','Ml','Mtr','Cm','Sqft','Box','Set','Pair','Roll','Pack','Bag','Bottle','Can','Sheet','Hour','Month'];
 const TAX_RATES = ['0','0.1','0.25','1','1.5','3','5','6','7.5','9','12','14','18','28'];
 const DEFAULT_TERMS = `1. Payment is due within 30 days from the date of invoice.
@@ -978,7 +986,7 @@ const Ic = ({n,s=15})=>{
   return icons[n]||null;
 };
 const LogoIcon = ({size=32})=>{
-  const id = `ip-grad-${size}-${Math.random().toString(36).slice(2,7)}`;
+  const id = `bb-grad-${size}-${Math.random().toString(36).slice(2,7)}`;
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width={size} height={size} style={{flexShrink:0,display:'block'}}>
       <defs>
@@ -987,11 +995,16 @@ const LogoIcon = ({size=32})=>{
           <stop offset="100%" stopColor="#6366F1"/>
         </linearGradient>
       </defs>
+      {/* Shield */}
       <path d="M28 4L8 12V28C8 39.5 17 49.5 28 52C39 49.5 48 39.5 48 28V12L28 4Z" fill={`url(#${id})`}/>
-      <rect x="19" y="18" width="18" height="2.5" rx="1.25" fill="white" fillOpacity="0.95"/>
-      <rect x="19" y="23" width="14" height="2.5" rx="1.25" fill="white" fillOpacity="0.75"/>
-      <rect x="19" y="28" width="16" height="2.5" rx="1.25" fill="white" fillOpacity="0.75"/>
-      <path d="M28 34.5L29.8 37.2L33 36.3L31.5 39.2L33.5 41.5L30.2 41.3L28 44L25.8 41.3L22.5 41.5L24.5 39.2L23 36.3L26.2 37.2Z" fill="#FCD34D" fillOpacity="0.97"/>
+      {/* Highlight overlay */}
+      <path d="M28 4L8 12V28C8 39 17 48 28 51C28 51 8 38 8 28V14L28 4Z" fill="#6366F1" fillOpacity="0.45"/>
+      {/* Lines */}
+      <rect x="18" y="17" width="20" height="3" rx="1.5" fill="white" fillOpacity="0.95"/>
+      <rect x="18" y="23" width="16" height="3" rx="1.5" fill="white" fillOpacity="0.75"/>
+      <rect x="18" y="29" width="18" height="3" rx="1.5" fill="white" fillOpacity="0.75"/>
+      {/* Star */}
+      <polygon points="28,36 29.8,39.2 33.4,38.2 31.6,41.3 33.8,43.8 30.1,43.5 28,46.5 25.9,43.5 22.2,43.8 24.4,41.3 22.6,38.2 26.2,39.2" fill="#F59E0B" fillOpacity="0.97"/>
     </svg>
   );
 };
@@ -1389,7 +1402,7 @@ const makePDF = (inv, co, terms) => {
     doc.setFont('helvetica','italic');doc.setFontSize(6.8);doc.setTextColor(...LGRAY);
     doc.text('This is a computer generated invoice and does not require a physical signature.',PW/2,PH-8,{align:'center'});
     doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...BLUE);
-    doc.text('Invoice Prime  |  Smart GST Billing · Your Business, Simplified.',ML+2,PH-4);
+    doc.text('BluBills  |  Smart GST Billing · Your Business, Simplified.',ML+2,PH-4);
     doc.setFont('helvetica','normal');doc.setTextColor(...LGRAY);
     doc.text('Page '+pg+' of '+tp,PW-MR-2,PH-4,{align:'right'});
   }
@@ -1571,43 +1584,83 @@ const makePurchaseExcel = (expenses) => {
   const XLSX = window.XLSX;
   const wb = XLSX.utils.book_new();
 
-  // ── Purchase Register Sheet ──
+  // ── Purchase Register Sheet — one row per line item ──
   const headers = [
     'Sl.No','Date','Vendor / Supplier Name','Vendor GSTIN','Vendor State',
-    'Bill No / Ref No','Bill Date','Category','Description',
+    'Bill No / Ref No','Bill Date','Due Date','Category','Product','Description',
     'HSN / SAC','Unit','Qty','Rate (Rs.)','Taxable Amount (Rs.)',
     'GST Type','Tax Rate %','CGST %','CGST Amount (Rs.)','SGST %','SGST Amount (Rs.)',
-    'IGST %','IGST Amount (Rs.)','Total Tax (Rs.)','Total Amount (Rs.)',
+    'IGST %','IGST Amount (Rs.)','Total Tax (Rs.)','Line Total (Rs.)','Added to Stock',
+    'Bill Total (Rs.)','Amount Paid (Rs.)','Balance Payable (Rs.)',
     'Payment Mode','Payment Status','Paid Date','Notes','Recorded By'
   ];
   const rows = [headers];
   let sl = 1;
   expenses.forEach(e => {
-    const tR = parseFloat(e.taxRate)||0;
-    const tax = parseFloat(e.taxable)||0;
-    const gst = parseFloat(e.gstAmt)||0;
-    const gt  = e.gstType||'INTRA';
-    rows.push([
-      sl++,
-      e.date||'', e.vendor||'', (e.vendorGSTIN||'').toUpperCase(), e.vendorState||'',
-      e.billNo||'', e.billDate||'', e.category||'', e.description||'',
-      e.hsnCode||'', e.unit||'Nos', parseFloat(e.qty)||1, parseFloat(e.rate)||0,
-      Number(tax).toFixed(2),
-      gt, tR,
-      gt==='INTRA'?tR/2:'', gt==='INTRA'?Number(gst/2).toFixed(2):'',
-      gt==='INTRA'?tR/2:'', gt==='INTRA'?Number(gst/2).toFixed(2):'',
-      gt!=='INTRA'?tR:'',    gt!=='INTRA'?Number(gst).toFixed(2):'',
-      Number(gst).toFixed(2),
-      Number(parseFloat(e.total)||0).toFixed(2),
-      e.payMode||'', e.payStatus||'', e.paidDate||'',
-      e.notes||'', e.createdBy||''
-    ]);
+    const gt = e.gstType || 'INTRA';
+    const items = expItems(e);
+    items.forEach((it, k) => {
+      const tR  = parseFloat(it.taxRate) || 0;
+      const tax = parseFloat(it.taxable) || 0;
+      const gst = parseFloat(it.gstAmt)  || 0;
+      rows.push([
+        sl++, e.date || '', e.vendor || '', (e.vendorGSTIN || '').toUpperCase(), e.vendorState || '',
+        e.billNo || '', e.billDate || '', expDueDate(e), e.category || '',
+        it.product || '', it.desc || '',
+        it.hsnCode || '', it.unit || 'Nos', parseFloat(it.qty) || 0, parseFloat(it.rate) || 0,
+        Number(tax).toFixed(2), gt, tR,
+        gt === 'INTRA' ? tR / 2 : '', gt === 'INTRA' ? Number(gst / 2).toFixed(2) : '',
+        gt === 'INTRA' ? tR / 2 : '', gt === 'INTRA' ? Number(gst / 2).toFixed(2) : '',
+        gt !== 'INTRA' ? tR : '',     gt !== 'INTRA' ? Number(gst).toFixed(2) : '',
+        Number(gst).toFixed(2), Number(parseFloat(it.total) || 0).toFixed(2),
+        it.toStock === false ? 'No' : 'Yes',
+        k === 0 ? Number(parseFloat(e.total) || 0).toFixed(2) : '',
+        k === 0 ? expPaid(e).toFixed(2) : '',
+        k === 0 ? expDue(e).toFixed(2) : '',
+        k === 0 ? (e.payMode || '') : '', k === 0 ? (e.payStatus || '') : '',
+        k === 0 ? (e.paidDate || '') : '', k === 0 ? (e.notes || '') : '',
+        k === 0 ? (e.createdBy || '') : ''
+      ]);
+    });
   });
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:5},{wch:12},{wch:24},{wch:20},{wch:14},{wch:14},{wch:12},{wch:16},{wch:30},
-    {wch:10},{wch:8},{wch:6},{wch:12},{wch:18},{wch:10},{wch:8},{wch:8},{wch:14},{wch:8},{wch:14},
-    {wch:8},{wch:14},{wch:14},{wch:16},{wch:14},{wch:14},{wch:12},{wch:24},{wch:20}];
+  ws['!cols'] = [{wch:5},{wch:12},{wch:24},{wch:20},{wch:14},{wch:16},{wch:12},{wch:12},{wch:16},{wch:24},{wch:24},
+    {wch:10},{wch:8},{wch:8},{wch:12},{wch:18},{wch:10},{wch:8},{wch:8},{wch:14},{wch:8},{wch:14},
+    {wch:8},{wch:14},{wch:14},{wch:16},{wch:12},{wch:16},{wch:16},{wch:18},{wch:16},{wch:14},{wch:12},{wch:24},{wch:20}];
   XLSX.utils.book_append_sheet(wb, ws, 'Purchase Register');
+
+  // ── Product-wise purchase summary ──
+  const prodMap = {};
+  expenses.forEach(e => expItems(e).forEach(it => {
+    const n = it.product || it.desc || 'Unnamed';
+    if (!prodMap[n]) prodMap[n] = {n, qty:0, taxable:0, tax:0, total:0, bills:0};
+    prodMap[n].qty     += parseFloat(it.qty) || 0;
+    prodMap[n].taxable += parseFloat(it.taxable) || 0;
+    prodMap[n].tax     += parseFloat(it.gstAmt) || 0;
+    prodMap[n].total   += parseFloat(it.total) || 0;
+    prodMap[n].bills   += 1;
+  }));
+  const pRows = [['Product','Qty Purchased','Lines','Taxable (Rs.)','Tax (Rs.)','Total (Rs.)','Avg Rate (Rs.)'],
+    ...Object.values(prodMap).sort((a,b)=>b.total-a.total).map(p=>[p.n,p.qty,p.bills,
+      p.taxable.toFixed(2),p.tax.toFixed(2),p.total.toFixed(2),(p.qty?p.taxable/p.qty:0).toFixed(2)])];
+  const wsP = XLSX.utils.aoa_to_sheet(pRows);
+  wsP['!cols'] = [{wch:30},{wch:14},{wch:8},{wch:16},{wch:14},{wch:16},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsP, 'Product-wise Purchases');
+
+  // ── Vendor-wise outstanding ──
+  const venMap = {};
+  expenses.forEach(e => {
+    const v = e.vendor || 'Unknown';
+    if (!venMap[v]) venMap[v] = {v, gstin:e.vendorGSTIN||'', bills:0, total:0, paid:0, due:0};
+    venMap[v].bills++; venMap[v].total += parseFloat(e.total)||0;
+    venMap[v].paid += expPaid(e); venMap[v].due += expDue(e);
+  });
+  const vRows = [['Vendor','GSTIN','Bills','Purchased (Rs.)','Paid (Rs.)','Outstanding (Rs.)'],
+    ...Object.values(venMap).sort((a,b)=>b.due-a.due).map(v=>[v.v,v.gstin,v.bills,
+      v.total.toFixed(2),v.paid.toFixed(2),v.due.toFixed(2)])];
+  const wsV = XLSX.utils.aoa_to_sheet(vRows);
+  wsV['!cols'] = [{wch:30},{wch:20},{wch:8},{wch:18},{wch:16},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, wsV, 'Vendor Outstanding');
 
   // ── Category Summary Sheet ──
   const catMap = {};
@@ -1962,7 +2015,7 @@ const makeFullExcel = () => {
     const termsRows=[['Type','Terms & Conditions'],['Invoice T&C',terms],['PO T&C',poTerms]];
     addSheet(wb, termsRows, 'Terms & Conditions', [14,80]);
 
-    XLSX.writeFile(wb, `InvoicePrime_FullBackup_${dt}.xlsx`);
+    XLSX.writeFile(wb, `BluBills_FullBackup_${dt}.xlsx`);
     toast.success(`Full backup downloaded — ${wb.SheetNames.length} sheets, ${invoices.length} invoices, ${expenses.length} expenses, ${pos.length} POs`);
   } catch(e) {
     console.error('Full backup error:', e);
@@ -2314,95 +2367,185 @@ const TermsModal = ({onClose, inline=false})=>{
 const EXP_CATEGORIES = ['Raw Materials','Packaging','Freight / Transport','Office Supplies','Rent','Electricity / Utilities','Labour / Wages','Professional Fees','Repairs & Maintenance','Software / IT','Travel & Conveyance','Advertising / Marketing','Bank Charges','Insurance','Statutory / Tax Payments','Other'];
 const PAY_MODES = ['Cash','Bank Transfer / NEFT','UPI / GPay / PhonePe','Cheque','Credit Card','Debit Card','Other'];
 
-const blankExp = (user) => ({
-  id: Date.now().toString(), date: today(), vendor:'', vendorGSTIN:'', vendorState:'',
-  billNo:'', billDate:'', category:'', description:'', hsnCode:'', unit:'Nos',
-  qty:1, rate:'', taxable:0, taxRate:'18', gstType:'INTRA', gstAmt:0, total:0,
-  payMode:'Bank Transfer / NEFT', payStatus:'Paid', paidDate: today(),
-  notes:'', createdBy: user?.email||''
+/* ══════════════════════════════════════════════════════════════
+   PURCHASE HELPERS
+   A purchase bill holds many line items. Older single-line records are
+   upgraded on read by expItems(), so nothing already saved is lost.
+   ══════════════════════════════════════════════════════════════ */
+const addDaysStr = (dateStr, days) => {
+  if(!dateStr) return '';
+  const d = new Date(dateStr);
+  if(isNaN(d)) return '';
+  d.setDate(d.getDate() + (parseInt(days)||0));
+  return d.toISOString().split('T')[0];
+};
+
+// Always return an array of line items — migrating legacy one-line bills.
+const expItems = (e) => {
+  if(!e) return [];
+  if(Array.isArray(e.items) && e.items.length) return e.items;
+  if(e.description || e.qty || e.rate){
+    const qty=parseFloat(e.qty)||0, rate=parseFloat(e.rate)||0;
+    const taxable=qty*rate, tR=parseFloat(e.taxRate)||0, gstAmt=taxable*tR/100;
+    return [{key:'legacy', product:e.product||'', desc:e.description||'', hsnCode:e.hsnCode||'',
+             unit:e.unit||'Nos', qty, rate, taxRate:e.taxRate||'18',
+             taxable:+taxable.toFixed(2), gstAmt:+gstAmt.toFixed(2), total:+(taxable+gstAmt).toFixed(2),
+             toStock: !!e.addToStock}];
+  }
+  return [];
+};
+
+const expTotal   = (e) => parseFloat(e?.total)||0;
+const expPaid    = (e) => {
+  if(!e) return 0;
+  if(e.payStatus==='Paid') return expTotal(e);
+  if(e.payStatus==='Partial') return Math.min(expTotal(e), parseFloat(e.paidAmount)||0);
+  return 0;
+};
+const expDue     = (e) => Math.max(0, expTotal(e) - expPaid(e));
+const expDueDate = (e) => e?.dueDate || addDaysStr(e?.billDate||e?.date, e?.creditDays??30);
+const expStockQty= (e) => expItems(e).filter(it=>it.toStock!==false).reduce((t,it)=>t+(parseFloat(it.qty)||0),0);
+
+// Pull every stock line this bill created back out of the ledger.
+const reverseStockForPurchase = (e) => { if(e) removeStockForSource('PUR-'+e.id); };
+
+let _pItemSeq = 0;
+const blankPItem = () => ({
+  key: (Date.now().toString(36) + (++_pItemSeq)),
+  product: '', desc: '', hsnCode: '', unit: 'Nos',
+  qty: 1, rate: '', taxRate: '18',
+  taxable: 0, gstAmt: 0, total: 0, toStock: true
 });
 
-const ExpenseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
+const blankExp = (user) => ({
+  id: Date.now().toString(), date: today(), vendor: '', vendorGSTIN: '', vendorState: '',
+  billNo: '', billDate: today(), creditDays: 30, dueDate: '',
+  category: '', gstType: 'INTRA', notes: '',
+  payMode: 'Bank Transfer / NEFT', payStatus: 'Pending', paidAmount: '', paidDate: '',
+  items: [blankPItem()],
+  taxable: 0, gstAmt: 0, total: 0,
+  createdBy: (user && user.email) || ''
+});
+
+/* Recalculate every line and roll the totals up to the bill */
+const calcPurchase = (f) => {
+  const items = (f.items && f.items.length ? f.items : [blankPItem()]).map(it => {
+    const qty = parseFloat(it.qty) || 0, rate = parseFloat(it.rate) || 0;
+    const taxable = qty * rate, tR = parseFloat(it.taxRate) || 0;
+    const gstAmt = taxable * tR / 100;
+    return { ...it, taxable: +taxable.toFixed(2), gstAmt: +gstAmt.toFixed(2), total: +(taxable + gstAmt).toFixed(2) };
+  });
+  const taxable = items.reduce((t, x) => t + (x.taxable || 0), 0);
+  const gstAmt  = items.reduce((t, x) => t + (x.gstAmt || 0), 0);
+  const dueDate = f.dueDate || addDaysStr(f.billDate || f.date, f.creditDays);
+  return { ...f, items, dueDate, taxable: +taxable.toFixed(2), gstAmt: +gstAmt.toFixed(2), total: +(taxable + gstAmt).toFixed(2) };
+};
+
+const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
   const [expenses, setExpenses] = useState(S.get(SK.EXP,[]));
   const [form, setForm] = useState(()=>blankExp(currentUser));
   const [tab, setTab] = useState('list');
   const [editId, setEditId] = useState(null);
+  const [expanded, setExpanded] = useState(null);
   const [q, setQ] = useState(searchQuery);
   useEffect(()=>{if(searchQuery!==undefined){setQ(searchQuery);setTab('list');}},[searchQuery]);
   const [filterCat, setFilterCat] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const isAdmin = currentUser?.role==='admin'||currentUser?.role==='superadmin';
+  const productList = S.get(SK.PRODUCTS,[]);
 
-  const calcExp = (f) => {
-    const qty=parseFloat(f.qty)||0, rate=parseFloat(f.rate)||0;
-    const taxable=qty*rate, tR=parseFloat(f.taxRate)||0;
-    const gstAmt = taxable*tR/100;
-    return {...f, taxable:taxable.toFixed(2), gstAmt:gstAmt.toFixed(2), total:(taxable+gstAmt).toFixed(2)};
+  const upF = k => e => setForm(p=>calcPurchase({...p,[k]:e.target.value}));
+  const upItem = (idx,k,val) => setForm(p=>calcPurchase({...p, items:p.items.map((it,i)=>i===idx?{...it,[k]:val}:it)}));
+  const addItem = () => setForm(p=>calcPurchase({...p, items:[...p.items, blankPItem()]}));
+  const delItem = idx => setForm(p=>calcPurchase({...p, items:p.items.length>1?p.items.filter((_,i)=>i!==idx):p.items}));
+
+  // Picking a known product fills in HSN / unit / rate / GST for you
+  const pickProduct = (idx, name) => {
+    const prod = productList.find(p=>p.name.toLowerCase()===String(name).toLowerCase());
+    setForm(p=>calcPurchase({...p, items:p.items.map((it,i)=>i!==idx?it:({
+      ...it, product:name,
+      hsnCode: prod? (prod.hsnCode||it.hsnCode) : it.hsnCode,
+      unit:    prod? (prod.unit||it.unit)       : it.unit,
+      rate:    (prod && !it.rate) ? (prod.rate||'') : it.rate,
+      taxRate: prod? (prod.taxRate||it.taxRate)  : it.taxRate,
+      desc:    it.desc || (prod?(prod.desc||''):'')
+    }))}));
   };
-  const upF = k => e => setForm(p=>calcExp({...p,[k]:e.target.value}));
 
   const saveExp = () => {
-    if(!form.vendor){toast.error('Vendor name required');return;}
-    if(!form.description&&!form.category){toast.error('Description or Category required');return;}
-    // ── Freeze Guard ──
+    if(!form.vendor){toast.error('Vendor name is required');return;}
+    if(!form.items.some(it=>(parseFloat(it.qty)||0)>0 && (it.product||it.desc))){
+      toast.error('Add at least one line item with a name and quantity');return;
+    }
     if(!isSuperAdmin(currentUser?.email) && isExpenseFrozen(form)){
-      const ym = (form.date||'').substring(0,7);
-      toast.error(` ${ym} expenses are frozen. Only Super Admin can edit for this month.`);
+      toast.error(`${(form.date||'').substring(0,7)} purchases are frozen. Only Super Admin can edit this month.`);
       return;
     }
-    const calc = {...calcExp(form), vendorGSTIN:(form.vendorGSTIN||'').toUpperCase()};
-    let updated;
+    const calc = {...calcPurchase(form), vendorGSTIN:(form.vendorGSTIN||'').toUpperCase()};
+    let updated, rec;
     if(editId){
-      updated = expenses.map(e=>e.id===editId?{...calc,id:editId}:e);
-      logAudit('EXPENSE_EDITED',`${calc.vendor} — ${calc.category} — ₹${calc.total}`,currentUser);
-      toast.success('Expense updated!');
+      rec = {...calc, id:editId};
+      updated = expenses.map(e=>e.id===editId?rec:e);
+      logAudit('EXPENSE_EDITED',`${calc.vendor} — ${calc.billNo} — ₹${calc.total}`,currentUser);
     } else {
-      const newE = {...calc, id:Date.now().toString(), createdAt:new Date().toISOString()};
-      updated = [...expenses, newE];
-      logAudit('EXPENSE_ADDED',`${calc.vendor} — ${calc.category} — ₹${calc.total}`,currentUser);
-      toast.success('Expense saved!');
+      rec = {...calc, id:calc.id||Date.now().toString(), createdAt:new Date().toISOString()};
+      updated = [...expenses, rec];
+      logAudit('EXPENSE_ADDED',`${calc.vendor} — ${calc.billNo} — ₹${calc.total}`,currentUser);
     }
     setExpenses(updated); S.set(SK.EXP, updated);
+    applyStockForPurchase(rec, currentUser);   // ⬅ quantities land in Inventory
+    const inQty = expItems(rec).filter(it=>it.toStock!==false).reduce((t,it)=>t+(parseFloat(it.qty)||0),0);
+    toast.success(editId?`Purchase updated — ${inQty} unit(s) synced to inventory`:`Purchase saved — ${inQty} unit(s) added to inventory`);
     setForm(blankExp(currentUser)); setEditId(null); setTab('list');
   };
 
   const delExp = id => {
-    if(!isAdmin){toast.error('Only Admin can delete expenses');return;}
+    if(!isAdmin){toast.error('Only Admin can delete purchases');return;}
     const e = expenses.find(x=>x.id===id);
     if(!isSuperAdmin(currentUser?.email) && isExpenseFrozen(e)){
-      toast.error(` ${(e?.date||'').substring(0,7)} expenses are frozen. Only Super Admin can delete.`);
+      toast.error(`${(e?.date||'').substring(0,7)} purchases are frozen. Only Super Admin can delete.`);
       return;
     }
-    if(!window.confirm('Delete this expense?'))return;
+    if(!window.confirm('Delete this purchase bill? The stock it added will be removed from inventory.'))return;
+    reverseStockForPurchase(e);
     const updated = expenses.filter(x=>x.id!==id);
     setExpenses(updated); S.set(SK.EXP,updated);
-    logAudit('EXPENSE_DELETED',`${e?.vendor} — ${e?.category} — ₹${e?.total}`,currentUser);
-    toast.info('Expense deleted');
+    logAudit('EXPENSE_DELETED',`${e?.vendor} — ${e?.billNo} — ₹${e?.total}`,currentUser);
+    toast.info('Purchase deleted and inventory reversed');
   };
 
-  const editExp = e => { setForm({...e}); setEditId(e.id); setTab('add'); };
+  const editExp = e => {
+    const norm = calcPurchase({...blankExp(currentUser), ...e, items: expItems(e).map(it=>({...blankPItem(), ...it}))});
+    setForm(norm); setEditId(e.id); setTab('add');
+  };
 
   const filtered = expenses.filter(e=>{
-    const mQ = !q || e.vendor?.toLowerCase().includes(q.toLowerCase()) || e.description?.toLowerCase().includes(q.toLowerCase()) || e.billNo?.toLowerCase().includes(q.toLowerCase()) || e.category?.toLowerCase().includes(q.toLowerCase());
+    const hay = [e.vendor,e.billNo,e.category,e.description,e.notes,...expItems(e).map(i=>i.product+' '+i.desc)].join(' ').toLowerCase();
+    const mQ = !q || hay.includes(q.toLowerCase());
     const mC = !filterCat || e.category===filterCat;
     const mS = !filterStatus || e.payStatus===filterStatus;
     return mQ&&mC&&mS;
   }).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
 
-  const totalExpense = filtered.reduce((s,e)=>s+parseFloat(e.total||0),0);
-  const totalTax     = filtered.reduce((s,e)=>s+parseFloat(e.gstAmt||0),0);
-  const totalPaid    = filtered.filter(e=>e.payStatus==='Paid').reduce((s,e)=>s+parseFloat(e.total||0),0);
-  const totalPending = filtered.filter(e=>e.payStatus!=='Paid').reduce((s,e)=>s+parseFloat(e.total||0),0);
+  const totalPurchase = filtered.reduce((s,e)=>s+(parseFloat(e.total)||0),0);
+  const totalTax      = filtered.reduce((s,e)=>s+(parseFloat(e.gstAmt)||0),0);
+  const totalPaid     = filtered.reduce((s,e)=>s+expPaid(e),0);
+  const totalDue      = filtered.reduce((s,e)=>s+expDue(e),0);
+  const totalQty      = filtered.reduce((s,e)=>s+expItems(e).reduce((t,i)=>t+(parseFloat(i.qty)||0),0),0);
 
-  const payBadge = s => s==='Paid'?{bg:'#F0FDF4',color:'#166534'}:s==='Pending'?{bg:'#FEF2F2',color:'#DC2626'}:{bg:'#FEF3C7',color:'#92400E'};
+  const payBadge = s => s==='Paid'?{bg:'rgba(63,185,80,0.12)',color:'var(--green)'}
+                    : s==='Partial'?{bg:'rgba(245,166,35,0.12)',color:'var(--gold)'}
+                    : {bg:'rgba(248,81,73,0.12)',color:'var(--red)'};
+
+  const GRID = '96px 1fr 130px 92px 118px 112px 96px 118px';
 
   return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
-    <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1260px, 95vw)',width:'100%'})}}>
+    <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1340px, 96vw)',width:'100%'})}}>
       <div className="modal-hdr">
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <span className="modal-title"><Ic n="receipt" s={20}/> Expense / Purchase Tracker</span>
+          <span className="modal-title"><Ic n="receipt" s={20}/> Purchases</span>
           <span style={{fontSize:11,color:'var(--text3)',background:'var(--card2)',padding:'3px 10px',borderRadius:20,border:'1px solid var(--border)'}}>
-            {expenses.length} records
+            {expenses.length} bills
           </span>
         </div>
         <div style={{display:'flex',gap:8}}>
@@ -2412,203 +2555,231 @@ const ExpenseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
       </div>
 
       <div className="modal-body">
-        {/* Tabs */}
-                <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
-          <button onClick={()=>{setTab('list');}} className={tab==='list'?'btn btn-sm btn-primary':'btn btn-sm btn-outline'}
-            style={{display:'flex',alignItems:'center',gap:6}}>
-            <Ic n="list" s={14}/> All Expenses
-          </button>
+        <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+          <button onClick={()=>setTab('list')} className={tab==='list'?'btn btn-sm btn-primary':'btn btn-sm btn-outline'}
+            style={{display:'flex',alignItems:'center',gap:6}}><Ic n="list" s={14}/> All Purchases</button>
           <button onClick={()=>{setTab('add');if(!editId)setForm(blankExp(currentUser));}} className={tab==='add'?'btn btn-sm btn-primary':'btn btn-sm btn-outline'}
-            style={{display:'flex',alignItems:'center',gap:6}}>
-            <Ic n={editId?'edit':'plus'} s={14}/> {editId?'Edit Expense':'Add Expense'}
-          </button>
+            style={{display:'flex',alignItems:'center',gap:6}}><Ic n={editId?'edit':'plus'} s={14}/> {editId?'Edit Purchase':'Record Purchase'}</button>
         </div>
 
-        {/* ── LIST TAB ── */}
+        {/* ══ LIST ══ */}
         {tab==='list'&&<>
-          {/* Summary Cards */}
-          <div className="g4" style={{marginBottom:16}}>
-            <div className="stat-card"><div className="stat-val" style={{fontSize:15,color:'var(--red)'}}>{fmt(totalExpense)}</div><div className="stat-lbl">Total Expenses</div></div>
-            <div className="stat-card"><div className="stat-val" style={{fontSize:15}}>{fmt(totalTax)}</div><div className="stat-lbl">Total Input Tax (GST)</div></div>
-            <div className="stat-card" style={{borderLeft:'3px solid #166534'}}><div className="stat-val" style={{fontSize:15,color:'#166534'}}>{fmt(totalPaid)}</div><div className="stat-lbl">Paid</div></div>
-            <div className="stat-card" style={{borderLeft:'3px solid #DC2626'}}><div className="stat-val" style={{fontSize:15,color:'#DC2626'}}>{fmt(totalPending)}</div><div className="stat-lbl">Pending Payment</div></div>
+          <div className="g4" style={{marginBottom:10}}>
+            <div className="stat-card"><div className="stat-val" style={{fontSize:15}}>{fmt(totalPurchase)}</div><div className="stat-lbl">Total Purchases</div></div>
+            <div className="stat-card"><div className="stat-val" style={{fontSize:15,color:'var(--blue)'}}>{fmt(totalTax)}</div><div className="stat-lbl">Input GST Credit</div></div>
+            <div className="stat-card" style={{borderLeft:'3px solid var(--green)'}}><div className="stat-val" style={{fontSize:15,color:'var(--green)'}}>{fmt(totalPaid)}</div><div className="stat-lbl">Paid to Vendors</div></div>
+            <div className="stat-card" style={{borderLeft:'3px solid var(--red)'}}><div className="stat-val" style={{fontSize:15,color:'var(--red)'}}>{fmt(totalDue)}</div><div className="stat-lbl">Outstanding (Payables)</div></div>
+          </div>
+          <div style={{fontSize:11,color:'var(--text3)',marginBottom:12}}>
+            <Ic n="package" s={11}/> {totalQty.toLocaleString('en-IN')} total units purchased across {filtered.length} bill(s) — all stock-flagged lines are live in Inventory.
           </div>
 
-          {/* Filters */}
           <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap'}}>
             <div style={{position:'relative',flex:1,minWidth:200}}>
               <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
-              <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search vendor, description, bill no, category..." style={{paddingLeft:38,width:'100%'}}/>
+              <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search vendor, bill no, product, category..." style={{paddingLeft:38,width:'100%'}}/>
             </div>
             <select className="field-input" value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{width:180}}>
               <option value="">All Categories</option>
               {EXP_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
             <select className="field-input" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} style={{width:130}}>
-              <option value="">All Status</option>
-              <option value="Paid">Paid</option>
-              <option value="Pending">Pending</option>
-              <option value="Partial">Partial</option>
+              <option value="">All Status</option><option value="Paid">Paid</option>
+              <option value="Pending">Pending</option><option value="Partial">Partial</option>
             </select>
           </div>
 
           {filtered.length>0?(
-            <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'52vh',overflowY:'auto'}}>
-              {/* Header */}
-              <div style={{display:'grid',gridTemplateColumns:'100px 1fr 150px 120px 120px 100px 130px',
-                gap:0,padding:'9px 16px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',
-                fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',
-                position:'sticky',top:0,zIndex:2}}>
-                <span>Date</span>
-                <span>Vendor / Description</span>
-                <span>Category</span>
-                <span style={{textAlign:'center'}}>Bill No</span>
-                <span style={{textAlign:'right'}}>Amount</span>
+            <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'auto',maxHeight:'54vh'}}>
+              <div style={{display:'grid',gridTemplateColumns:GRID,padding:'9px 16px',background:'var(--card2)',
+                borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',
+                textTransform:'uppercase',letterSpacing:'0.6px',position:'sticky',top:0,zIndex:2,minWidth:960}}>
+                <span>Date</span><span>Vendor / Bill No</span><span>Category</span>
+                <span style={{textAlign:'center'}}>Qty In</span>
+                <span style={{textAlign:'right'}}>Bill Value</span>
+                <span style={{textAlign:'right'}}>Outstanding</span>
                 <span style={{textAlign:'center'}}>Status</span>
                 <span style={{textAlign:'center'}}>Actions</span>
               </div>
               {filtered.map((e,i)=>{
                 const pb=payBadge(e.payStatus);
-                return(
-                <div key={i} style={{display:'grid',gridTemplateColumns:'100px 1fr 150px 120px 120px 100px 130px',
-                  gap:0,padding:'12px 16px',borderBottom:'1px solid var(--border)',alignItems:'center',
-                  transition:'background 0.15s'}}
-                  onMouseEnter={el=>el.currentTarget.style.background='var(--primary-bg)'}
-                  onMouseLeave={el=>el.currentTarget.style.background=''}>
-                  {/* Date */}
-                  <div style={{fontSize:12,color:'var(--text3)',fontWeight:500}}>{fmtDate(e.date)}</div>
-                  {/* Vendor / Description */}
-                  <div style={{minWidth:0}}>
-                    <div style={{fontWeight:700,color:'var(--text)',fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.vendor}</div>
-                    {e.description&&<div style={{fontSize:11,color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.description}</div>}
+                const items=expItems(e);
+                const qty=items.reduce((t,x)=>t+(parseFloat(x.qty)||0),0);
+                const due=expDue(e);
+                const open = expanded===e.id;
+                return(<div key={e.id||i} style={{borderBottom:'1px solid var(--border)',minWidth:960}}>
+                  <div style={{display:'grid',gridTemplateColumns:GRID,padding:'11px 16px',alignItems:'center',cursor:'pointer'}}
+                    onClick={()=>setExpanded(open?null:e.id)}>
+                    <div style={{fontSize:12,color:'var(--text3)',fontWeight:500}}>{fmtDate(e.date)}</div>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontWeight:700,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.vendor}</div>
+                      <div style={{fontSize:11,color:'var(--text3)',fontFamily:'monospace'}}>{e.billNo||'—'} · {items.length} item(s)</div>
+                    </div>
+                    <div><span style={{display:'inline-block',fontSize:11,color:'var(--primary2)',background:'var(--primary-bg)',
+                      padding:'3px 10px',borderRadius:20,border:'1px solid rgba(99,102,241,0.2)',fontWeight:600,
+                      maxWidth:'100%',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.category||'—'}</span></div>
+                    <div style={{textAlign:'center',fontWeight:700,color:'var(--green)',fontSize:13}}>+{qty}</div>
+                    <div style={{fontWeight:700,fontSize:13,textAlign:'right'}}>{fmt(e.total)}</div>
+                    <div style={{textAlign:'right',fontWeight:700,fontSize:13,color:due>0?'var(--red)':'var(--text3)'}}>{due>0?fmt(due):'—'}</div>
+                    <div style={{textAlign:'center'}}>
+                      <span style={{display:'inline-block',padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:700,
+                        background:pb.bg,color:pb.color,border:`1px solid ${pb.color}33`}}>{e.payStatus||'—'}</span>
+                    </div>
+                    <div style={{display:'flex',gap:5,justifyContent:'center'}} onClick={ev=>ev.stopPropagation()}>
+                      <button className="btn btn-xs btn-outline" style={{padding:'4px 10px'}} onClick={()=>editExp(e)}><Ic n="edit" s={11}/> Edit</button>
+                      {isAdmin&&<button className="btn btn-xs btn-danger btn-icon" onClick={()=>delExp(e.id)}><Ic n="trash" s={11}/></button>}
+                    </div>
                   </div>
-                  {/* Category */}
-                  <div>
-                    <span style={{display:'inline-block',fontSize:11,color:'var(--primary2)',background:'var(--primary-bg)',
-                      padding:'3px 10px',borderRadius:20,border:'1px solid rgba(99,102,241,0.2)',
-                      fontWeight:600,maxWidth:'100%',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                      {e.category||'—'}
-                    </span>
-                  </div>
-                  {/* Bill No */}
-                  <div style={{fontSize:11,color:'var(--text3)',fontFamily:'monospace',textAlign:'center',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.billNo||'—'}</div>
-                  {/* Amount */}
-                  <div style={{fontWeight:700,color:'var(--red)',fontSize:13,textAlign:'right'}}>{fmt(e.total)}</div>
-                  {/* Status */}
-                  <div style={{textAlign:'center'}}>
-                    <span style={{display:'inline-block',padding:'3px 10px',borderRadius:20,fontSize:11,
-                      fontWeight:700,background:pb.bg,color:pb.color,border:`1px solid ${pb.color}33`}}>
-                      {e.payStatus||'—'}
-                    </span>
-                  </div>
-                  {/* Actions */}
-                  <div style={{display:'flex',gap:5,justifyContent:'center',alignItems:'center'}}>
-                    {(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(e))&&
-                      <span title="Month frozen" style={{fontSize:13}}></span>}
-                    <button className="btn btn-xs btn-outline"
-                      onClick={()=>{
-                        if(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(e)){
-                          toast.error(` ${(e.date||'').substring(0,7)} expenses are frozen.`);
-                        }
-                        editExp(e);
-                      }}
-                      style={{padding:'4px 10px',opacity:(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(e))?0.6:1}}
-                      title={(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(e))?'Month frozen — view only':'Edit expense'}>
-                      <Ic n="edit" s={11}/> Edit
-                    </button>
-                    {isAdmin&&<button className="btn btn-xs btn-danger btn-icon" onClick={()=>delExp(e.id)}><Ic n="trash" s={11}/></button>}
-                  </div>
+                  {open&&<div style={{padding:'0 16px 12px 16px',background:'var(--card2)'}}>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 100px 70px 70px 90px 70px 100px 80px',gap:0,padding:'7px 0',
+                      fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',borderBottom:'1px solid var(--border)'}}>
+                      <span>Product / Description</span><span>HSN</span><span style={{textAlign:'center'}}>Unit</span>
+                      <span style={{textAlign:'center'}}>Qty</span><span style={{textAlign:'right'}}>Rate</span>
+                      <span style={{textAlign:'center'}}>GST%</span><span style={{textAlign:'right'}}>Line Total</span>
+                      <span style={{textAlign:'center'}}>Stock</span>
+                    </div>
+                    {items.map((it,k)=>(
+                      <div key={k} style={{display:'grid',gridTemplateColumns:'1fr 100px 70px 70px 90px 70px 100px 80px',gap:0,
+                        padding:'7px 0',fontSize:12,borderBottom:'1px solid var(--border)'}}>
+                        <span style={{fontWeight:600}}>{it.product||it.desc||'—'}{it.product&&it.desc?<span style={{color:'var(--text3)',fontWeight:400}}> — {it.desc}</span>:null}</span>
+                        <span style={{fontFamily:'monospace',color:'var(--text3)'}}>{it.hsnCode||'—'}</span>
+                        <span style={{textAlign:'center',color:'var(--text3)'}}>{it.unit}</span>
+                        <span style={{textAlign:'center',fontWeight:700}}>{it.qty}</span>
+                        <span style={{textAlign:'right'}}>{fmt(it.rate)}</span>
+                        <span style={{textAlign:'center',color:'var(--text3)'}}>{it.taxRate}%</span>
+                        <span style={{textAlign:'right',fontWeight:700}}>{fmt(it.total)}</span>
+                        <span style={{textAlign:'center'}}>{it.toStock===false?<span style={{color:'var(--text3)'}}>—</span>:<span className="badge badge-green">IN</span>}</span>
+                      </div>
+                    ))}
+                    <div style={{display:'flex',gap:18,paddingTop:9,fontSize:11,color:'var(--text2)',flexWrap:'wrap'}}>
+                      <span>Bill Date: <strong>{fmtDate(e.billDate)||'—'}</strong></span>
+                      <span>Due Date: <strong>{fmtDate(expDueDate(e))||'—'}</strong></span>
+                      <span>Paid: <strong style={{color:'var(--green)'}}>{fmt(expPaid(e))}</strong></span>
+                      <span>Payment Mode: <strong>{e.payMode||'—'}</strong></span>
+                      {e.notes&&<span>Notes: <strong>{e.notes}</strong></span>}
+                    </div>
+                  </div>}
                 </div>);
               })}
             </div>
           ):<div style={{textAlign:'center',padding:'50px',color:'var(--text3)'}}>
-              <div style={{fontSize:40,marginBottom:10}}><Ic n="receipt" s={16}/></div>
-              <div style={{fontSize:14}}>No expenses recorded yet.</div>
-              <div style={{fontSize:12,marginTop:4}}>Click "Add Expense" to start tracking purchases.</div>
+              <div style={{marginBottom:10}}><Ic n="cart" s={34}/></div>
+              <div style={{fontSize:14}}>No purchases recorded yet.</div>
+              <div style={{fontSize:12,marginTop:4}}>Click "Record Purchase" — every quantity you enter flows straight into Inventory.</div>
             </div>}
         </>}
 
-        {/* ── ADD / EDIT TAB ── */}
+        {/* ══ ADD / EDIT ══ */}
         {tab==='add'&&<div>
-          {/* Freeze banner */}
           {isExpenseFrozen(form)&&!isSuperAdmin(currentUser?.email)&&(
             <div className="alert" style={{background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.3)',color:'var(--primary2)',marginBottom:12}}>
-              <span style={{fontSize:18}}></span>
-              <span><strong>{(form.date||'').substring(0,7)} expenses are frozen.</strong> Contact Super Admin to unfreeze before editing.</span>
+              <Ic n="lock" s={16}/><span><strong>{(form.date||'').substring(0,7)} purchases are frozen.</strong> Contact Super Admin to unfreeze.</span>
             </div>
           )}
-          {/* Row 1: Date, Vendor, GSTIN, State */}
+
           <div className="g4" style={{marginBottom:4}}>
-            <div className="field">
-              <label className="field-label">Date *</label>
+            <div className="field"><label className="field-label">Entry Date *</label>
               <input type="date" className="field-input" value={form.date}
                 onChange={e=>{
-                  const newDate=e.target.value;
-                  if(!isSuperAdmin(currentUser?.email) && isMonthFrozen(newDate,'expenses')){
-                    toast.error(` ${newDate.substring(0,7)} expenses are frozen. Cannot add/edit entries for this month.`);
-                    return;
+                  const nd=e.target.value;
+                  if(!isSuperAdmin(currentUser?.email) && isMonthFrozen(nd,'expenses')){
+                    toast.error(`${nd.substring(0,7)} purchases are frozen.`);return;
                   }
                   upF('date')(e);
-                }}
-                style={{borderColor:(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form))?'var(--red)':''}}/>
-              {(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form))&&
-                <div style={{fontSize:10,color:'var(--red)',marginTop:3}}> This month is frozen</div>}
+                }}/>
             </div>
-            <div className="field"><label className="field-label">Vendor / Supplier Name *</label><input className="field-input" value={form.vendor} onChange={upF('vendor')} placeholder="Supplier name"/></div>
-            <div className="field"><label className="field-label">Vendor GSTIN</label><input className="field-input" value={form.vendorGSTIN||''} onChange={e=>setForm(p=>calcExp({...p,vendorGSTIN:e.target.value.toUpperCase()}))} placeholder="29XXXXX0000X1Z5" maxLength={15} style={{textTransform:'uppercase'}}/></div>
+            <div className="field"><label className="field-label">Vendor / Supplier *</label><input className="field-input" value={form.vendor} onChange={upF('vendor')} placeholder="Supplier name"/></div>
+            <div className="field"><label className="field-label">Vendor GSTIN</label><input className="field-input" value={form.vendorGSTIN||''} onChange={e=>setForm(p=>calcPurchase({...p,vendorGSTIN:e.target.value.toUpperCase()}))} placeholder="29XXXXX0000X1Z5" maxLength={15} style={{textTransform:'uppercase'}}/></div>
             <div className="field"><label className="field-label">Vendor State</label><input className="field-input" value={form.vendorState||''} onChange={upF('vendorState')} placeholder="e.g. Karnataka"/></div>
           </div>
-          {/* Row 2: Bill No, Bill Date, Category */}
-          <div className="g3" style={{marginBottom:4}}>
-            <div className="field"><label className="field-label">Bill / Invoice No</label><input className="field-input" value={form.billNo||''} onChange={upF('billNo')} placeholder="INV/BILL-001"/></div>
+
+          <div className="g4" style={{marginBottom:4}}>
+            <div className="field"><label className="field-label">Invoice / Bill No *</label><input className="field-input" value={form.billNo||''} onChange={upF('billNo')} placeholder="e.g. SUP/2026/0142"/></div>
             <div className="field"><label className="field-label">Bill Date</label><input type="date" className="field-input" value={form.billDate||''} onChange={upF('billDate')}/></div>
-            <div className="field"><label className="field-label">Category *</label>
+            <div className="field"><label className="field-label">Credit Days</label><input type="number" className="field-input" value={form.creditDays} onChange={e=>setForm(p=>calcPurchase({...p,creditDays:e.target.value,dueDate:''}))} min="0"/></div>
+            <div className="field"><label className="field-label">Payment Due Date</label><input type="date" className="field-input" value={form.dueDate||''} onChange={upF('dueDate')}/></div>
+          </div>
+
+          <div className="g3" style={{marginBottom:12}}>
+            <div className="field"><label className="field-label">Category</label>
               <select className="field-input" value={form.category||''} onChange={upF('category')}>
                 <option value="">— Select Category —</option>
                 {EXP_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-          </div>
-          {/* Row 3: Description, HSN, Unit */}
-          <div className="g3" style={{marginBottom:4}}>
-            <div className="field"><label className="field-label">Description / Item</label><input className="field-input" value={form.description||''} onChange={upF('description')} placeholder="What was purchased?"/></div>
-            <div className="field"><label className="field-label">HSN / SAC Code</label><input className="field-input" value={form.hsnCode||''} onChange={upF('hsnCode')} placeholder="84713010"/></div>
-            <div className="field"><label className="field-label">Unit</label>
-              <select className="field-input" value={form.unit||'Nos'} onChange={upF('unit')}>
-                {['Nos','Kg','Gm','Ltr','Mtr','Box','Pcs','Set','Pair','Month','Year','Job','Other'].map(u=><option key={u} value={u}>{u}</option>)}
-              </select>
-            </div>
-          </div>
-          {/* Row 4: Qty, Rate, Tax Rate, GST Type */}
-          <div className="g4" style={{marginBottom:4}}>
-            <div className="field"><label className="field-label">Qty</label><input type="number" className="field-input" value={form.qty} onChange={upF('qty')} min="0"/></div>
-            <div className="field"><label className="field-label">Rate (Rs.)</label><input type="number" className="field-input" value={form.rate} onChange={upF('rate')} placeholder="0.00" min="0"/></div>
-            <div className="field"><label className="field-label">GST Rate</label>
-              <select className="field-input" value={form.taxRate} onChange={upF('taxRate')}>
-                {['0','5','12','18','28'].map(r=><option key={r} value={r}>{r}%</option>)}
-              </select>
-            </div>
             <div className="field"><label className="field-label">GST Type</label>
               <select className="field-input" value={form.gstType||'INTRA'} onChange={upF('gstType')}>
-                <option value="INTRA">Intra-State (CGST+SGST)</option>
+                <option value="INTRA">Intra-State (CGST + SGST)</option>
                 <option value="INTER">Inter-State (IGST)</option>
               </select>
             </div>
+            <div className="field"><label className="field-label">Notes / Remarks</label><input className="field-input" value={form.notes||''} onChange={upF('notes')} placeholder="Transport, LR number, remarks..."/></div>
           </div>
-          {/* Calculated totals display */}
-          <div style={{display:'flex',gap:12,padding:'10px 14px',background:'var(--card2)',borderRadius:10,marginBottom:12,border:'1px solid var(--border)',flexWrap:'wrap'}}>
-            <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Taxable</div><div style={{fontWeight:700,color:'var(--text)'}}>{fmt(form.taxable)}</div></div>
+
+          {/* ── Line items ── */}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+            <div style={{fontSize:13,fontWeight:700,display:'flex',alignItems:'center',gap:7}}>
+              <Ic n="package" s={15}/> Items Purchased
+              <span style={{fontSize:11,fontWeight:500,color:'var(--text3)'}}>— ticked lines are added to Inventory</span>
+            </div>
+            <button className="btn btn-sm btn-outline-primary" onClick={addItem}><Ic n="plus" s={13}/> Add Line</button>
+          </div>
+
+          <datalist id="purch-products">
+            {productList.map((p,i)=><option key={i} value={p.name}/>)}
+          </datalist>
+
+          <div style={{border:'1px solid var(--border)',borderRadius:10,overflowX:'auto',marginBottom:12}}>
+            <div style={{display:'grid',gridTemplateColumns:'1.5fr 1.2fr 110px 88px 78px 98px 84px 104px 60px 44px',gap:6,padding:'8px 12px',
+              background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,
+              color:'var(--text3)',textTransform:'uppercase',minWidth:1080}}>
+              <span>Product *</span><span>Description</span><span>HSN / SAC</span><span>Unit</span>
+              <span style={{textAlign:'center'}}>Qty *</span><span style={{textAlign:'right'}}>Rate</span>
+              <span style={{textAlign:'center'}}>GST %</span><span style={{textAlign:'right'}}>Line Total</span>
+              <span style={{textAlign:'center'}}>Stock</span><span/>
+            </div>
+            {form.items.map((it,idx)=>(
+              <div key={it.key||idx} style={{display:'grid',gridTemplateColumns:'1.5fr 1.2fr 110px 88px 78px 98px 84px 104px 60px 44px',gap:6,
+                padding:'8px 12px',borderBottom:'1px solid var(--border)',alignItems:'center',minWidth:1080}}>
+                <input className="field-input" list="purch-products" value={it.product} onChange={e=>pickProduct(idx,e.target.value)} placeholder="Item name"/>
+                <input className="field-input" value={it.desc} onChange={e=>upItem(idx,'desc',e.target.value)} placeholder="Optional details"/>
+                <input className="field-input" value={it.hsnCode} onChange={e=>upItem(idx,'hsnCode',e.target.value)} placeholder="84713010"/>
+                <select className="field-input" value={it.unit} onChange={e=>upItem(idx,'unit',e.target.value)}>
+                  {UNITS.map(u=><option key={u} value={u}>{u}</option>)}
+                </select>
+                <input type="number" className="field-input" style={{textAlign:'center'}} value={it.qty} onChange={e=>upItem(idx,'qty',e.target.value)} min="0"/>
+                <input type="number" className="field-input" style={{textAlign:'right'}} value={it.rate} onChange={e=>upItem(idx,'rate',e.target.value)} placeholder="0.00" min="0"/>
+                <select className="field-input" value={it.taxRate} onChange={e=>upItem(idx,'taxRate',e.target.value)}>
+                  {['0','0.1','0.25','1','1.5','3','5','6','12','18','28'].map(r=><option key={r} value={r}>{r}%</option>)}
+                </select>
+                <div style={{textAlign:'right',fontWeight:700,fontSize:13}}>{fmt(it.total)}</div>
+                <div style={{textAlign:'center'}}>
+                  <input type="checkbox" checked={it.toStock!==false} onChange={e=>upItem(idx,'toStock',e.target.checked)}
+                    title="Add this quantity to inventory" style={{width:16,height:16,cursor:'pointer'}}/>
+                </div>
+                <button className="btn btn-xs btn-danger btn-icon" onClick={()=>delItem(idx)} disabled={form.items.length<=1}><Ic n="trash" s={11}/></button>
+              </div>
+            ))}
+          </div>
+
+          {/* Totals */}
+          <div style={{display:'flex',gap:14,padding:'11px 16px',background:'var(--card2)',borderRadius:10,
+            marginBottom:12,border:'1px solid var(--border)',flexWrap:'wrap',alignItems:'center'}}>
+            <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Total Qty</div>
+              <div style={{fontWeight:700,color:'var(--green)'}}>{form.items.reduce((t,i)=>t+(parseFloat(i.qty)||0),0)}</div></div>
+            <div style={{color:'var(--border2)'}}>|</div>
+            <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Taxable</div><div style={{fontWeight:700}}>{fmt(form.taxable)}</div></div>
             <div style={{color:'var(--border2)'}}>|</div>
             {form.gstType==='INTRA'?<>
-              <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>CGST ({parseFloat(form.taxRate)/2}%)</div><div style={{fontWeight:700,color:'var(--text2)'}}>{fmt(parseFloat(form.gstAmt)/2)}</div></div>
-              <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>SGST ({parseFloat(form.taxRate)/2}%)</div><div style={{fontWeight:700,color:'var(--text2)'}}>{fmt(parseFloat(form.gstAmt)/2)}</div></div>
-            </>:<div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>IGST ({form.taxRate}%)</div><div style={{fontWeight:700,color:'var(--text2)'}}>{fmt(form.gstAmt)}</div></div>}
+              <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>CGST</div><div style={{fontWeight:700,color:'var(--text2)'}}>{fmt(form.gstAmt/2)}</div></div>
+              <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>SGST</div><div style={{fontWeight:700,color:'var(--text2)'}}>{fmt(form.gstAmt/2)}</div></div>
+            </>:<div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>IGST</div><div style={{fontWeight:700,color:'var(--text2)'}}>{fmt(form.gstAmt)}</div></div>}
             <div style={{color:'var(--border2)'}}>|</div>
-            <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Total GST</div><div style={{fontWeight:700,color:'var(--text)'}}>{fmt(form.gstAmt)}</div></div>
+            <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Input GST</div><div style={{fontWeight:700,color:'var(--blue)'}}>{fmt(form.gstAmt)}</div></div>
             <div style={{color:'var(--border2)'}}>|</div>
-            <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Total Amount</div><div style={{fontWeight:800,color:'var(--primary2)',fontSize:16}}>{fmt(form.total)}</div></div>
+            <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Bill Total</div><div style={{fontWeight:800,color:'var(--primary2)',fontSize:17}}>{fmt(form.total)}</div></div>
           </div>
-          {/* Row 5: Payment details */}
+
           <div className="g4" style={{marginBottom:4}}>
             <div className="field"><label className="field-label">Payment Mode</label>
               <select className="field-input" value={form.payMode||''} onChange={upF('payMode')}>
@@ -2616,14 +2787,18 @@ const ExpenseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
               </select>
             </div>
             <div className="field"><label className="field-label">Payment Status</label>
-              <select className="field-input" value={form.payStatus||'Paid'} onChange={upF('payStatus')}>
-                <option value="Paid">Paid</option>
-                <option value="Pending">⏳ Pending</option>
-                <option value="Partial"> Partial</option>
+              <select className="field-input" value={form.payStatus||'Pending'} onChange={upF('payStatus')}>
+                <option value="Pending">Pending</option><option value="Partial">Partial</option><option value="Paid">Paid</option>
               </select>
             </div>
+            <div className="field"><label className="field-label">Amount Paid (Rs.)</label>
+              <input type="number" className="field-input" value={form.payStatus==='Paid'?form.total:(form.paidAmount||'')}
+                disabled={form.payStatus==='Paid'} onChange={upF('paidAmount')} placeholder="0.00" min="0"/>
+              <div style={{fontSize:10,color:form.payStatus==='Paid'?'var(--green)':'var(--red)',marginTop:3}}>
+                Balance payable: {fmt(expDue(calcPurchase(form)))}
+              </div>
+            </div>
             <div className="field"><label className="field-label">Paid Date</label><input type="date" className="field-input" value={form.paidDate||''} onChange={upF('paidDate')}/></div>
-            <div className="field"><label className="field-label">Notes / Remarks</label><input className="field-input" value={form.notes||''} onChange={upF('notes')} placeholder="Any additional notes..."/></div>
           </div>
         </div>}
       </div>
@@ -2634,13 +2809,13 @@ const ExpenseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
           <button className="btn btn-outline" onClick={()=>{setForm(blankExp(currentUser));setEditId(null);setTab('list');}}>Cancel</button>
           <button className="btn btn-primary"
             disabled={!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form)}
-            title={(!isSuperAdmin(currentUser?.email)&&isExpenseFrozen(form))?` ${(form.date||'').substring(0,7)} is frozen`:''}
-            onClick={saveExp}><Ic n="save"/>{editId?'Update Expense':'Save Expense'}</button>
+            onClick={saveExp}><Ic n="save"/>{editId?'Update Purchase':'Save Purchase & Add to Stock'}</button>
         </>}
       </div>
     </div>
   </div>;
 };
+const ExpenseModal = PurchaseModal; // legacy alias
 
 const CustomerModal = ({onClose, onSelect, inline=false, searchQuery=''})=>{
   const blank={name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',notes:''};
@@ -2771,10 +2946,11 @@ const HistoryModal = ({onClose,onLoad,currentUser,inline=false,searchQuery=''})=
       toast.error(` ${(inv?.date||'').substring(0,7)} is frozen. Only Super Admin can delete invoices for this month.`);
       return;
     }
-    if(!window.confirm('Delete this invoice permanently?'))return;
+    if(!window.confirm('Delete this invoice permanently? Any stock it moved will be reversed.'))return;
     const u=invs.filter(i=>i.invNo!==id);setInvs(u);S.set(SK.INV,u);
+    removeStockForSource(id);   // pull this invoice's stock movement back out of inventory
     logAudit('INVOICE_DELETED',`${inv?.invNo} — ${inv?.billTo?.name} — ₹${Math.abs(getGrand(inv||{}))||0}`,currentUser);
-    toast.info('Invoice deleted');
+    toast.info('Invoice deleted — stock reversed');
   };
   const sorted=[...invs].filter(i=>!q||i.invNo?.toLowerCase().includes(q.toLowerCase())||i.billTo?.name?.toLowerCase().includes(q.toLowerCase())||(i.docType||'').toLowerCase().includes(q.toLowerCase())||(i.isB2C?'b2c':'b2b').includes(q.toLowerCase())).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
   const total=invs.reduce((s,i)=>s+getGrand(i),0);
@@ -3730,7 +3906,7 @@ const ExportTab = ({invs, isSuper})=>{
               const data={exportDate:new Date().toISOString(),company:S.get(SK.CO,{}),hsn:S.get(SK.HSN,[]),invoices:S.get(SK.INV,[]),expenses:S.get(SK.EXP,[]),purchaseOrders:S.get(SK.PO,[]),customers:S.get(SK.CUST,[]),products:S.get(SK.PRODUCTS,[]),terms:S.get(SK.TERMS,''),poTerms:S.get(SK.PO_TERMS,''),auditLog:S.get(SK.AUDIT,[]),frozenPeriods:S.get(SK.FREEZE,{sales:[],expenses:[]})};
               const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
               const url=URL.createObjectURL(blob);const a=document.createElement('a');
-              a.href=url;a.download=`InvoicePrime_Backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
+              a.href=url;a.download=`BluBills_Backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
               URL.revokeObjectURL(url);
               toast.success(`JSON backup: ${(data.invoices||[]).length} invoices, ${(data.expenses||[]).length} expenses`);
             }}>
@@ -3879,7 +4055,7 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
     (l.userName||'').toLowerCase().includes(auditQ.toLowerCase())
   );
 
-  const roleBadge=r=>r==='superadmin'?{cls:'badge-gold',label:'Super Admin'}:r==='admin'?{cls:'badge-primary',label:'Admin'}:{cls:'badge-green',label:'User'};
+  const roleBadge=r=>r==='superadmin'?{cls:'badge-gold',label:'Super Admin'}:r==='admin'?{cls:'badge-primary',label:'Admin'}:r==='accountant'?{cls:'badge-primary',label:'Accountant'}:r==='sales'?{cls:'badge-green',label:'Sales'}:{cls:'badge-green',label:'User'};
 
   return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
     <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1100px, 95vw)',width:'100%'})}}>
@@ -3954,7 +4130,9 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
                 </div>
                 <div className="field"><label className="field-label">Role</label>
                   <select className="field-input" value={uForm.role} onChange={e=>setUForm(p=>({...p,role:e.target.value}))}>
-                    <option value="user">User</option>
+                    <option value="user">User (full access)</option>
+                    <option value="sales">Sales (invoices, history, customers only)</option>
+                    <option value="accountant">Accountant (billing, purchases, inventory, ageing, bank recon — no admin/company settings)</option>
                     <option value="admin">Admin</option>
                     {isSuper&&<option value="superadmin">Super Admin</option>}
                   </select>
@@ -4110,7 +4288,7 @@ const Login = ({onLogin})=>{
       <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
         <LogoIcon size={44}/>
         <div>
-          <div className="login-logo">Invoice <span style={{color:'var(--gold)'}}>Prime</span></div>
+          <div className="login-logo">Blu<span style={{color:'var(--gold)'}}>Bills</span></div>
           <div className="login-sub" style={{margin:0,fontSize:11}}>Smart GST Billing · Your Business, Simplified.</div>
         </div>
       </div>
@@ -4148,7 +4326,7 @@ const Login = ({onLogin})=>{
           </div>
         </div>
         <div style={{textAlign:'center',marginTop:12,fontSize:10,color:'var(--text3)'}}>
-          Invoice Prime © {new Date().getFullYear()} — All rights reserved
+          BluBills © {new Date().getFullYear()} — All rights reserved
         </div>
       </div>
 
@@ -4289,6 +4467,11 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     const isEdit = ex>=0;
     if(isEdit){updated=[...invs];updated[ex]={...toSave};}else{updated=[...invs,{...toSave}];commitInvNo(inv.docType);}
     S.set(SK.INV,updated);
+    // Re-post stock on every save (create AND edit). applyStockForInvoice removes
+    // this invoice's old ledger lines by srcId first, so editing quantities,
+    // switching docType, or changing the customer always reconciles correctly
+    // instead of only moving stock the first time the invoice was ever saved.
+    applyStockForInvoice(toSave,currentUser);
     logAudit(isEdit?'INVOICE_EDITED':'INVOICE_CREATED', `${inv.docType} ${inv.invNo} — ${inv.billTo?.name} — ₹${Math.abs(grandVal)}`, currentUser);
     if(onSave)onSave(toSave);
     toast.success(`${inv.docType} ${inv.invNo} saved!`);
@@ -5413,7 +5596,7 @@ const checkOverdue = () => {
 const DEFAULT_PRODUCTS = [];
 
 const ProductMasterModal = ({onClose, onSelect})=>{
-  const blank={name:'',desc:'',hsnCode:'',unit:'Nos',rate:'',taxRate:'18',category:''};
+  const blank={name:'',desc:'',hsnCode:'',unit:'Nos',rate:'',taxRate:'18',category:'',trackStock:false,openingStock:'',openingRate:'',reorderLevel:''};
   const [list,setList]=useState(S.get(SK.PRODUCTS,DEFAULT_PRODUCTS));
   const [form,setForm]=useState(blank);
   const [editing,setEditing]=useState(null);
@@ -5424,16 +5607,22 @@ const ProductMasterModal = ({onClose, onSelect})=>{
   const save=()=>{
     if(!form.name||!form.rate){toast.error('Product name and rate required');return;}
     let u;
-    if(editing!==null){u=list.map((p,i)=>i===editing?{...form}:p);}
+    if(editing!==null){
+      // Never overwrite currentStock from the edit form — it's maintained by sales/adjustments, not manual edits
+      u=list.map((p,i)=>i===editing?{...p,...form}:p);
+    }
     else{
       if(list.find(p=>p.name.toLowerCase()===form.name.toLowerCase())){toast.error('Product already exists');return;}
-      u=[...list,{...form,createdAt:new Date().toISOString()}];
+      const opening=form.trackStock?(parseFloat(form.openingStock)||0):0;
+      u=[...list,{...form,currentStock:opening,createdAt:new Date().toISOString()}];
     }
-    setList(u);S.set(SK.PRODUCTS,u);
+    S.set(SK.PRODUCTS,u);
+    rebuildStock();                      // opening stock changed → re-derive balances
+    setList(S.get(SK.PRODUCTS,[]));
     setForm(blank);setEditing(null);setTab('list');
     toast.success(editing!==null?'Product updated!':'Product saved!');
   };
-  const del=i=>{if(!window.confirm('Delete product?'))return;const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.PRODUCTS,u);};
+  const del=i=>{if(!window.confirm('Delete product?'))return;const u=list.filter((_,j)=>j!==i);S.set(SK.PRODUCTS,u);rebuildStock();setList(S.get(SK.PRODUCTS,[]));};
   const edit=i=>{setForm({...list[i]});setEditing(i);setTab('add');};
   const filtered=list.filter(p=>!q||p.name.toLowerCase().includes(q.toLowerCase())||p.hsnCode?.includes(q)||(p.category||'').toLowerCase().includes(q.toLowerCase()));
 
@@ -5469,6 +5658,25 @@ const ProductMasterModal = ({onClose, onSelect})=>{
               <div className="field"><label className="field-label">GST Rate %</label><select className="field-input" value={form.taxRate} onChange={up('taxRate')}>{TAX_RATES.map(r=><option key={r} value={r}>{r}%</option>)}</select></div>
               <div className="field"><label className="field-label">Description</label><input className="field-input" value={form.desc} onChange={up('desc')} placeholder="Optional description"/></div>
             </div>
+            <div style={{display:'flex',alignItems:'center',gap:8,margin:'4px 0 12px'}}>
+              <input type="checkbox" id="trackStock" checked={!!form.trackStock} onChange={e=>setForm(p=>({...p,trackStock:e.target.checked}))}/>
+              <label htmlFor="trackStock" style={{fontSize:13,cursor:'pointer'}}>Track inventory / stock for this item</label>
+            </div>
+            {form.trackStock&&(
+              <div className="g3" style={{marginBottom:12}}>
+                <div className="field"><label className="field-label">Opening Stock</label>
+                  <input type="number" className="field-input" value={form.openingStock} onChange={up('openingStock')} placeholder="0"/>
+                  {editing!==null&&<div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>
+                    Live stock now: <strong>{list[editing]?.currentStock??0}</strong> — that is opening plus every purchase, sale and adjustment. Change opening only to correct your starting figure; use Inventory → Adjust for day-to-day corrections.
+                  </div>}
+                </div>
+                <div className="field"><label className="field-label">Opening Cost Rate (₹)</label>
+                  <input type="number" className="field-input" value={form.openingRate||''} onChange={up('openingRate')} placeholder="What you paid per unit"/>
+                  <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>Used to value opening stock. Blank → falls back to sale rate, which overstates stock value.</div>
+                </div>
+                <div className="field"><label className="field-label">Reorder Level</label><input type="number" className="field-input" value={form.reorderLevel} onChange={up('reorderLevel')} placeholder="e.g. 10"/></div>
+              </div>
+            )}
             <div style={{display:'flex',gap:10}}>
               <button className="btn btn-primary" onClick={save}>{editing!==null?'Update Product':'Save Product'}</button>
               {editing!==null&&<button className="btn btn-outline" onClick={()=>{setForm(blank);setEditing(null);setTab('list');}}>Cancel</button>}
@@ -5484,11 +5692,11 @@ const ProductMasterModal = ({onClose, onSelect})=>{
             </div>
             {filtered.length>0?(
               <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'52vh',overflowY:'auto'}}>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 90px 80px 80px 100px auto',gap:0,padding:'8px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>
-                  <span>Name / Category</span><span>HSN/SAC</span><span>Unit</span><span>GST%</span><span style={{textAlign:'right'}}>Rate (₹)</span><span style={{textAlign:'center'}}>Actions</span>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 90px 80px 80px 100px 90px auto',gap:0,padding:'8px 14px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>
+                  <span>Name / Category</span><span>HSN/SAC</span><span>Unit</span><span>GST%</span><span style={{textAlign:'right'}}>Rate (₹)</span><span style={{textAlign:'center'}}>Stock</span><span style={{textAlign:'center'}}>Actions</span>
                 </div>
                 {filtered.map((p,i)=>(
-                  <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 90px 80px 80px 100px auto',gap:0,padding:'10px 14px',borderBottom:'1px solid var(--border)',alignItems:'center'}}>
+                  <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 90px 80px 80px 100px 90px auto',gap:0,padding:'10px 14px',borderBottom:'1px solid var(--border)',alignItems:'center'}}>
                     <div>
                       <div style={{fontWeight:700,color:'var(--text)',fontSize:13}}>{p.name}</div>
                       {p.category&&<div style={{fontSize:11,color:'var(--text3)'}}>{p.category}</div>}
@@ -5498,6 +5706,11 @@ const ProductMasterModal = ({onClose, onSelect})=>{
                     <div style={{fontSize:12,color:'var(--text2)'}}>{p.unit||'Nos'}</div>
                     <div><span className="badge badge-green">{p.taxRate||'18'}%</span></div>
                     <div style={{fontWeight:700,color:'var(--primary2)',textAlign:'right',fontSize:13}}>₹{Number(p.rate||0).toLocaleString('en-IN')}</div>
+                    <div style={{textAlign:'center'}}>
+                      {p.trackStock?(
+                        <span className={`badge ${Number(p.currentStock||0)<=Number(p.reorderLevel||0)?'badge-red':'badge-green'}`}>{p.currentStock??0}</span>
+                      ):<span style={{color:'var(--text3)',fontSize:11}}>—</span>}
+                    </div>
                     <div style={{display:'flex',gap:5,justifyContent:'center'}}>
                       {onSelect&&<button className="btn btn-sm btn-outline-primary" onClick={()=>{onSelect(p);onClose();}}>Select</button>}
                       <button className="btn btn-sm btn-outline btn-icon" onClick={()=>edit(list.indexOf(p))}><Ic n="edit" s={12}/></button>
@@ -5517,6 +5730,286 @@ const ProductMasterModal = ({onClose, onSelect})=>{
       <div className="modal-ftr"><button className="btn btn-primary" onClick={onClose}>Close</button></div>
     </div>
   </div>;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ⭐ FEATURE: INVENTORY / STOCK LEDGER
+   ══════════════════════════════════════════════════════════════ */
+// Best-effort match of an invoice line's free-text description back to a Product Master entry.
+// Lines picked "from Master" are saved as "ProductName — description", so try that first.
+const findProductForLine = (desc, products) => {
+  if(!desc) return null;
+  const d = String(desc).trim().toLowerCase();
+  const exact = products.find(p=>(p.name||'').toLowerCase()===d);
+  if(exact) return exact;
+  const head = String(desc).split(' — ')[0].trim().toLowerCase();
+  return products.find(p=>(p.name||'').toLowerCase()===head) || null;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   STOCK LEDGER ENGINE
+   ──────────────────────────────────────────────────────────────
+   The ledger (SK.STOCK) is the single source of truth. Every entry:
+     { id, date, time, product, qty (+in/-out), rate, value,
+       type:'IN'|'OUT', refType:'PURCHASE'|'INVOICE'|'ADJUST'|'OPENING',
+       ref (bill/invoice no), party (vendor/customer), reason,
+       srcId (id of the purchase/invoice doc that created it), user }
+   Product.currentStock is always DERIVED = openingStock + Σ ledger qty.
+   That makes edits and deletes safe — we mutate the ledger and rebuild.
+   ══════════════════════════════════════════════════════════════ */
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const stockLog = ()=>{const l=S.get(SK.STOCK,[]);return Array.isArray(l)?l:[];};
+
+// Normalise legacy rows (they used qtyChange and had no type/refType)
+const guessRefType = l => {
+  if(l.refType) return l.refType;
+  const r = String(l.reason||'').toLowerCase();
+  if(r.includes('purchase')) return 'PURCHASE';
+  if(r.includes('invoice')||r.includes('sale')||r.includes('credit note')) return 'INVOICE';
+  return 'ADJUST';
+};
+// Human label for a ledger line, matching what the Inventory screens group/filter by.
+const docLabelFor = (refType, qty) => {
+  if(refType==='PURCHASE') return qty<0 ? 'Purchase Return' : 'Purchase';
+  if(refType==='INVOICE')  return qty>0 ? 'Sales Return' : 'Sale';
+  if(refType==='OPENING')  return 'Opening';
+  return 'Adjustment';
+};
+
+const normLine = l => {
+  const qty = Number(l.qty!==undefined?l.qty:l.qtyChange)||0;
+  const rate = Number(l.rate)||0;
+  const refType = guessRefType(l);
+  return {
+    id:l.id||uid(), date:l.date||today(), time:l.time||'', product:l.product||'',
+    qty, rate, type:l.type||(qty>=0?'IN':'OUT'),
+    refType,
+    ref:l.ref||'', party:l.party||'', reason:l.reason||'', srcId:l.srcId||'',
+    user:l.user||'', balanceAfter:Number(l.balanceAfter)||0,
+    // ── aliases the Inventory/Ageing screens read ──
+    qtyChange: qty, dir: qty>=0?'IN':'OUT',
+    value: Math.round(Math.abs(qty*rate)*100)/100,
+    doc: l.doc || docLabelFor(refType, qty)
+  };
+};
+
+const sortLedger = rows => [...rows].sort((a,b)=>{
+  if(a.date!==b.date) return (a.date||'')<(b.date||'')?-1:1;
+  return (a.time||'')<(b.time||'')?-1:(a.time===b.time?0:1);
+});
+
+// Recompute every product's currentStock + each row's running balance, then persist.
+const rebuildStock = (rows) => {
+  const log = sortLedger((rows||stockLog()).map(normLine));
+  const products = S.get(SK.PRODUCTS,[]);
+  const run = {};
+  products.forEach(p=>{ run[(p.name||'').toLowerCase()] = Number(p.openingStock)||0; });
+  log.forEach(l=>{
+    const k=(l.product||'').toLowerCase();
+    if(run[k]===undefined) run[k]=0;
+    run[k]+=l.qty;
+    l.balanceAfter=Math.round(run[k]*10000)/10000;
+  });
+  const updated = products.map(p=>{
+    const k=(p.name||'').toLowerCase();
+    if(!p.trackStock) return p;
+    const v = run[k]!==undefined?run[k]:(Number(p.openingStock)||0);
+    return {...p, currentStock: Math.round(v*10000)/10000};
+  });
+  S.set(SK.PRODUCTS, updated);
+  S.set(SK.STOCK, log);
+  return log;
+};
+
+// Append one movement. meta: {rate, refType, ref, party, srcId, date, reason}
+const addStockLine = (productName, qty, meta={}, user) => {
+  if(!productName || !qty) return;
+  const products = S.get(SK.PRODUCTS,[]);
+  const prod = products.find(p=>(p.name||'').toLowerCase()===String(productName).toLowerCase());
+  if(!prod || !prod.trackStock) return;
+  const rate = Number(meta.rate)||0;
+  const line = {
+    id:uid(), date:meta.date||today(), time:nowTime(), product:prod.name,
+    qty:Number(qty), rate, type:Number(qty)>=0?'IN':'OUT',
+    refType:meta.refType||'ADJUST', ref:meta.ref||'', party:meta.party||'',
+    reason:meta.reason||'', srcId:meta.srcId||'', user:user?.name||'', balanceAfter:0
+  };
+  rebuildStock([...stockLog(), line]);
+};
+
+// Backwards-compatible wrapper — old call sites keep working.
+const adjustStock = (productName, qtyChange, reason, ref, user, meta={}) =>
+  addStockLine(productName, qtyChange, {reason, ref, ...meta}, user);
+
+// Remove every ledger line created by a given source document, then rebuild.
+const removeStockForSource = (srcId) => {
+  if(!srcId) return;
+  const rows = stockLog().filter(l=>String(l.srcId||'')!==String(srcId));
+  rebuildStock(rows);
+};
+
+/* ── SALES: post an invoice's items to the ledger ── */
+const applyStockForInvoice = (inv, user) => {
+  if(!inv || !Array.isArray(inv.items)) return;
+  removeStockForSource(inv.invNo);                 // idempotent: re-saving replaces
+  const products = S.get(SK.PRODUCTS,[]);
+  const isReturn  = inv.docType==='CREDIT NOTE';   // goods come back → stock IN
+  const isOutward = inv.docType==='TAX INVOICE' || inv.docType==='NON GST INVOICE' || inv.docType==='DEBIT NOTE' || inv.isB2C;
+  const lines=[];
+  inv.items.forEach(row=>{
+    const prod = findProductForLine(row.desc, products);
+    if(!prod || !prod.trackStock) return;
+    const qty = Number(row.qty)||0;
+    if(!qty) return;
+    const change = isReturn ? qty : (isOutward ? -qty : 0);
+    if(!change) return;
+    lines.push({
+      id:uid(), date:inv.date||today(), time:inv.time||nowTime(), product:prod.name,
+      qty:change, rate:Number(row.rate)||0, type:change>=0?'IN':'OUT',
+      refType:'INVOICE', ref:inv.invNo||'', party:inv.billTo?.name||'',
+      reason:isReturn?'Credit note (sales return)':'Sale — '+(inv.docType||'Invoice'),
+      srcId:inv.invNo||'', user:user?.name||'', balanceAfter:0
+    });
+  });
+  if(lines.length) rebuildStock([...stockLog(), ...lines]);
+};
+
+/* ── PURCHASES: post every stock-flagged line of a bill into the ledger ── */
+const applyStockForPurchase = (exp, user) => {
+  if(!exp) return;
+  const srcId = 'PUR-'+exp.id;
+  removeStockForSource(srcId);                  // idempotent — editing a bill replaces its lines
+  const products = S.get(SK.PRODUCTS,[]);
+  const when = exp.billDate||exp.date||today();
+  const lines=[];
+  expItems(exp).forEach(it=>{
+    if(it.toStock===false) return;
+    const name = it.product || it.desc;
+    const qty  = parseFloat(it.qty)||0;
+    if(!name || qty<=0) return;
+    const prod = products.find(p=>(p.name||'').toLowerCase()===String(name).toLowerCase());
+    if(!prod || !prod.trackStock) return;       // untracked items are cost-only, never stock
+    lines.push({
+      id:uid(), date:when, time:nowTime(), product:prod.name,
+      qty, rate:parseFloat(it.rate)||0, type:'IN', refType:'PURCHASE',
+      ref:exp.billNo||'', party:exp.vendor||'', reason:'Purchase',
+      srcId, user:user?.name||'', balanceAfter:0
+    });
+  });
+  if(lines.length) rebuildStock([...stockLog(), ...lines]);
+};
+
+/* ══════════════════════════════════════════════════════════════
+   FIFO COSTING — drives valuation, inventory ageing and per-invoice COGS
+   Returns per product: remaining layers (qty, rate, date) + cogs per OUT line.
+   ══════════════════════════════════════════════════════════════ */
+const computeFIFO = (log) => {
+  const rows = sortLedger((log||stockLog()).map(normLine));
+  const products = S.get(SK.PRODUCTS,[]);
+  const layers = {};   // productKey -> [{qty, rate, date}]
+  const cogsByLine = {};
+  // seed opening stock as the oldest layer, valued at product rate
+  products.filter(p=>p.trackStock && Number(p.openingStock)>0).forEach(p=>{
+    layers[(p.name||'').toLowerCase()] = [{
+      qty:Number(p.openingStock)||0,
+      rate:Number(p.openingRate||p.rate)||0,
+      date:(p.createdAt||'').slice(0,10)||'2000-01-01'
+    }];
+  });
+  rows.forEach(l=>{
+    const k=(l.product||'').toLowerCase();
+    if(!layers[k]) layers[k]=[];
+    if(l.qty>0){
+      layers[k].push({qty:l.qty, rate:l.rate||0, date:l.date});
+    } else {
+      let need=-l.qty, cost=0;
+      while(need>0 && layers[k].length){
+        const lay=layers[k][0];
+        const take=Math.min(need, lay.qty);
+        cost += take*(lay.rate||0);
+        lay.qty-=take; need-=take;
+        if(lay.qty<=0.00001) layers[k].shift();
+      }
+      if(need>0) cost += need*(l.rate||0); // sold more than we bought — value at doc rate
+      cogsByLine[l.id]=cost;
+    }
+  });
+  return {layers, cogsByLine, rows};
+};
+
+const INV_AGE_BUCKETS = [
+  {key:'a0', label:'0-30 Days',   test:d=>d<=30},
+  {key:'a1', label:'31-60 Days',  test:d=>d>30&&d<=60},
+  {key:'a2', label:'61-90 Days',  test:d=>d>60&&d<=90},
+  {key:'a3', label:'91-180 Days', test:d=>d>90&&d<=180},
+  {key:'a4', label:'180+ Days',   test:d=>d>180},
+];
+
+/* Whole days from one date to another (negative = still in the future) */
+const daysBetween = (fromStr, toStr) => {
+  if(!fromStr || !toStr) return 0;
+  const a=new Date(fromStr), b=new Date(toStr);
+  if(isNaN(a)||isNaN(b)) return 0;
+  return Math.floor((b-a)/86400000);
+};
+const daysSince = ds => ds ? Math.max(0, daysBetween(ds, today())) : 0;
+
+/* Rebuild every derived balance from the ledger (name used by the report screens) */
+const rebuildStockBalances = () => rebuildStock();
+
+/* ── ONE-TIME MIGRATION ──
+   Older versions stored currentStock directly and incremented it. We now derive
+   currentStock = openingStock + Σ ledger. For any product that predates this,
+   work backwards from the stock it is showing today so the number does not jump:
+        openingStock = currentStock - Σ (its existing ledger movements)
+   Runs once, then records a flag so it never re-runs. */
+const migrateInventory = () => {
+  if(S.get('ip_stock_migrated', false)) return;
+  const products = S.get(SK.PRODUCTS, []);
+  if(Array.isArray(products) && products.length){
+    const log = stockLog().map(normLine);
+    const moved = {};
+    log.forEach(l=>{
+      const k=(l.product||'').toLowerCase();
+      moved[k]=(moved[k]||0)+l.qty;
+    });
+    const fixed = products.map(p=>{
+      if(!p.trackStock) return p;
+      if(p.openingStock!=='' && p.openingStock!==undefined && p.openingStock!==null) return p;
+      const k=(p.name||'').toLowerCase();
+      const opening = (Number(p.currentStock)||0) - (moved[k]||0);
+      return {...p, openingStock: Math.round(opening*10000)/10000};
+    });
+    S.set(SK.PRODUCTS, fixed);
+  }
+  rebuildStock();                       // recompute balances + running totals
+  S.set('ip_stock_migrated', true);
+  console.log('✅ Inventory migrated to derived-balance model');
+};
+
+/* FIFO layers still on hand, keyed by product name:
+   { "Product Name": { product, layers:[{qty, rate, date}] } }
+   Each layer remembers the purchase that brought it in, which is what
+   lets Inventory Ageing say how long that stock has been sitting. */
+const buildFifoLayers = () => {
+  const {layers} = computeFIFO();
+  const out = {};
+  S.get(SK.PRODUCTS,[]).filter(p=>p.trackStock).forEach(p=>{
+    const lay = (layers[(p.name||'').toLowerCase()]||[]).filter(l=>l.qty>0.00001);
+    out[p.name] = {product:p, layers:lay};
+  });
+  return out;
+};
+
+/* Amount already received against a sales invoice.
+   Invoices carry a status; a partial payment may also record paidAmount. */
+const invPaid = (inv) => {
+  if(!inv) return 0;
+  const gross = Math.abs(getGrand(inv));
+  if(inv.status==='Paid') return gross;
+  const part = parseFloat(inv.paidAmount);
+  if(!isNaN(part) && part>0) return Math.min(gross, part);
+  return 0;
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -5723,11 +6216,1012 @@ const Dashboard = ({onClose, onLoad, inline=false})=>{
 };
 
 /* ── APP ── */
+/* ══════════════════════════════════════════════════════════════
+   ⭐ FEATURE: INVENTORY PAGE
+   ══════════════════════════════════════════════════════════════ */
+const xlsxDownload = (sheets, filename) => {
+  const wb = XLSX.utils.book_new();
+  sheets.forEach(([name, aoa, cols]) => {
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    if (cols) ws['!cols'] = cols;
+    XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 31));
+  });
+  XLSX.writeFile(wb, filename);
+  toast.success('Downloaded: ' + filename);
+};
+
+const TabBar = ({tabs, value, onChange}) => (
+  <div style={{display:'flex',gap:7,marginBottom:16,flexWrap:'wrap'}}>
+    {tabs.map(([k,l,icon])=>(
+      <button key={k} onClick={()=>onChange(k)}
+        style={{padding:'7px 14px',borderRadius:8,fontSize:12,fontWeight:value===k?700:500,cursor:'pointer',
+          display:'flex',alignItems:'center',gap:6,
+          border:`2px solid ${value===k?'var(--primary)':'var(--border2)'}`,
+          background:value===k?'var(--primary-bg)':'transparent',
+          color:value===k?'var(--primary2)':'var(--text2)'}}>
+        {icon?<Ic n={icon} s={13}/>:null}{l}
+      </button>
+    ))}
+  </div>
+);
+
+const Empty = ({text}) => <div style={{textAlign:'center',padding:'44px',color:'var(--text3)'}}>{text}</div>;
+const th = {textAlign:'left',padding:'9px 12px',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'};
+const thR = {...th,textAlign:'right'};
+const thC = {...th,textAlign:'center'};
+const td = {padding:'9px 12px',fontSize:12};
+const tdR = {...td,textAlign:'right'};
+const tdC = {...td,textAlign:'center'};
+const Wrap = ({children,min}) => <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'auto',maxHeight:'56vh'}}>
+  <table style={{width:'100%',borderCollapse:'collapse',minWidth:min||760}}>{children}</table></div>;
+const HeadRow = ({children}) => <thead><tr style={{background:'var(--card2)',borderBottom:'2px solid var(--border2)',position:'sticky',top:0,zIndex:2}}>{children}</tr></thead>;
+
+const InventoryPage = ({inline=true, onClose, currentUser})=>{
+  const [products,setProducts]=useState(()=>S.get(SK.PRODUCTS,[]));
+  const [log,setLog]=useState(()=>S.get(SK.STOCK,[]));
+  const [tab,setTab]=useState('summary');
+  const [from,setFrom]=useState('');
+  const [to,setTo]=useState('');
+  const [q,setQ]=useState('');
+  const [selProduct,setSelProduct]=useState('');
+  const [adjFor,setAdjFor]=useState(null);
+  const [adjQty,setAdjQty]=useState('');
+  const [adjReason,setAdjReason]=useState('');
+  const [expandedDoc,setExpandedDoc]=useState(null);
+
+  const refresh = ()=>{setProducts(S.get(SK.PRODUCTS,[]));setLog(S.get(SK.STOCK,[]));};
+
+  const tracked = products.filter(p=>p.trackStock);
+  const inRange = l => (!from || (l.date||'')>=from) && (!to || (l.date||'')<=to);
+  const moves = useMemo(()=>[...log].filter(inRange)
+    .sort((a,b)=>String((b.date||'')+(b.time||'')).localeCompare(String((a.date||'')+(a.time||'')))),[log,from,to]);
+
+  const fifo = useMemo(()=>buildFifoLayers(),[log,products]);
+
+  const doAdjust=()=>{
+    const qv=parseFloat(adjQty);
+    if(!adjFor||!qv){toast.error('Enter a quantity (use a minus sign to reduce)');return;}
+    adjustStock(adjFor, qv, adjReason||'Manual adjustment', 'ADJ-'+today(), currentUser, {doc:'Adjustment'});
+    rebuildStockBalances(); refresh();
+    setAdjFor(null);setAdjQty('');setAdjReason('');
+    toast.success('Stock adjusted');
+  };
+
+  /* ── Per-product roll-up for the selected period ── */
+  const rows = useMemo(()=>tracked.map(p=>{
+    const k=p.name.toLowerCase();
+    const mine = log.filter(l=>String(l.product||'').toLowerCase()===k);
+    const inP  = mine.filter(l=>inRange(l)&&l.qtyChange>0);
+    const outP = mine.filter(l=>inRange(l)&&l.qtyChange<0);
+    const qtyIn  = inP.reduce((t,l)=>t+l.qtyChange,0);
+    const qtyOut = outP.reduce((t,l)=>t-l.qtyChange,0);
+    const valIn  = inP.reduce((t,l)=>t+(Number(l.value)||0),0);
+    const valOut = outP.reduce((t,l)=>t+(Number(l.value)||0),0);
+    const closing = Number(p.currentStock||0);
+    const after = log.filter(l=>String(l.product||'').toLowerCase()===k && to && (l.date||'')>to)
+                     .reduce((t,l)=>t+(Number(l.qtyChange)||0),0);
+    const closingAt = closing - after;
+    const opening = closingAt - qtyIn + qtyOut;
+    const layers = (fifo[p.name]&&fifo[p.name].layers)||[];
+    const stockValue = layers.reduce((t,l)=>t+l.qty*l.rate,0);
+    const avgRate = closing>0 ? stockValue/closing : (Number(p.rate)||0);
+    const lastMove = mine.length? mine.map(l=>l.date).sort().slice(-1)[0] : '';
+    return {p,opening,qtyIn,qtyOut,valIn,valOut,closing:closingAt,liveClosing:closing,stockValue,avgRate,lastMove,
+      low: closing<=Number(p.reorderLevel||0)};
+  }).filter(r=>!q||r.p.name.toLowerCase().includes(q.toLowerCase())),[tracked,log,from,to,q,fifo]);
+
+  const lowStock = rows.filter(r=>r.low);
+  const totalStockValue = rows.reduce((t,r)=>t+r.stockValue,0);
+  const totalUnits = rows.reduce((t,r)=>t+r.liveClosing,0);
+
+  /* ── Document (bill) wise in & out ── */
+  const byDoc = useMemo(()=>{
+    const m={};
+    moves.forEach(l=>{
+      const key=(l.doc||'Other')+'||'+(l.ref||'—');
+      if(!m[key]) m[key]={doc:l.doc||'Other',ref:l.ref||'—',date:l.date,party:l.party||'',
+        qtyIn:0,qtyOut:0,valIn:0,valOut:0,lines:[]};
+      const e=m[key];
+      if(l.qtyChange>0){e.qtyIn+=l.qtyChange;e.valIn+=Number(l.value)||0;}
+      else{e.qtyOut+=-l.qtyChange;e.valOut+=Number(l.value)||0;}
+      if((l.date||'')<(e.date||'zzzz')) e.date=l.date;
+      if(!e.party&&l.party) e.party=l.party;
+      e.lines.push(l);
+    });
+    return Object.values(m).sort((a,b)=>String(b.date).localeCompare(String(a.date)))
+      .filter(d=>!q||(d.ref+' '+d.party+' '+d.doc).toLowerCase().includes(q.toLowerCase()));
+  },[moves,q]);
+
+  const salesDocs = byDoc.filter(d=>d.doc==='Sale'||d.doc==='Sales Return');
+  const purchDocs = byDoc.filter(d=>d.doc==='Purchase'||d.doc==='Purchase Return');
+
+  /* ── Inventory ageing (FIFO) ── */
+  const ageRows = useMemo(()=>{
+    const td=today();
+    return Object.entries(fifo).map(([name,{product,layers}])=>{
+      const b={a0:0,a1:0,a2:0,a3:0,a4:0}, bv={a0:0,a1:0,a2:0,a3:0,a4:0};
+      let oldest=null;
+      layers.forEach(l=>{
+        const age = l.date? Math.max(0,daysBetween(l.date,td)) : 0;
+        const bk = INV_AGE_BUCKETS.find(x=>x.test(age))||INV_AGE_BUCKETS[0];
+        b[bk.key]+=l.qty; bv[bk.key]+=l.qty*l.rate;
+        if(oldest===null||age>oldest) oldest=age;
+      });
+      const qty=layers.reduce((t,l)=>t+l.qty,0);
+      const val=layers.reduce((t,l)=>t+l.qty*l.rate,0);
+      return {name,product,layers,b,bv,qty,val,oldest:oldest||0};
+    }).filter(r=>r.qty>0).filter(r=>!q||r.name.toLowerCase().includes(q.toLowerCase()))
+      .sort((a,b)=>b.oldest-a.oldest);
+  },[fifo,q]);
+
+  const ageTotals = INV_AGE_BUCKETS.reduce((acc,bk)=>{
+    acc[bk.key]={qty:ageRows.reduce((t,r)=>t+r.b[bk.key],0),val:ageRows.reduce((t,r)=>t+r.bv[bk.key],0)};
+    return acc;},{});
+
+  /* ── Slow / non moving ── */
+  const slow = rows.filter(r=>r.liveClosing>0)
+    .map(r=>({...r,idle:r.lastMove?daysBetween(r.lastMove,today()):9999}))
+    .filter(r=>r.idle>=60).sort((a,b)=>b.idle-a.idle);
+
+  /* ── Exports ── */
+  const expSummary = ()=>xlsxDownload([['Stock Summary',
+    [['Product','Unit','HSN','Opening','Qty In','Qty Out','Closing','Avg Rate (Rs.)','Stock Value (Rs.)','Reorder Level','Status'],
+     ...rows.map(r=>[r.p.name,r.p.unit||'',r.p.hsnCode||'',r.opening,r.qtyIn,r.qtyOut,r.closing,
+       r.avgRate.toFixed(2),r.stockValue.toFixed(2),r.p.reorderLevel||0,r.low?'LOW STOCK':'OK']),
+     ['TOTAL','','','','','','','',totalStockValue.toFixed(2),'','']],
+    [{wch:30},{wch:8},{wch:12},{wch:10},{wch:10},{wch:10},{wch:10},{wch:14},{wch:16},{wch:14},{wch:12}]]],
+    `Stock_Summary_${today()}.xlsx`);
+
+  const expLedger = ()=>xlsxDownload([['Stock Ledger',
+    [['Date','Time','Product','Direction','Document','Ref No','Party','Qty','Rate (Rs.)','Value (Rs.)','Balance','Reason','User'],
+     ...moves.map(l=>[l.date,l.time||'',l.product,l.dir||(l.qtyChange>0?'IN':'OUT'),l.doc||'',l.ref||'',l.party||'',
+       l.qtyChange,Number(l.rate||0).toFixed(2),Number(l.value||0).toFixed(2),l.balanceAfter,l.reason||'',l.user||''])],
+    [{wch:12},{wch:9},{wch:28},{wch:9},{wch:14},{wch:16},{wch:22},{wch:9},{wch:12},{wch:14},{wch:10},{wch:24},{wch:16}]]],
+    `Stock_Ledger_${today()}.xlsx`);
+
+  const expAgeing = ()=>xlsxDownload([['Inventory Ageing',
+    [['Product','Unit','Qty on Hand','Stock Value (Rs.)','Oldest Stock (Days)',
+      ...INV_AGE_BUCKETS.flatMap(b=>[b.label+' Qty',b.label+' Value (Rs.)'])],
+     ...ageRows.map(r=>[r.name,r.product.unit||'',r.qty,r.val.toFixed(2),r.oldest,
+       ...INV_AGE_BUCKETS.flatMap(b=>[r.b[b.key],r.bv[b.key].toFixed(2)])]),
+     ['TOTAL','',ageRows.reduce((t,r)=>t+r.qty,0),ageRows.reduce((t,r)=>t+r.val,0).toFixed(2),'',
+       ...INV_AGE_BUCKETS.flatMap(b=>[ageTotals[b.key].qty,ageTotals[b.key].val.toFixed(2)])]]]],
+    `Inventory_Ageing_${today()}.xlsx`);
+
+  const expDocs = (list,label)=>xlsxDownload([[label,
+    [['Date','Document Type','Ref / Bill No','Party','Qty In','Qty Out','Net Qty','Value In (Rs.)','Value Out (Rs.)','Line Items'],
+     ...list.map(d=>[d.date,d.doc,d.ref,d.party,d.qtyIn,d.qtyOut,d.qtyIn-d.qtyOut,
+       d.valIn.toFixed(2),d.valOut.toFixed(2),d.lines.length])],
+    [{wch:12},{wch:14},{wch:20},{wch:26},{wch:9},{wch:9},{wch:9},{wch:14},{wch:14},{wch:10}]],
+    ['Line Detail',
+    [['Date','Ref','Document','Party','Product','Qty','Rate (Rs.)','Value (Rs.)','Balance After'],
+     ...list.flatMap(d=>d.lines.map(l=>[l.date,d.ref,d.doc,d.party,l.product,l.qtyChange,
+       Number(l.rate||0).toFixed(2),Number(l.value||0).toFixed(2),l.balanceAfter]))]]],
+    `${label.replace(/ /g,'_')}_${today()}.xlsx`);
+
+  /* ── shared little pieces ── */
+  const renderFilters = (showProduct)=>(
+    <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap',alignItems:'flex-end'}}>
+      <div style={{position:'relative',flex:1,minWidth:180}}>
+        <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
+        <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search..." style={{paddingLeft:38,width:'100%'}}/>
+      </div>
+      {showProduct&&<select className="field-input" value={selProduct} onChange={e=>setSelProduct(e.target.value)} style={{width:220}}>
+        <option value="">— Select a product —</option>
+        {tracked.map((p,i)=><option key={i} value={p.name}>{p.name}</option>)}
+      </select>}
+      <div><div style={{fontSize:10,color:'var(--text3)',marginBottom:3}}>From</div>
+        <input type="date" className="field-input" value={from} onChange={e=>setFrom(e.target.value)} style={{width:150}}/></div>
+      <div><div style={{fontSize:10,color:'var(--text3)',marginBottom:3}}>To</div>
+        <input type="date" className="field-input" value={to} onChange={e=>setTo(e.target.value)} style={{width:150}}/></div>
+      {(from||to||q)&&<button className="btn btn-sm btn-outline" onClick={()=>{setFrom('');setTo('');setQ('');}}>Clear</button>}
+    </div>
+  );
+
+
+  const TABS = [
+    ['summary','Stock Summary','package'],
+    ['ageing','Inventory Ageing','clock'],
+    ['product','Product-wise Movement','chart'],
+    ['purchdoc','Bill-wise (Purchases)','cart'],
+    ['salesdoc','Invoice-wise (Sales)','receipt'],
+    ['alldoc','All Documents In / Out','file'],
+    ['valuation','Valuation & Slow Moving','dollar'],
+    ['log','Full Stock Ledger','list'],
+  ];
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="package" s={18}/> Inventory</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
+      <div className="modal-body">
+
+        {/* KPI strip */}
+        <div className="g4" style={{marginBottom:12}}>
+          <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{tracked.length}</div><div className="stat-lbl">Tracked Items</div></div>
+          <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--blue)'}}>{totalUnits.toLocaleString('en-IN')}</div><div className="stat-lbl">Units on Hand</div></div>
+          <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--green)'}}>{fmt(totalStockValue)}</div><div className="stat-lbl">Stock Value (FIFO)</div></div>
+          <div className="stat-card" style={{borderLeft:`3px solid ${lowStock.length?'var(--red)':'var(--green)'}`}}>
+            <div className="stat-val" style={{fontSize:16,color:lowStock.length?'var(--red)':'var(--green)'}}>{lowStock.length}</div>
+            <div className="stat-lbl">Below Reorder Level</div></div>
+        </div>
+
+        {lowStock.length>0&&(
+          <div className="card" style={{marginBottom:12,borderColor:'var(--red)',background:'rgba(248,81,73,0.06)'}}>
+            <div style={{fontWeight:700,color:'var(--red)',marginBottom:5,fontSize:13,display:'flex',alignItems:'center',gap:6}}>
+              <Ic n="alert" s={13}/> {lowStock.length} item{lowStock.length>1?'s':''} at or below reorder level — time to raise a PO</div>
+            <div style={{fontSize:12,color:'var(--text2)'}}>{lowStock.map(r=>`${r.p.name} (${r.liveClosing})`).join(' · ')}</div>
+          </div>
+        )}
+
+        <TabBar tabs={TABS} value={tab} onChange={setTab}/>
+
+        {/* ══ 1. STOCK SUMMARY ══ */}
+        {tab==='summary'&&<>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:10,flexWrap:'wrap'}}>
+            <div style={{flex:1,minWidth:280}}>{renderFilters()}</div>
+            <button className="btn btn-outline-primary btn-sm" style={{marginBottom:12}} onClick={expSummary}><Ic n="xlsx" s={13}/> Export</button>
+          </div>
+          {rows.length===0?<Empty text='No stock-tracked items yet. Record a purchase, or tick "Track inventory" on a product in Product Master.'/>:
+          <Wrap min={920}>
+            <HeadRow>
+              <th style={th}>Product</th><th style={thC}>Unit</th>
+              <th style={thR}>Opening</th><th style={thR}>In</th><th style={thR}>Out</th>
+              <th style={thR}>Closing</th><th style={thR}>Avg Rate</th><th style={thR}>Stock Value</th>
+              <th style={thC}>Reorder</th><th style={thC}>Adjust</th>
+            </HeadRow>
+            <tbody>
+              {rows.map((r,i)=>(
+                <tr key={i} style={{borderBottom:'1px solid var(--border)'}}>
+                  <td style={{...td,fontWeight:600}}>{r.p.name}
+                    {r.p.autoCreated&&<span style={{fontSize:9,color:'var(--gold)',marginLeft:6}}>auto</span>}</td>
+                  <td style={{...tdC,color:'var(--text3)'}}>{r.p.unit||'—'}</td>
+                  <td style={tdR}>{r.opening}</td>
+                  <td style={{...tdR,color:'var(--green)',fontWeight:600}}>{r.qtyIn?'+'+r.qtyIn:'—'}</td>
+                  <td style={{...tdR,color:'var(--red)',fontWeight:600}}>{r.qtyOut?'-'+r.qtyOut:'—'}</td>
+                  <td style={tdR}><span className={`badge ${r.low?'badge-red':'badge-green'}`}>{r.closing}</span></td>
+                  <td style={{...tdR,color:'var(--text2)'}}>{fmt(r.avgRate)}</td>
+                  <td style={{...tdR,fontWeight:700}}>{fmt(r.stockValue)}</td>
+                  <td style={{...tdC,color:'var(--text3)'}}>{r.p.reorderLevel||0}</td>
+                  <td style={tdC}>
+                    {adjFor===r.p.name?(
+                      <div style={{display:'flex',gap:4,justifyContent:'center'}}>
+                        <input type="number" className="field-input" style={{width:64,padding:'4px 6px'}} value={adjQty}
+                          onChange={e=>setAdjQty(e.target.value)} placeholder="±qty"/>
+                        <input className="field-input" style={{width:96,padding:'4px 6px'}} value={adjReason}
+                          onChange={e=>setAdjReason(e.target.value)} placeholder="reason"/>
+                        <button className="btn btn-sm btn-primary" onClick={doAdjust}>OK</button>
+                      </div>
+                    ):<button className="btn btn-sm btn-outline" onClick={()=>setAdjFor(r.p.name)}>Adjust</button>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot><tr style={{borderTop:'2px solid var(--border2)',fontWeight:700,background:'var(--card2)'}}>
+              <td style={td} colSpan={3}>Total</td>
+              <td style={{...tdR,color:'var(--green)'}}>+{rows.reduce((t,r)=>t+r.qtyIn,0)}</td>
+              <td style={{...tdR,color:'var(--red)'}}>-{rows.reduce((t,r)=>t+r.qtyOut,0)}</td>
+              <td style={tdR}>{rows.reduce((t,r)=>t+r.closing,0)}</td>
+              <td style={tdR}></td>
+              <td style={{...tdR,color:'var(--primary2)'}}>{fmt(totalStockValue)}</td>
+              <td colSpan={2}></td>
+            </tr></tfoot>
+          </Wrap>}
+        </>}
+
+        {/* ══ 2. INVENTORY AGEING ══ */}
+        {tab==='ageing'&&<>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,marginBottom:12,flexWrap:'wrap'}}>
+            <div style={{fontSize:12,color:'var(--text2)',flex:1,minWidth:260}}>
+              How long the stock you are still holding has been sitting there. Calculated FIFO — the oldest purchase
+              layer is treated as the first one sold, so what remains is genuinely your slowest stock.
+            </div>
+            <button className="btn btn-outline-primary btn-sm" onClick={expAgeing}><Ic n="xlsx" s={13}/> Export</button>
+          </div>
+          <div className="g4" style={{marginBottom:12,gridTemplateColumns:'repeat(5,1fr)'}}>
+            {INV_AGE_BUCKETS.map((b,i)=>(
+              <div key={b.key} className="stat-card" style={{borderLeft:`3px solid ${['var(--green)','var(--blue)','var(--gold)','#FB923C','var(--red)'][i]}`}}>
+                <div className="stat-val" style={{fontSize:15}}>{fmt(ageTotals[b.key].val)}</div>
+                <div className="stat-lbl">{b.label} · {ageTotals[b.key].qty} units</div>
+              </div>
+            ))}
+          </div>
+          <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search product..." style={{marginBottom:12,maxWidth:280}}/>
+          {ageRows.length===0?<Empty text="Nothing in stock to age right now."/>:
+          <Wrap min={980}>
+            <HeadRow>
+              <th style={th}>Product</th><th style={thR}>Qty on Hand</th><th style={thR}>Value</th>
+              {INV_AGE_BUCKETS.map(b=><th key={b.key} style={thR}>{b.label}</th>)}
+              <th style={thC}>Oldest</th>
+            </HeadRow>
+            <tbody>
+              {ageRows.map((r,i)=>(
+                <tr key={i} style={{borderBottom:'1px solid var(--border)'}}>
+                  <td style={{...td,fontWeight:600}}>{r.name}</td>
+                  <td style={tdR}>{r.qty}</td>
+                  <td style={{...tdR,fontWeight:700}}>{fmt(r.val)}</td>
+                  {INV_AGE_BUCKETS.map((b,bi)=>(
+                    <td key={b.key} style={{...tdR,color:r.b[b.key]>0?(bi>=3?'var(--red)':'var(--text)'):'var(--text3)'}}>
+                      {r.b[b.key]>0?<>{r.b[b.key]}<div style={{fontSize:10,color:'var(--text3)'}}>{fmt(r.bv[b.key])}</div></>:'—'}
+                    </td>
+                  ))}
+                  <td style={{...tdC,fontWeight:700,color:r.oldest>180?'var(--red)':r.oldest>90?'var(--gold)':'var(--text2)'}}>{r.oldest}d</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot><tr style={{borderTop:'2px solid var(--border2)',fontWeight:700,background:'var(--card2)'}}>
+              <td style={td}>Grand Total</td>
+              <td style={tdR}>{ageRows.reduce((t,r)=>t+r.qty,0)}</td>
+              <td style={{...tdR,color:'var(--primary2)'}}>{fmt(ageRows.reduce((t,r)=>t+r.val,0))}</td>
+              {INV_AGE_BUCKETS.map(b=><td key={b.key} style={tdR}>{ageTotals[b.key].qty}<div style={{fontSize:10,fontWeight:400,color:'var(--text3)'}}>{fmt(ageTotals[b.key].val)}</div></td>)}
+              <td/>
+            </tr></tfoot>
+          </Wrap>}
+        </>}
+
+        {/* ══ 3. PRODUCT-WISE MOVEMENT ══ */}
+        {tab==='product'&&<>
+          {renderFilters(true)}
+          {!selProduct?<Empty text="Pick a product above to see every movement in and out, with a running balance."/>:(()=>{
+            const lines=[...log].filter(l=>String(l.product||'').toLowerCase()===selProduct.toLowerCase()&&inRange(l))
+              .sort((a,b)=>String((a.date||'')+(a.time||'')).localeCompare(String((b.date||'')+(b.time||''))));
+            const tin=lines.filter(l=>l.qtyChange>0).reduce((t,l)=>t+l.qtyChange,0);
+            const tout=lines.filter(l=>l.qtyChange<0).reduce((t,l)=>t-l.qtyChange,0);
+            const prod=tracked.find(p=>p.name===selProduct);
+            const lay=(fifo[selProduct]&&fifo[selProduct].layers)||[];
+            return <>
+              <div className="g4" style={{marginBottom:12}}>
+                <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--green)'}}>+{tin}</div><div className="stat-lbl">Total In</div></div>
+                <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--red)'}}>-{tout}</div><div className="stat-lbl">Total Out</div></div>
+                <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{prod?prod.currentStock||0:0}</div><div className="stat-lbl">Stock on Hand</div></div>
+                <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--primary2)'}}>{fmt(lay.reduce((t,l)=>t+l.qty*l.rate,0))}</div><div className="stat-lbl">Current Value</div></div>
+              </div>
+              {lines.length===0?<Empty text="No movements for this product in the selected period."/>:
+              <Wrap min={900}>
+                <HeadRow>
+                  <th style={th}>Date</th><th style={thC}>Type</th><th style={th}>Document</th>
+                  <th style={th}>Ref No</th><th style={th}>Party</th>
+                  <th style={thR}>In</th><th style={thR}>Out</th><th style={thR}>Rate</th>
+                  <th style={thR}>Value</th><th style={thR}>Balance</th>
+                </HeadRow>
+                <tbody>
+                  {lines.map((l,i)=>(
+                    <tr key={i} style={{borderBottom:'1px solid var(--border)'}}>
+                      <td style={{...td,color:'var(--text2)'}}>{fmtDate(l.date)}</td>
+                      <td style={tdC}><span className={`badge ${l.qtyChange>0?'badge-green':'badge-red'}`}>{l.qtyChange>0?'IN':'OUT'}</span></td>
+                      <td style={td}>{l.doc||l.reason}</td>
+                      <td style={{...td,fontFamily:'monospace',color:'var(--text2)'}}>{l.ref||'—'}</td>
+                      <td style={{...td,color:'var(--text2)'}}>{l.party||'—'}</td>
+                      <td style={{...tdR,color:'var(--green)',fontWeight:600}}>{l.qtyChange>0?l.qtyChange:'—'}</td>
+                      <td style={{...tdR,color:'var(--red)',fontWeight:600}}>{l.qtyChange<0?-l.qtyChange:'—'}</td>
+                      <td style={tdR}>{fmt(l.rate)}</td>
+                      <td style={tdR}>{fmt(l.value)}</td>
+                      <td style={{...tdR,fontWeight:700}}>{l.balanceAfter}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Wrap>}
+              {lay.length>0&&<>
+                <div style={{fontSize:12,fontWeight:700,margin:'16px 0 8px',display:'flex',alignItems:'center',gap:6}}>
+                  <Ic n="clock" s={13}/> Stock still on hand, by purchase layer (FIFO)</div>
+                <Wrap min={620}>
+                  <HeadRow><th style={th}>Received On</th><th style={th}>From Bill</th><th style={th}>Vendor</th>
+                    <th style={thR}>Qty Left</th><th style={thR}>Rate</th><th style={thR}>Value</th><th style={thC}>Age</th></HeadRow>
+                  <tbody>{lay.map((l,i)=>{
+                    const age=l.date?Math.max(0,daysBetween(l.date,today())):0;
+                    return <tr key={i} style={{borderBottom:'1px solid var(--border)'}}>
+                      <td style={td}>{fmtDate(l.date)||'—'}</td>
+                      <td style={{...td,fontFamily:'monospace',color:'var(--text2)'}}>{l.ref||'—'}</td>
+                      <td style={{...td,color:'var(--text2)'}}>{l.party||'—'}</td>
+                      <td style={{...tdR,fontWeight:700}}>{l.qty}</td>
+                      <td style={tdR}>{fmt(l.rate)}</td>
+                      <td style={{...tdR,fontWeight:700}}>{fmt(l.qty*l.rate)}</td>
+                      <td style={{...tdC,color:age>180?'var(--red)':age>90?'var(--gold)':'var(--text2)',fontWeight:700}}>{age}d</td>
+                    </tr>;})}</tbody>
+                </Wrap>
+              </>}
+            </>;
+          })()}
+        </>}
+
+        {/* ══ 4/5/6. DOCUMENT-WISE ══ */}
+        {(tab==='purchdoc'||tab==='salesdoc'||tab==='alldoc')&&(()=>{
+          const list = tab==='purchdoc'?purchDocs:tab==='salesdoc'?salesDocs:byDoc;
+          const label = tab==='purchdoc'?'Bill-wise Inventory In':tab==='salesdoc'?'Invoice-wise Inventory Out':'Document-wise Inventory Movement';
+          return <>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:10,flexWrap:'wrap'}}>
+              <div style={{flex:1,minWidth:280}}>{renderFilters()}</div>
+              <button className="btn btn-outline-primary btn-sm" style={{marginBottom:12}} onClick={()=>expDocs(list,label)}><Ic n="xlsx" s={13}/> Export</button>
+            </div>
+            {list.length===0?<Empty text="No inventory movements found for this view."/>:
+            <Wrap min={900}>
+              <HeadRow>
+                <th style={th}>Date</th><th style={thC}>Type</th><th style={th}>Ref / Bill No</th>
+                <th style={th}>Party</th><th style={thC}>Lines</th>
+                <th style={thR}>Qty In</th><th style={thR}>Qty Out</th>
+                <th style={thR}>Value In</th><th style={thR}>Value Out</th>
+              </HeadRow>
+              <tbody>
+                {list.map((d,i)=>{
+                  const key=d.doc+d.ref;
+                  const open=expandedDoc===key;
+                  return <React.Fragment key={i}>
+                    <tr style={{borderBottom:'1px solid var(--border)',cursor:'pointer'}} onClick={()=>setExpandedDoc(open?null:key)}>
+                      <td style={{...td,color:'var(--text2)'}}>{fmtDate(d.date)}</td>
+                      <td style={tdC}><span className="badge" style={{background:d.qtyIn>=d.qtyOut?'rgba(63,185,80,0.12)':'rgba(248,81,73,0.12)',
+                        color:d.qtyIn>=d.qtyOut?'var(--green)':'var(--red)'}}>{d.doc}</span></td>
+                      <td style={{...td,fontFamily:'monospace',fontWeight:600}}>{d.ref}</td>
+                      <td style={{...td,color:'var(--text2)'}}>{d.party||'—'}</td>
+                      <td style={{...tdC,color:'var(--text3)'}}>{d.lines.length}</td>
+                      <td style={{...tdR,color:'var(--green)',fontWeight:700}}>{d.qtyIn?'+'+d.qtyIn:'—'}</td>
+                      <td style={{...tdR,color:'var(--red)',fontWeight:700}}>{d.qtyOut?'-'+d.qtyOut:'—'}</td>
+                      <td style={tdR}>{d.valIn?fmt(d.valIn):'—'}</td>
+                      <td style={tdR}>{d.valOut?fmt(d.valOut):'—'}</td>
+                    </tr>
+                    {open&&<tr><td colSpan={9} style={{padding:0,background:'var(--card2)'}}>
+                      <table style={{width:'100%',borderCollapse:'collapse'}}>
+                        <thead><tr><th style={th}>Product</th><th style={thR}>Qty</th><th style={thR}>Rate</th>
+                          <th style={thR}>Value</th><th style={thR}>Balance After</th><th style={th}>Reason</th></tr></thead>
+                        <tbody>{d.lines.map((l,k)=>(
+                          <tr key={k} style={{borderTop:'1px solid var(--border)'}}>
+                            <td style={{...td,fontWeight:600}}>{l.product}</td>
+                            <td style={{...tdR,color:l.qtyChange>0?'var(--green)':'var(--red)',fontWeight:700}}>{l.qtyChange>0?'+':''}{l.qtyChange}</td>
+                            <td style={tdR}>{fmt(l.rate)}</td>
+                            <td style={tdR}>{fmt(l.value)}</td>
+                            <td style={tdR}>{l.balanceAfter}</td>
+                            <td style={{...td,color:'var(--text3)'}}>{l.reason||'—'}</td>
+                          </tr>))}</tbody>
+                      </table>
+                    </td></tr>}
+                  </React.Fragment>;
+                })}
+              </tbody>
+              <tfoot><tr style={{borderTop:'2px solid var(--border2)',fontWeight:700,background:'var(--card2)'}}>
+                <td style={td} colSpan={5}>Total — {list.length} document(s)</td>
+                <td style={{...tdR,color:'var(--green)'}}>+{list.reduce((t,d)=>t+d.qtyIn,0)}</td>
+                <td style={{...tdR,color:'var(--red)'}}>-{list.reduce((t,d)=>t+d.qtyOut,0)}</td>
+                <td style={tdR}>{fmt(list.reduce((t,d)=>t+d.valIn,0))}</td>
+                <td style={tdR}>{fmt(list.reduce((t,d)=>t+d.valOut,0))}</td>
+              </tr></tfoot>
+            </Wrap>}
+          </>;
+        })()}
+
+        {/* ══ 7. VALUATION & SLOW MOVING ══ */}
+        {tab==='valuation'&&<>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,gap:10,flexWrap:'wrap'}}>
+            <div style={{fontSize:12,color:'var(--text2)',flex:1,minWidth:260}}>
+              Closing stock valued at FIFO cost, plus anything that has not moved in 60 days or more —
+              money sitting on a shelf.</div>
+            <button className="btn btn-outline-primary btn-sm" onClick={expSummary}><Ic n="xlsx" s={13}/> Export</button>
+          </div>
+          <Wrap min={720}>
+            <HeadRow><th style={th}>Product</th><th style={thR}>Qty</th><th style={thR}>FIFO Value</th>
+              <th style={thR}>Avg Cost</th><th style={thR}>% of Stock Value</th></HeadRow>
+            <tbody>{rows.filter(r=>r.liveClosing>0).sort((a,b)=>b.stockValue-a.stockValue).map((r,i)=>(
+              <tr key={i} style={{borderBottom:'1px solid var(--border)'}}>
+                <td style={{...td,fontWeight:600}}>{r.p.name}</td>
+                <td style={tdR}>{r.liveClosing}</td>
+                <td style={{...tdR,fontWeight:700}}>{fmt(r.stockValue)}</td>
+                <td style={{...tdR,color:'var(--text2)'}}>{fmt(r.avgRate)}</td>
+                <td style={tdR}>{totalStockValue?((r.stockValue/totalStockValue)*100).toFixed(1):'0.0'}%</td>
+              </tr>))}</tbody>
+            <tfoot><tr style={{borderTop:'2px solid var(--border2)',fontWeight:700,background:'var(--card2)'}}>
+              <td style={td}>Total Stock Value</td><td style={tdR}>{totalUnits}</td>
+              <td style={{...tdR,color:'var(--primary2)'}}>{fmt(totalStockValue)}</td><td colSpan={2}/>
+            </tr></tfoot>
+          </Wrap>
+          <div style={{fontSize:12,fontWeight:700,margin:'18px 0 8px',display:'flex',alignItems:'center',gap:6}}>
+            <Ic n="alert" s={13}/> Slow &amp; non-moving stock (no movement in 60+ days)</div>
+          {slow.length===0?<Empty text="Nothing is sitting idle — every item has moved in the last 60 days."/>:
+          <Wrap min={620}>
+            <HeadRow><th style={th}>Product</th><th style={thR}>Qty Idle</th><th style={thR}>Value Locked</th>
+              <th style={th}>Last Movement</th><th style={thC}>Days Idle</th></HeadRow>
+            <tbody>{slow.map((r,i)=>(
+              <tr key={i} style={{borderBottom:'1px solid var(--border)'}}>
+                <td style={{...td,fontWeight:600}}>{r.p.name}</td>
+                <td style={tdR}>{r.liveClosing}</td>
+                <td style={{...tdR,fontWeight:700,color:'var(--red)'}}>{fmt(r.stockValue)}</td>
+                <td style={{...td,color:'var(--text2)'}}>{r.lastMove?fmtDate(r.lastMove):'Never moved'}</td>
+                <td style={{...tdC,fontWeight:700,color:'var(--red)'}}>{r.idle>9000?'—':r.idle+'d'}</td>
+              </tr>))}</tbody>
+          </Wrap>}
+        </>}
+
+        {/* ══ 8. FULL LEDGER ══ */}
+        {tab==='log'&&<>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:10,flexWrap:'wrap'}}>
+            <div style={{flex:1,minWidth:280}}>{renderFilters()}</div>
+            <button className="btn btn-outline-primary btn-sm" style={{marginBottom:12}} onClick={expLedger}><Ic n="xlsx" s={13}/> Export</button>
+          </div>
+          {moves.length===0?<Empty text="No stock movements recorded yet."/>:
+          <Wrap min={1000}>
+            <HeadRow>
+              <th style={th}>Date</th><th style={thC}>In/Out</th><th style={th}>Product</th>
+              <th style={th}>Document</th><th style={th}>Ref No</th><th style={th}>Party</th>
+              <th style={thR}>Qty</th><th style={thR}>Rate</th><th style={thR}>Value</th>
+              <th style={thR}>Balance</th><th style={th}>By</th>
+            </HeadRow>
+            <tbody>
+              {moves.filter(l=>!q||(l.product+' '+(l.ref||'')+' '+(l.party||'')+' '+(l.doc||'')).toLowerCase().includes(q.toLowerCase())).map((l,i)=>(
+                <tr key={i} style={{borderBottom:'1px solid var(--border)'}}>
+                  <td style={{...td,color:'var(--text2)'}}>{fmtDate(l.date)}<div style={{fontSize:10,color:'var(--text3)'}}>{l.time||''}</div></td>
+                  <td style={tdC}><span className={`badge ${l.qtyChange>0?'badge-green':'badge-red'}`}>{l.qtyChange>0?'IN':'OUT'}</span></td>
+                  <td style={{...td,fontWeight:600}}>{l.product}</td>
+                  <td style={{...td,color:'var(--text2)'}}>{l.doc||'—'}</td>
+                  <td style={{...td,fontFamily:'monospace',color:'var(--text2)'}}>{l.ref||'—'}</td>
+                  <td style={{...td,color:'var(--text2)'}}>{l.party||'—'}</td>
+                  <td style={{...tdR,fontWeight:700,color:l.qtyChange<0?'var(--red)':'var(--green)'}}>{l.qtyChange>0?'+':''}{l.qtyChange}</td>
+                  <td style={tdR}>{fmt(l.rate)}</td>
+                  <td style={tdR}>{fmt(l.value)}</td>
+                  <td style={{...tdR,fontWeight:600}}>{l.balanceAfter}</td>
+                  <td style={{...td,color:'var(--text3)',fontSize:11}}>{l.user||'—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Wrap>}
+        </>}
+
+      </div>
+    </div>
+  </div>;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ⭐ FEATURE: AGING REPORT (RECEIVABLES)
+   ══════════════════════════════════════════════════════════════ */
+const AGING_BUCKETS = [
+  {key:'current', label:'Not Yet Due', test:d=>d<=0},
+  {key:'b1', label:'1-30 Days',  test:d=>d>0&&d<=30},
+  {key:'b2', label:'31-60 Days', test:d=>d>30&&d<=60},
+  {key:'b3', label:'61-90 Days', test:d=>d>60&&d<=90},
+  {key:'b4', label:'90+ Days',   test:d=>d>90},
+];
+const emptyBuckets = () => AGING_BUCKETS.reduce((a,b)=>{a[b.key]=0;return a;},{});
+const bucketFor = d => (AGING_BUCKETS.find(b=>b.test(d))||AGING_BUCKETS[0]).key;
+
+const AgingReportPage = ({inline=true, onClose})=>{
+  const [tab,setTab]=useState('ar');
+  const [q,setQ]=useState('');
+  const [asOn,setAsOn]=useState(today());
+  const [expandedParty,setExpandedParty]=useState(null);
+
+  const invs = S.get(SK.INV,[]);
+  const exps = S.get(SK.EXP,[]);
+
+  /* ── TRADE RECEIVABLES — money customers owe us ── */
+  const arBills = useMemo(()=>invs
+    .filter(i=>(i.docType==='TAX INVOICE'||i.docType==='NON GST INVOICE'||i.docType==='DEBIT NOTE') && i.status!=='Draft')
+    .map(inv=>{
+      const gross = Math.abs(getGrand(inv));
+      const paid  = invPaid(inv);
+      const due   = Math.max(0, gross-paid);
+      const dueDate = inv.dueDate || inv.date;
+      const daysOverdue = daysBetween(dueDate, asOn);
+      return {id:inv.invNo, party:(inv.billTo&&inv.billTo.name)||'Unknown Customer',
+        gstin:(inv.billTo&&inv.billTo.gstin)||'', docNo:inv.invNo, date:inv.date, dueDate,
+        gross, paid, due, daysOverdue, bucket:bucketFor(daysOverdue), status:inv.status||'',
+        docType:inv.docType};
+    }).filter(b=>b.due>0.01),[invs,asOn]);
+
+  /* ── TRADE PAYABLES — money we owe suppliers ── */
+  const apBills = useMemo(()=>exps.map(e=>{
+      const gross = Number(e.total)||0;
+      const paid  = expPaid(e);
+      const due   = Math.max(0, gross-paid);
+      const dueDate = expDueDate(e);
+      const daysOverdue = daysBetween(dueDate, asOn);
+      return {id:e.id, party:e.vendor||'Unknown Vendor', gstin:e.vendorGSTIN||'',
+        docNo:e.billNo||('—'), date:e.billDate||e.date, dueDate,
+        gross, paid, due, daysOverdue, bucket:bucketFor(daysOverdue), status:e.payStatus||'',
+        docType:'PURCHASE BILL'};
+    }).filter(b=>b.due>0.01),[exps,asOn]);
+
+  const bills = tab==='ap'||tab==='apbill' ? apBills : arBills;
+  const isAP  = tab==='ap'||tab==='apbill';
+
+  const filteredBills = bills.filter(b=>!q||(b.party+' '+b.docNo+' '+b.gstin).toLowerCase().includes(q.toLowerCase()));
+
+  /* group by party */
+  const byParty = useMemo(()=>{
+    const m={};
+    filteredBills.forEach(b=>{
+      if(!m[b.party]) m[b.party]={party:b.party,gstin:b.gstin,...emptyBuckets(),total:0,bills:[]};
+      m[b.party][b.bucket]+=b.due;
+      m[b.party].total+=b.due;
+      m[b.party].bills.push(b);
+    });
+    return Object.values(m).sort((a,b)=>b.total-a.total);
+  },[filteredBills]);
+
+  const totals = AGING_BUCKETS.reduce((acc,bk)=>{
+    acc[bk.key]=byParty.reduce((t,p)=>t+p[bk.key],0);return acc;},{});
+  const grandTotal = byParty.reduce((t,p)=>t+p.total,0);
+  const overdueTotal = filteredBills.filter(b=>b.daysOverdue>0).reduce((t,b)=>t+b.due,0);
+
+  /* net position for the summary tab */
+  const arTotal = arBills.reduce((t,b)=>t+b.due,0);
+  const apTotal = apBills.reduce((t,b)=>t+b.due,0);
+  const arOver  = arBills.filter(b=>b.daysOverdue>0).reduce((t,b)=>t+b.due,0);
+  const apOver  = apBills.filter(b=>b.daysOverdue>0).reduce((t,b)=>t+b.due,0);
+  const arBuckets = arBills.reduce((a,b)=>{a[b.bucket]+=b.due;return a;},emptyBuckets());
+  const apBuckets = apBills.reduce((a,b)=>{a[b.bucket]+=b.due;return a;},emptyBuckets());
+
+  const exportParty = ()=>xlsxDownload([[isAP?'Payables by Vendor':'Receivables by Customer',
+    [[isAP?'Vendor':'Customer','GSTIN',...AGING_BUCKETS.map(b=>b.label),'Total Outstanding (Rs.)','Open Bills'],
+     ...byParty.map(p=>[p.party,p.gstin,...AGING_BUCKETS.map(b=>p[b.key].toFixed(2)),p.total.toFixed(2),p.bills.length]),
+     ['GRAND TOTAL','',...AGING_BUCKETS.map(b=>totals[b.key].toFixed(2)),grandTotal.toFixed(2),filteredBills.length]],
+    [{wch:30},{wch:18},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:18},{wch:11}]],
+    ['Bill Detail',
+    [['Date',isAP?'Vendor':'Customer','Document Type','Bill / Invoice No','Due Date','Gross (Rs.)','Received/Paid (Rs.)','Outstanding (Rs.)','Days Overdue','Bucket'],
+     ...filteredBills.sort((a,b)=>b.daysOverdue-a.daysOverdue).map(b=>[b.date,b.party,b.docType,b.docNo,b.dueDate,
+       b.gross.toFixed(2),b.paid.toFixed(2),b.due.toFixed(2),b.daysOverdue,
+       (AGING_BUCKETS.find(x=>x.key===b.bucket)||{}).label||''])]]],
+    `${isAP?'Trade_Payables':'Trade_Receivables'}_${asOn}.xlsx`);
+
+  const exportSummary = ()=>xlsxDownload([['Aging Summary',
+    [['Bucket','Trade Receivables (Rs.)','Trade Payables (Rs.)','Net Position (Rs.)'],
+     ...AGING_BUCKETS.map(b=>[b.label,arBuckets[b.key].toFixed(2),apBuckets[b.key].toFixed(2),(arBuckets[b.key]-apBuckets[b.key]).toFixed(2)]),
+     ['TOTAL',arTotal.toFixed(2),apTotal.toFixed(2),(arTotal-apTotal).toFixed(2)],
+     ['Of which overdue',arOver.toFixed(2),apOver.toFixed(2),(arOver-apOver).toFixed(2)]],
+    [{wch:18},{wch:24},{wch:22},{wch:20}]]],
+    `Aging_Summary_${asOn}.xlsx`);
+
+  const bucketColor = (k,v)=> v<=0?'var(--text3)' : (k==='b3'||k==='b4')?'var(--red)' : k==='b2'?'var(--gold)':'var(--text)';
+
+  const TABS = [
+    ['summary','Summary','chart'],
+    ['ar','Trade Receivables','users'],
+    ['arbill','Receivables — Bill-wise','receipt'],
+    ['ap','Trade Payables','cart'],
+    ['apbill','Payables — Bill-wise','file'],
+  ];
+
+  const partyTable = ()=>(
+    byParty.length===0?<Empty text={isAP?"Nothing outstanding to vendors — all bills settled.":"No outstanding invoices — everything's paid up."}/>:
+    <Wrap min={900}>
+      <HeadRow>
+        <th style={th}>{isAP?'Vendor':'Customer'}</th>
+        {AGING_BUCKETS.map(b=><th key={b.key} style={thR}>{b.label}</th>)}
+        <th style={thR}>Total Outstanding</th><th style={thC}>Bills</th>
+      </HeadRow>
+      <tbody>
+        {byParty.map((p,i)=>{
+          const open=expandedParty===p.party;
+          return <React.Fragment key={i}>
+            <tr style={{borderBottom:'1px solid var(--border)',cursor:'pointer'}} onClick={()=>setExpandedParty(open?null:p.party)}>
+              <td style={{...td,fontWeight:600}}>{p.party}
+                {p.gstin&&<div style={{fontSize:10,color:'var(--text3)',fontFamily:'monospace'}}>{p.gstin}</div>}</td>
+              {AGING_BUCKETS.map(b=><td key={b.key} style={{...tdR,color:bucketColor(b.key,p[b.key])}}>{p[b.key]>0?fmt(p[b.key]):'—'}</td>)}
+              <td style={{...tdR,fontWeight:700,color:'var(--primary2)'}}>{fmt(p.total)}</td>
+              <td style={{...tdC,color:'var(--text3)'}}>{p.bills.length}</td>
+            </tr>
+            {open&&<tr><td colSpan={AGING_BUCKETS.length+3} style={{padding:0,background:'var(--card2)'}}>
+              <table style={{width:'100%',borderCollapse:'collapse'}}>
+                <thead><tr><th style={th}>Date</th><th style={th}>{isAP?'Bill No':'Invoice No'}</th>
+                  <th style={th}>Due Date</th><th style={thR}>Gross</th><th style={thR}>{isAP?'Paid':'Received'}</th>
+                  <th style={thR}>Outstanding</th><th style={thC}>Overdue By</th></tr></thead>
+                <tbody>{p.bills.sort((a,b)=>b.daysOverdue-a.daysOverdue).map((b,k)=>(
+                  <tr key={k} style={{borderTop:'1px solid var(--border)'}}>
+                    <td style={{...td,color:'var(--text2)'}}>{fmtDate(b.date)}</td>
+                    <td style={{...td,fontFamily:'monospace',fontWeight:600}}>{b.docNo}</td>
+                    <td style={{...td,color:'var(--text2)'}}>{fmtDate(b.dueDate)||'—'}</td>
+                    <td style={tdR}>{fmt(b.gross)}</td>
+                    <td style={{...tdR,color:'var(--green)'}}>{b.paid>0?fmt(b.paid):'—'}</td>
+                    <td style={{...tdR,fontWeight:700}}>{fmt(b.due)}</td>
+                    <td style={{...tdC,fontWeight:700,color:b.daysOverdue>90?'var(--red)':b.daysOverdue>0?'var(--gold)':'var(--green)'}}>
+                      {b.daysOverdue>0?b.daysOverdue+'d':'Not due'}</td>
+                  </tr>))}</tbody>
+              </table>
+            </td></tr>}
+          </React.Fragment>;
+        })}
+      </tbody>
+      <tfoot><tr style={{borderTop:'2px solid var(--border2)',fontWeight:700,background:'var(--card2)'}}>
+        <td style={td}>Grand Total</td>
+        {AGING_BUCKETS.map(b=><td key={b.key} style={tdR}>{fmt(totals[b.key])}</td>)}
+        <td style={{...tdR,color:'var(--primary2)'}}>{fmt(grandTotal)}</td>
+        <td style={tdC}>{filteredBills.length}</td>
+      </tr></tfoot>
+    </Wrap>
+  );
+
+  const billTable = ()=>{
+    const list=[...filteredBills].sort((a,b)=>b.daysOverdue-a.daysOverdue);
+    return list.length===0?<Empty text="Nothing outstanding in this view."/>:
+    <Wrap min={960}>
+      <HeadRow>
+        <th style={th}>Date</th><th style={th}>{isAP?'Bill No':'Invoice No'}</th>
+        <th style={th}>{isAP?'Vendor':'Customer'}</th><th style={th}>Due Date</th>
+        <th style={thR}>Gross</th><th style={thR}>{isAP?'Paid':'Received'}</th>
+        <th style={thR}>Outstanding</th><th style={thC}>Overdue By</th><th style={thC}>Bucket</th>
+      </HeadRow>
+      <tbody>{list.map((b,i)=>(
+        <tr key={i} style={{borderBottom:'1px solid var(--border)'}}>
+          <td style={{...td,color:'var(--text2)'}}>{fmtDate(b.date)}</td>
+          <td style={{...td,fontFamily:'monospace',fontWeight:600}}>{b.docNo}</td>
+          <td style={{...td,fontWeight:600}}>{b.party}</td>
+          <td style={{...td,color:'var(--text2)'}}>{fmtDate(b.dueDate)||'—'}</td>
+          <td style={tdR}>{fmt(b.gross)}</td>
+          <td style={{...tdR,color:'var(--green)'}}>{b.paid>0?fmt(b.paid):'—'}</td>
+          <td style={{...tdR,fontWeight:700,color:'var(--primary2)'}}>{fmt(b.due)}</td>
+          <td style={{...tdC,fontWeight:700,color:b.daysOverdue>90?'var(--red)':b.daysOverdue>0?'var(--gold)':'var(--green)'}}>
+            {b.daysOverdue>0?b.daysOverdue+'d':'Not due'}</td>
+          <td style={tdC}><span className="badge" style={{
+            background:b.bucket==='b4'||b.bucket==='b3'?'rgba(248,81,73,0.12)':b.bucket==='current'?'rgba(63,185,80,0.12)':'rgba(245,166,35,0.12)',
+            color:b.bucket==='b4'||b.bucket==='b3'?'var(--red)':b.bucket==='current'?'var(--green)':'var(--gold)'}}>
+            {(AGING_BUCKETS.find(x=>x.key===b.bucket)||{}).label}</span></td>
+        </tr>))}</tbody>
+      <tfoot><tr style={{borderTop:'2px solid var(--border2)',fontWeight:700,background:'var(--card2)'}}>
+        <td style={td} colSpan={6}>Total — {list.length} open bill(s)</td>
+        <td style={{...tdR,color:'var(--primary2)'}}>{fmt(grandTotal)}</td><td colSpan={2}/>
+      </tr></tfoot>
+    </Wrap>;
+  };
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="clock" s={18}/> Ageing</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
+      <div className="modal-body">
+
+        <div className="g4" style={{marginBottom:12}}>
+          <div className="stat-card" style={{borderLeft:'3px solid var(--green)'}}>
+            <div className="stat-val" style={{fontSize:16,color:'var(--green)'}}>{fmt(arTotal)}</div>
+            <div className="stat-lbl">Trade Receivables</div></div>
+          <div className="stat-card" style={{borderLeft:'3px solid var(--red)'}}>
+            <div className="stat-val" style={{fontSize:16,color:'var(--red)'}}>{fmt(apTotal)}</div>
+            <div className="stat-lbl">Trade Payables</div></div>
+          <div className="stat-card" style={{borderLeft:`3px solid ${arTotal-apTotal>=0?'var(--blue)':'var(--gold)'}`}}>
+            <div className="stat-val" style={{fontSize:16,color:arTotal-apTotal>=0?'var(--blue)':'var(--gold)'}}>{fmt(arTotal-apTotal)}</div>
+            <div className="stat-lbl">Net Working Position</div></div>
+          <div className="stat-card">
+            <div className="stat-val" style={{fontSize:16,color:'var(--gold)'}}>{fmt(arOver)}</div>
+            <div className="stat-lbl">Receivables Past Due</div></div>
+        </div>
+
+        <TabBar tabs={TABS} value={tab} onChange={k=>{setTab(k);setExpandedParty(null);}}/>
+
+        <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap',alignItems:'flex-end'}}>
+          {tab!=='summary'&&<div style={{position:'relative',flex:1,minWidth:200}}>
+            <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
+            <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
+              placeholder={isAP?'Search vendor, bill no, GSTIN...':'Search customer, invoice no, GSTIN...'}
+              style={{paddingLeft:38,width:'100%'}}/>
+          </div>}
+          <div><div style={{fontSize:10,color:'var(--text3)',marginBottom:3}}>Ageing as on</div>
+            <input type="date" className="field-input" value={asOn} onChange={e=>setAsOn(e.target.value)} style={{width:160}}/></div>
+          <button className="btn btn-outline-primary btn-sm" onClick={tab==='summary'?exportSummary:exportParty}>
+            <Ic n="xlsx" s={13}/> Export Excel</button>
+        </div>
+
+        {/* ══ SUMMARY ══ */}
+        {tab==='summary'&&<>
+          <div style={{fontSize:12,color:'var(--text2)',marginBottom:12}}>
+            Both sides of the ledger side by side. A positive net position means more is owed to you than by you.
+          </div>
+          <Wrap min={700}>
+            <HeadRow><th style={th}>Ageing Bucket</th><th style={thR}>Trade Receivables</th>
+              <th style={thR}>Trade Payables</th><th style={thR}>Net</th></HeadRow>
+            <tbody>{AGING_BUCKETS.map(b=>{
+              const net=arBuckets[b.key]-apBuckets[b.key];
+              return <tr key={b.key} style={{borderBottom:'1px solid var(--border)'}}>
+                <td style={{...td,fontWeight:600}}>{b.label}</td>
+                <td style={{...tdR,color:arBuckets[b.key]>0?'var(--green)':'var(--text3)'}}>{arBuckets[b.key]>0?fmt(arBuckets[b.key]):'—'}</td>
+                <td style={{...tdR,color:apBuckets[b.key]>0?'var(--red)':'var(--text3)'}}>{apBuckets[b.key]>0?fmt(apBuckets[b.key]):'—'}</td>
+                <td style={{...tdR,fontWeight:700,color:net>=0?'var(--blue)':'var(--gold)'}}>{fmt(net)}</td>
+              </tr>;})}</tbody>
+            <tfoot>
+              <tr style={{borderTop:'2px solid var(--border2)',fontWeight:700,background:'var(--card2)'}}>
+                <td style={td}>Total Outstanding</td>
+                <td style={{...tdR,color:'var(--green)'}}>{fmt(arTotal)}</td>
+                <td style={{...tdR,color:'var(--red)'}}>{fmt(apTotal)}</td>
+                <td style={{...tdR,color:'var(--primary2)'}}>{fmt(arTotal-apTotal)}</td>
+              </tr>
+              <tr style={{fontWeight:600,background:'var(--card2)'}}>
+                <td style={{...td,color:'var(--text2)'}}>Of which past due</td>
+                <td style={{...tdR,color:'var(--gold)'}}>{fmt(arOver)}</td>
+                <td style={{...tdR,color:'var(--gold)'}}>{fmt(apOver)}</td>
+                <td style={tdR}>{fmt(arOver-apOver)}</td>
+              </tr>
+            </tfoot>
+          </Wrap>
+          <div className="g2" style={{marginTop:16}}>
+            <div className="card">
+              <div style={{fontWeight:700,fontSize:13,marginBottom:8,color:'var(--green)'}}>Top 5 customers owing you</div>
+              {arBills.length===0?<div style={{fontSize:12,color:'var(--text3)'}}>Nothing outstanding.</div>:
+                Object.entries(arBills.reduce((m,b)=>{m[b.party]=(m[b.party]||0)+b.due;return m;},{}))
+                  .sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,v],i)=>(
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',
+                    borderBottom:'1px solid var(--border)',fontSize:12}}>
+                    <span>{n}</span><strong>{fmt(v)}</strong></div>))}
+            </div>
+            <div className="card">
+              <div style={{fontWeight:700,fontSize:13,marginBottom:8,color:'var(--red)'}}>Top 5 vendors you owe</div>
+              {apBills.length===0?<div style={{fontSize:12,color:'var(--text3)'}}>Nothing outstanding.</div>:
+                Object.entries(apBills.reduce((m,b)=>{m[b.party]=(m[b.party]||0)+b.due;return m;},{}))
+                  .sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,v],i)=>(
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',
+                    borderBottom:'1px solid var(--border)',fontSize:12}}>
+                    <span>{n}</span><strong>{fmt(v)}</strong></div>))}
+            </div>
+          </div>
+        </>}
+
+        {(tab==='ar'||tab==='ap')&&<>
+          <div style={{fontSize:12,color:'var(--text2)',marginBottom:10}}>
+            {isAP?'What you still owe suppliers, grouped by vendor. Click a row to open the bills behind it.'
+                 :'What customers still owe you, grouped by customer. Click a row to open the invoices behind it.'}
+          </div>
+          {partyTable()}
+        </>}
+
+        {(tab==='arbill'||tab==='apbill')&&<>
+          <div style={{fontSize:12,color:'var(--text2)',marginBottom:10}}>
+            Every open {isAP?'purchase bill':'invoice'}, oldest first — the chase list.
+          </div>
+          {billTable()}
+        </>}
+
+      </div>
+    </div>
+  </div>;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ⭐ FEATURE: BANK RECONCILIATION
+   ══════════════════════════════════════════════════════════════ */
+const blankTxn = ()=>({id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:today(),desc:'',amount:'',type:'credit',matched:false,matchedRef:'',matchedType:''});
+
+const BankReconPage = ({inline=true, onClose, currentUser})=>{
+  const [txns,setTxns]=useState(()=>S.get(SK.BANK,[]));
+  const [form,setForm]=useState(blankTxn());
+  const [filter,setFilter]=useState('unmatched');
+  const [matchingId,setMatchingId]=useState(null);
+  const fileRef=useRef();
+
+  const persist=(u)=>{setTxns(u);S.set(SK.BANK,u);};
+
+  const addTxn=()=>{
+    if(!form.desc||!form.amount){toast.error('Description and amount required');return;}
+    persist([...txns,{...form,amount:parseFloat(form.amount)}]);
+    setForm(blankTxn());
+    toast.success('Transaction added');
+  };
+  const delTxn=id=>{persist(txns.filter(t=>t.id!==id));};
+
+  const importFile=(e)=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=(ev)=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'binary'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        // Expect columns: Date, Description, Amount, Type (credit/debit) — tolerant to header case
+        const imported=rows.map(r=>{
+          const get=(...keys)=>keys.map(k=>r[k]).find(v=>v!==undefined&&v!=='');
+          const amtRaw=get('Amount','amount','AMOUNT')||get('Credit','credit')||get('Debit','debit')||0;
+          const isDebit = get('Debit','debit')!==undefined && parseFloat(get('Debit','debit')||0)>0;
+          return {
+            id:Date.now().toString()+Math.random().toString(36).slice(2,6),
+            date:get('Date','date','DATE')||today(),
+            desc:get('Description','description','Narration','narration')||'',
+            amount:Math.abs(parseFloat(amtRaw)||0),
+            type:isDebit?'debit':(get('Type','type')||'credit').toLowerCase(),
+            matched:false,matchedRef:'',matchedType:''
+          };
+        }).filter(t=>t.desc||t.amount);
+        if(imported.length===0){toast.error('No rows found — check the file has Date/Description/Amount columns');return;}
+        persist([...txns,...imported]);
+        toast.success(`Imported ${imported.length} transactions`);
+      }catch(err){toast.error('Could not read file: '+err.message);}
+      if(fileRef.current)fileRef.current.value='';
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  // Candidate matches for a transaction: unpaid invoices (credit txns) or expenses (debit txns) with the same amount
+  const candidatesFor=(t)=>{
+    if(t.type==='credit'){
+      return S.get(SK.INV,[]).filter(i=>i.status!=='Paid'&&i.status!=='Draft'&&Math.abs(Math.abs(getGrand(i))-t.amount)<1)
+        .map(i=>({ref:i.invNo,label:`${i.invNo} — ${i.billTo?.name||''} — ${fmt(Math.abs(getGrand(i)))}`,kind:'invoice'}));
+    }
+    return S.get(SK.EXP,[]).filter(e=>!e.reconciled&&Math.abs((parseFloat(e.total)||0)-t.amount)<1)
+      .map(e=>({ref:e.id||e.vendor,label:`${e.vendor||''} — ${e.category||''} — ${fmt(parseFloat(e.total)||0)}`,kind:'expense'}));
+  };
+
+  const doMatch=(txnId,cand)=>{
+    const updatedTxns=txns.map(t=>t.id===txnId?{...t,matched:true,matchedRef:cand.ref,matchedType:cand.kind}:t);
+    persist(updatedTxns);
+    if(cand.kind==='invoice'){
+      const invs=S.get(SK.INV,[]).map(i=>i.invNo===cand.ref?{...i,status:'Paid',paidDate:today()}:i);
+      S.set(SK.INV,invs);
+      logAudit('INVOICE_MARKED_PAID',`${cand.ref} matched to bank transaction`,currentUser);
+    } else {
+      const exps=S.get(SK.EXP,[]).map(e=>(e.id||e.vendor)===cand.ref?{...e,reconciled:true}:e);
+      S.set(SK.EXP,exps);
+    }
+    setMatchingId(null);
+    toast.success('Matched and marked reconciled!');
+  };
+
+  const filtered = txns.filter(t=>filter==='all'||(filter==='matched'?t.matched:!t.matched));
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="bank" s={18}/> Bank Reconciliation</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
+      <div className="modal-body">
+        <div className="card" style={{marginBottom:16}}>
+          <div style={{fontWeight:700,marginBottom:10,fontSize:13}}>Add Transaction</div>
+          <div className="g4">
+            <div className="field"><label className="field-label">Date</label><input type="date" className="field-input" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></div>
+            <div className="field"><label className="field-label">Description</label><input className="field-input" value={form.desc} onChange={e=>setForm(p=>({...p,desc:e.target.value}))} placeholder="e.g. NEFT from ABC Corp"/></div>
+            <div className="field"><label className="field-label">Amount (₹)</label><input type="number" className="field-input" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))} placeholder="0.00"/></div>
+            <div className="field"><label className="field-label">Type</label><select className="field-input" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}><option value="credit">Credit (money in)</option><option value="debit">Debit (money out)</option></select></div>
+          </div>
+          <div style={{display:'flex',gap:10,marginTop:8}}>
+            <button className="btn btn-primary" onClick={addTxn}><Ic n="plus" s={13}/> Add</button>
+            <input type="file" ref={fileRef} accept=".csv,.xlsx,.xls" style={{display:'none'}} onChange={importFile}/>
+            <button className="btn btn-outline-primary" onClick={()=>fileRef.current?.click()}><Ic n="upload" s={13}/> Import Excel/CSV</button>
+          </div>
+          <div style={{fontSize:11,color:'var(--text3)',marginTop:6}}>Import expects columns like Date, Description, Amount (or separate Debit/Credit columns) exported from your bank's statement.</div>
+        </div>
+
+        <div style={{display:'flex',gap:8,marginBottom:12}}>
+          {[['unmatched','Unmatched'],['matched','Matched'],['all','All']].map(([k,l])=>(
+            <button key={k} onClick={()=>setFilter(k)}
+              style={{padding:'6px 14px',borderRadius:8,fontSize:12,fontWeight:filter===k?700:500,cursor:'pointer',
+                border:`2px solid ${filter===k?'var(--primary)':'var(--border2)'}`,
+                background:filter===k?'var(--primary-bg)':'transparent',color:filter===k?'var(--primary2)':'var(--text2)'}}>{l}</button>
+          ))}
+        </div>
+
+        {filtered.length===0?(
+          <div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>No transactions here yet.</div>
+        ):(
+          <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden'}}>
+            {filtered.map(t=>(
+              <div key={t.id} style={{padding:'10px 14px',borderBottom:'1px solid var(--border)'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}>
+                  <div style={{minWidth:0}}>
+                    <div style={{fontWeight:600,fontSize:13}}>{t.desc}</div>
+                    <div style={{fontSize:11,color:'var(--text3)'}}>{fmtDate?fmtDate(t.date):t.date} · {t.type==='credit'?'Money In':'Money Out'}</div>
+                  </div>
+                  <div style={{textAlign:'right',flexShrink:0}}>
+                    <div style={{fontWeight:700,color:t.type==='credit'?'var(--green)':'var(--red)'}}>{t.type==='credit'?'+':'-'}{fmt(t.amount)}</div>
+                    {t.matched?<span className="badge badge-green">Matched: {t.matchedRef}</span>:
+                      <div style={{display:'flex',gap:5,marginTop:4}}>
+                        <button className="btn btn-sm btn-outline-primary" onClick={()=>setMatchingId(matchingId===t.id?null:t.id)}>Match</button>
+                        <button className="btn btn-sm btn-danger btn-icon" onClick={()=>delTxn(t.id)}><Ic n="trash" s={11}/></button>
+                      </div>}
+                  </div>
+                </div>
+                {matchingId===t.id&&(
+                  <div style={{marginTop:8,padding:10,background:'var(--card2)',borderRadius:8}}>
+                    {candidatesFor(t).length===0?
+                      <div style={{fontSize:12,color:'var(--text3)'}}>No {t.type==='credit'?'unpaid invoice':'expense'} found with a matching amount.</div>
+                      :candidatesFor(t).map((c,i)=>(
+                        <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',fontSize:12}}>
+                          <span>{c.label}</span>
+                          <button className="btn btn-sm btn-primary" onClick={()=>doMatch(t.id,c)}>Confirm Match</button>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>;
+};
+
 const App = ()=>{
   const [user,setUser]=useState(null);
   const [theme,setTheme]=useState('dark');
   const [modal,setModal]=useState(null);
-  const [page,setPage]=useState('invoice'); // 'invoice','history','pohistory','expenses','customers'
+  const [page,setPage]=useState('invoice'); // 'invoice','history','pohistory','expenses'(=Purchases),'customers','inventory','aging'
   const [loadedInv,setLoadedInv]=useState(null);
   const [loadedPO,setLoadedPO]=useState(null);
   const [formKey,setFormKey]=useState(0);
@@ -5743,6 +7237,7 @@ const App = ()=>{
     (async()=>{
       setLoadMsg('Loading your data from cloud...');
       await loadCache();
+      try{ migrateInventory(); }catch(err){ console.warn('Inventory migration skipped:', err.message); }
       setLoadMsg('Almost ready...');
       seedUsers();
       const savedTheme = S.get(SK.THEME,'dark');
@@ -5820,7 +7315,7 @@ const App = ()=>{
       <div className="sidebar-logo" onClick={()=>setSidebarCollapsed(c=>!c)}>
         <LogoIcon size={30}/>
         <div>
-          <div className="sidebar-brand">Invoice <span>Prime</span></div>
+          <div className="sidebar-brand">Blu<span>Bills</span></div>
           <div className="sidebar-sub">Smart GST Billing</div>
         </div>
       </div>
@@ -5846,12 +7341,25 @@ const App = ()=>{
           onClick={()=>{setPage('pohistory');setModal(null);setMobSidebarOpen(false);}} active={page==='pohistory'&&!modal}
           badge={poCount>0?poCount:null} badgeCls="gold"/>
 
-        <NavItem icon={<Ic n="receipt" s={17}/>} label="Expenses"
+        <NavItem icon={<Ic n="receipt" s={17}/>} label="Purchases"
           onClick={()=>{setPage('expenses');setModal(null);setMobSidebarOpen(false);}} active={page==='expenses'&&!modal}/>
 
-        <NavItem icon={<Ic n="users" s={17}/>} label="Customers"
-          onClick={()=>{setPage('customers');setModal(null);setMobSidebarOpen(false);}} active={page==='customers'&&!modal}/>
+        {canSee(user.role,'customers')&&<NavItem icon={<Ic n="users" s={17}/>} label="Customers"
+          onClick={()=>{setPage('customers');setModal(null);setMobSidebarOpen(false);}} active={page==='customers'&&!modal}/>}
 
+        {canSee(user.role,'inventory')&&<NavItem icon={<Ic n="tag" s={17}/>} label="Product Master"
+          onClick={()=>{setModal('products');setMobSidebarOpen(false);}} active={modal==='products'}/>}
+
+        {canSee(user.role,'inventory')&&<NavItem icon={<Ic n="package" s={17}/>} label="Inventory"
+          onClick={()=>{setPage('inventory');setModal(null);setMobSidebarOpen(false);}} active={page==='inventory'&&!modal}/>}
+
+        {canSee(user.role,'aging')&&<NavItem icon={<Ic n="clock" s={17}/>} label="Ageing & Outstanding"
+          onClick={()=>{setPage('aging');setModal(null);setMobSidebarOpen(false);}} active={page==='aging'&&!modal}/>}
+
+        {canSee(user.role,'bankrecon')&&<NavItem icon={<Ic n="bank" s={17}/>} label="Bank Reconciliation"
+          onClick={()=>{setPage('bankrecon');setModal(null);setMobSidebarOpen(false);}} active={page==='bankrecon'&&!modal}/>}
+
+        {canSee(user.role,'company')&&<>
         <div className="nav-sep"/>
         <div className="sidebar-section-label">Settings</div>
 
@@ -5860,9 +7368,10 @@ const App = ()=>{
 
         <NavItem icon={<Ic n="tag" s={17}/>} label="HSN / SAC" extraCls="nav-item-gold"
           onClick={()=>{setPage('hsn');setModal(null);setMobSidebarOpen(false);}} active={page==='hsn'}/>
+        </>}
 
-        <NavItem icon={<Ic n="file" s={17}/>} label="Terms & Conditions"
-          onClick={()=>{setPage('terms');setModal(null);setMobSidebarOpen(false);}} active={page==='terms'}/>
+        {canSee(user.role,'terms')&&<NavItem icon={<Ic n="file" s={17}/>} label="Terms & Conditions"
+          onClick={()=>{setPage('terms');setModal(null);setMobSidebarOpen(false);}} active={page==='terms'}/>}
 
         {isAdmin&&<>
           <div className="nav-sep"/>
@@ -5914,7 +7423,7 @@ const App = ()=>{
         <div className="topbar-company">
           <LogoIcon size={32}/>
           <div className="topbar-company-info">
-            <div className="topbar-company-name">{S.get(SK.CO,{}).name||'Invoice Prime'}</div>
+            <div className="topbar-company-name">{S.get(SK.CO,{}).name||'BluBills'}</div>
             <div className="topbar-company-gstin">{S.get(SK.CO,{}).gstin?`GSTIN: ${S.get(SK.CO,{}).gstin}`:'Smart GST Billing'}</div>
           </div>
         </div>
@@ -5924,12 +7433,13 @@ const App = ()=>{
           <div className="topbar-page-dot"/>
           <span className="topbar-page-label">{{
             invoice:'New Invoice',history:'Invoice History',pohistory:'Purchase Orders',
-            expenses:'Expenses & Purchases',customers:'Customer Database',
+            expenses:'Purchases',customers:'Customer Database',
             dashboard:'Dashboard',company:'Company Settings',hsn:'HSN / SAC Database',
-            terms:'Terms & Conditions',admin:'Admin Panel'
-          }[page]||'Invoice Prime'}</span>
+            terms:'Terms & Conditions',admin:'Admin Panel',
+            inventory:'Inventory & Stock',aging:'Ageing — Receivables & Payables',bankrecon:'Bank Reconciliation'
+          }[page]||'BluBills'}</span>
           <span className="topbar-page-sep">|</span>
-          <span className="topbar-page-sub">Invoice Prime</span>
+          <span className="topbar-page-sub">BluBills</span>
         </div>
 
         {/* RIGHT — Actions */}
@@ -5973,12 +7483,15 @@ const App = ()=>{
         {page==='invoice'&&<InvoiceForm key={formKey} currentUser={user} initial={loadedInv} onSave={()=>{}}/>}
         {page==='history'&&<HistoryModal onClose={()=>setPage('invoice')} onLoad={loadInv} currentUser={user} inline={true} searchQuery={searchQuery}/>}
         {page==='pohistory'&&<POHistoryModal onClose={()=>setPage('invoice')} onLoad={po=>{setLoadedPO(po);setPoKey(k=>k+1);setModal('po');}} currentUser={user} onNewPO={()=>{setLoadedPO(null);setPoKey(k=>k+1);setModal('po');}} inline={true} searchQuery={searchQuery}/>}
-        {page==='expenses'&&<ExpenseModal onClose={()=>setPage('invoice')} currentUser={user} inline={true} searchQuery={searchQuery}/>}
+        {page==='expenses'&&<PurchaseModal onClose={()=>setPage('invoice')} currentUser={user} inline={true} searchQuery={searchQuery}/>}
         {page==='customers'&&<CustomerModal onClose={()=>setPage('invoice')} inline={true} searchQuery={searchQuery}/>}
         {page==='dashboard'&&<Dashboard onClose={()=>setPage('invoice')} onLoad={loadInv} inline={true}/>}
         {page==='company'&&<CompanyModal onClose={()=>setPage('invoice')} currentUser={user} inline={true}/>}
         {page==='hsn'&&<HSNModal onClose={()=>setPage('invoice')} inline={true} searchQuery={searchQuery}/>}
-        {page==='terms'&&<TermsModal onClose={()=>setPage('invoice')} inline={true}/>}
+        {page==='terms'&&canSee(user.role,'terms')&&<TermsModal onClose={()=>setPage('invoice')} inline={true}/>}
+        {page==='inventory'&&canSee(user.role,'inventory')&&<InventoryPage currentUser={user}/>}
+        {page==='aging'&&canSee(user.role,'aging')&&<AgingReportPage/>}
+        {page==='bankrecon'&&canSee(user.role,'bankrecon')&&<BankReconPage currentUser={user}/>}
         {page==='admin'&&isAdmin&&<AdminPanel currentUser={user} onClose={()=>setPage('invoice')} inline={true}/>}
       </div>
     </div>
@@ -5997,7 +7510,7 @@ const App = ()=>{
 
     {/* All sections render inline in app-body above */}
     {/* Products master modal — stays as overlay */}
-    {modal==='products'&&<ProductMasterModal onClose={()=>setModal(null)}/>}
+    {modal==='products'&&<ProductMasterModal onClose={()=>{setModal(null);setFormKey(k=>k+1);}}/>}
   </div>;
 };
 
