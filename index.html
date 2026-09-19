@@ -106,6 +106,12 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 .nav-item-gold:hover,.nav-item-gold.active{background:linear-gradient(135deg,rgba(245,166,35,0.2),rgba(245,166,35,0.08))!important;
   border-color:rgba(245,166,35,0.25)!important;color:#FFD166!important}
 .nav-item-admin{color:rgba(245,166,35,0.85)!important}
+.nav-subitems{display:flex;flex-direction:column;padding-left:14px;margin-bottom:2px}
+.nav-subitems .nav-item{font-size:12.5px;padding:6px 12px 6px 10px}
+.nav-subitems .nav-item .nav-icon{opacity:0.7;width:14px}
+.nav-group-toggle{cursor:pointer}
+.nav-chevron{display:flex;align-items:center;transition:transform 0.18s ease;opacity:0.6}
+.sidebar.collapsed .nav-subitems,.sidebar.collapsed .nav-chevron{display:none}
 .nav-item-admin.active{background:linear-gradient(135deg,rgba(245,166,35,0.22),rgba(245,166,35,0.1))!important;
   border-color:rgba(245,166,35,0.3)!important}
 .nav-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px}
@@ -678,13 +684,13 @@ body,html{overflow-x:hidden;max-width:100vw;box-sizing:border-box}
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ── CONSTANTS ── */
-const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series', STOCK:'ip_stock', BANK:'ip_bank' };
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series', STOCK:'ip_stock', BANK:'ip_bank', QSALE:'ip_quicksales', BANK_OB:'ip_bank_ob', BANK_ACCTS:'ip_bank_accounts', QUOTE:'ip_quotations', DC:'ip_delivery_challans', RECUR:'ip_recurring', JOURNAL:'ip_journal', ACCMAP:'ip_acc_map', POLICIES:'ip_policies' };
 
 /* ── ROLE-BASED PAGE ACCESS — 'user','admin','superadmin' keep full access (unchanged).
    'sales' and 'accountant' are new, narrower roles — adjust freely later. ── */
 const ROLE_PAGES = {
-  sales:      ['dashboard','invoice','history','customers'],
-  accountant: ['dashboard','invoice','history','pohistory','expenses','customers','inventory','aging','bankrecon','terms'],
+  sales:      ['dashboard','invoice','history','customers','salesview','quotations','dc','recurring','reminders'],
+  accountant: ['dashboard','invoice','history','pohistory','expenses','customers','inventory','aging','bankrecon','terms','salesview','reports','coa','journal','ledger','trialbalance','quotations','dc','recurring','reminders'],
 };
 const canSee = (role,key) => !ROLE_PAGES[role] || ROLE_PAGES[role].includes(key);
 const UNITS = ['Nos','Pcs','Kg','Gm','Ltr','Ml','Mtr','Cm','Sqft','Box','Set','Pair','Roll','Pack','Bag','Bottle','Can','Sheet','Hour','Month'];
@@ -790,7 +796,19 @@ const S = {
 const fmt  = n => '₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtN = n => Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const today  = ()=>new Date().toISOString().split('T')[0];
-const fmtDate= d=>{if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+const fmtDate= d=>{
+  if(!d)return'';
+  if(typeof d==='number'){ // Excel date-serial slipped through (e.g. bad import) — convert to a real date
+    const dt=new Date(Math.round((d-25569)*86400*1000));
+    if(isNaN(dt))return'';
+    d=dt.toISOString().split('T')[0];
+  }
+  if(typeof d!=='string')return'';
+  const parts=d.split('-');
+  if(parts.length!==3)return d;
+  const[y,m,dd]=parts;
+  return`${dd}/${m}/${y}`;
+}
 // Helper: get correct grand total for any invoice type (fixes NonGST invoices saved with grand=0)
 const getGrand = inv => {
   if(inv.docType==='NON GST INVOICE'){
@@ -972,6 +990,7 @@ const Ic = ({n,s=15})=>{
     info:<svg {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
     package:<svg {...p}><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
     list:<svg {...p}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+    chevron:<svg {...p} strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>,
     crown:<svg {...p}><path d="M2 20h20M4 20l2-8 6 4 6-4 2 8"/><polyline points="4 12 12 4 20 12"/></svg>,
     whatsapp:<svg {...p} fill="none"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>,
     award:<svg {...p}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>,
@@ -3654,7 +3673,7 @@ const SeriesTab = ({isSuper})=>{
 };
 
 /* ── EXPORT TAB ── */
-const ExportTab = ({invs, isSuper})=>{
+const ExportTab = ({invs, isSuper, currentUser})=>{
   const fy=getFY();
   const fyShort=getFYShort();
   // Build list of all FYs present in data
@@ -3903,7 +3922,8 @@ const ExportTab = ({invs, isSuper})=>{
               <Ic n="xlsx" s={12}/>Excel Backup
             </button>
             <button className="btn btn-outline btn-sm" onClick={()=>{
-              const data={exportDate:new Date().toISOString(),company:S.get(SK.CO,{}),hsn:S.get(SK.HSN,[]),invoices:S.get(SK.INV,[]),expenses:S.get(SK.EXP,[]),purchaseOrders:S.get(SK.PO,[]),customers:S.get(SK.CUST,[]),products:S.get(SK.PRODUCTS,[]),terms:S.get(SK.TERMS,''),poTerms:S.get(SK.PO_TERMS,''),auditLog:S.get(SK.AUDIT,[]),frozenPeriods:S.get(SK.FREEZE,{sales:[],expenses:[]})};
+              const data={exportDate:new Date().toISOString(),company:S.get(SK.CO,{}),hsn:S.get(SK.HSN,[]),invoices:S.get(SK.INV,[]),expenses:S.get(SK.EXP,[]),purchaseOrders:S.get(SK.PO,[]),customers:S.get(SK.CUST,[]),products:S.get(SK.PRODUCTS,[]),terms:S.get(SK.TERMS,''),poTerms:S.get(SK.PO_TERMS,''),auditLog:S.get(SK.AUDIT,[]),frozenPeriods:S.get(SK.FREEZE,{sales:[],expenses:[]}),
+                bankTxns:S.get(SK.BANK,[]),bankAccounts:S.get(SK.BANK_ACCTS,[]),quickSales:S.get(SK.QSALE,[]),quotations:S.get(SK.QUOTE,[]),deliveryChallans:S.get(SK.DC,[]),recurring:S.get(SK.RECUR,[]),series:S.get(SK.SERIES,{}),stockLog:S.get(SK.STOCK,[])};
               const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
               const url=URL.createObjectURL(blob);const a=document.createElement('a');
               a.href=url;a.download=`BluBills_Backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
@@ -3911,6 +3931,28 @@ const ExportTab = ({invs, isSuper})=>{
               toast.success(`JSON backup: ${(data.invoices||[]).length} invoices, ${(data.expenses||[]).length} expenses`);
             }}>
               <Ic n="save" s={12}/>JSON
+            </button>
+            <input type="file" id="__restoreInput" accept=".json" style={{display:'none'}} onChange={e=>{
+              const file=e.target.files[0]; if(!file)return;
+              const reader=new FileReader();
+              reader.onload=ev=>{
+                try{
+                  const data=JSON.parse(ev.target.result);
+                  if(!data||typeof data!=='object'||(!data.invoices&&!data.company)){toast.error('This does not look like a BluBills backup file');return;}
+                  if(!window.confirm(`This will REPLACE all current data with the backup dated ${data.exportDate?new Date(data.exportDate).toLocaleString():'unknown'} (${(data.invoices||[]).length} invoices, ${(data.expenses||[]).length} expenses). This cannot be undone. Continue?`))return;
+                  const map=[[SK.CO,'company',{}],[SK.HSN,'hsn',[]],[SK.INV,'invoices',[]],[SK.EXP,'expenses',[]],[SK.PO,'purchaseOrders',[]],[SK.CUST,'customers',[]],[SK.PRODUCTS,'products',[]],[SK.TERMS,'terms',''],[SK.PO_TERMS,'poTerms',''],[SK.AUDIT,'auditLog',[]],[SK.FREEZE,'frozenPeriods',{sales:[],expenses:[]}],
+                    [SK.BANK,'bankTxns',[]],[SK.BANK_ACCTS,'bankAccounts',[]],[SK.QSALE,'quickSales',[]],[SK.QUOTE,'quotations',[]],[SK.DC,'deliveryChallans',[]],[SK.RECUR,'recurring',[]],[SK.SERIES,'series',{}],[SK.STOCK,'stockLog',[]]];
+                  map.forEach(([key,field,dflt])=>{ if(data[field]!==undefined) S.set(key,data[field]); else S.set(key,dflt); });
+                  logAudit('DATA_RESTORED',`Restored from backup dated ${data.exportDate||'unknown'}`,currentUser);
+                  toast.success('Backup restored! Reloading…');
+                  setTimeout(()=>window.location.reload(),1200);
+                }catch(err){toast.error('Could not read backup file: '+err.message);}
+              };
+              reader.readAsText(file);
+              e.target.value='';
+            }}/>
+            <button className="btn btn-outline btn-sm" style={{borderColor:'var(--red)',color:'var(--red)'}} onClick={()=>document.getElementById('__restoreInput').click()}>
+              <Ic n="upload" s={12}/>Restore from Backup
             </button>
             <span style={{fontSize:11,color:'var(--text3)'}}>Full database backup — not filtered by period</span>
           </div>
@@ -4253,7 +4295,7 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
           </div>
         )}
 
-        {tab==='export'&&(<ExportTab invs={invs} isSuper={isSuper}/>)}
+        {tab==='export'&&(<ExportTab invs={invs} isSuper={isSuper} currentUser={currentUser}/>)}
 
         {tab==='freeze'&&<FreezeTab invs={invs} isSuper={isSuper} currentUser={currentUser}/>}
         {tab==='series'&&<SeriesTab isSuper={isSuper}/>}
@@ -6256,10 +6298,11 @@ const Wrap = ({children,min}) => <div style={{border:'1px solid var(--border)',b
   <table style={{width:'100%',borderCollapse:'collapse',minWidth:min||760}}>{children}</table></div>;
 const HeadRow = ({children}) => <thead><tr style={{background:'var(--card2)',borderBottom:'2px solid var(--border2)',position:'sticky',top:0,zIndex:2}}>{children}</tr></thead>;
 
-const InventoryPage = ({inline=true, onClose, currentUser})=>{
+const InventoryPage = ({inline=true, onClose, currentUser, initialTab})=>{
   const [products,setProducts]=useState(()=>S.get(SK.PRODUCTS,[]));
   const [log,setLog]=useState(()=>S.get(SK.STOCK,[]));
-  const [tab,setTab]=useState('summary');
+  const [tab,setTab]=useState(initialTab||'summary');
+  useEffect(()=>{ if(initialTab && initialTab!==tab) setTab(initialTab); },[initialTab]);
   const [from,setFrom]=useState('');
   const [to,setTo]=useState('');
   const [q,setQ]=useState('');
@@ -6453,9 +6496,7 @@ const InventoryPage = ({inline=true, onClose, currentUser})=>{
           </div>
         )}
 
-        <TabBar tabs={TABS} value={tab} onChange={setTab}/>
-
-        {/* ══ 1. STOCK SUMMARY ══ */}
+        {/* Section switching now lives in the sidebar under Inventory */}
         {tab==='summary'&&<>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:10,flexWrap:'wrap'}}>
             <div style={{flex:1,minWidth:280}}>{renderFilters()}</div>
@@ -6779,8 +6820,9 @@ const AGING_BUCKETS = [
 const emptyBuckets = () => AGING_BUCKETS.reduce((a,b)=>{a[b.key]=0;return a;},{});
 const bucketFor = d => (AGING_BUCKETS.find(b=>b.test(d))||AGING_BUCKETS[0]).key;
 
-const AgingReportPage = ({inline=true, onClose})=>{
-  const [tab,setTab]=useState('ar');
+const AgingReportPage = ({inline=true, onClose, initialTab})=>{
+  const [tab,setTab]=useState(initialTab||'ar');
+  useEffect(()=>{ if(initialTab && initialTab!==tab){ setTab(initialTab); setExpandedParty(null); } },[initialTab]);
   const [q,setQ]=useState('');
   const [asOn,setAsOn]=useState(today());
   const [expandedParty,setExpandedParty]=useState(null);
@@ -6978,7 +7020,7 @@ const AgingReportPage = ({inline=true, onClose})=>{
             <div className="stat-lbl">Receivables Past Due</div></div>
         </div>
 
-        <TabBar tabs={TABS} value={tab} onChange={k=>{setTab(k);setExpandedParty(null);}}/>
+        {/* Section switching now lives in the sidebar under Ageing & Outstanding */}
 
         <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap',alignItems:'flex-end'}}>
           {tab!=='summary'&&<div style={{position:'relative',flex:1,minWidth:200}}>
@@ -7069,20 +7111,82 @@ const AgingReportPage = ({inline=true, onClose})=>{
 /* ══════════════════════════════════════════════════════════════
    ⭐ FEATURE: BANK RECONCILIATION
    ══════════════════════════════════════════════════════════════ */
-const blankTxn = ()=>({id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:today(),desc:'',amount:'',type:'credit',matched:false,matchedRef:'',matchedType:''});
+const blankTxn = ()=>({id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:today(),desc:'',amount:'',type:'credit',refNo:'',matched:false,matchedRef:'',matchedType:''});
 
 const BankReconPage = ({inline=true, onClose, currentUser})=>{
-  const [txns,setTxns]=useState(()=>S.get(SK.BANK,[]));
+  // Multi-account support: migrate any pre-existing single-account data (old SK.BANK_OB / unlabeled
+  // transactions) into a "Primary Account" the first time this page loads under the new scheme.
+  const [accounts,setAccounts]=useState(()=>{
+    let accts=S.get(SK.BANK_ACCTS,[]);
+    if(accts.length===0){
+      accts=[{id:'PRIMARY',name:'Primary Account',bankName:'',accountNo:'',openingBalance:parseFloat(S.get(SK.BANK_OB,0))||0}];
+      S.set(SK.BANK_ACCTS,accts);
+    }
+    return accts;
+  });
+  const [activeAcctId,setActiveAcctId]=useState(()=>accounts[0]?.id||'PRIMARY');
+  const [showAddAcct,setShowAddAcct]=useState(false);
+  const [newAcct,setNewAcct]=useState({name:'',bankName:'',accountNo:'',openingBalance:''});
+
+  const [allTxns,setAllTxns]=useState(()=>S.get(SK.BANK,[]));
+  const txns = useMemo(()=>allTxns.filter(t=>(t.acctId||'PRIMARY')===activeAcctId),[allTxns,activeAcctId]);
   const [form,setForm]=useState(blankTxn());
   const [filter,setFilter]=useState('unmatched');
   const [matchingId,setMatchingId]=useState(null);
+  const [pickedRef,setPickedRef]=useState('');
+  const [qsCustomer,setQsCustomer]=useState('');
+  const [qsNotes,setQsNotes]=useState('');
+  const [editingOB,setEditingOB]=useState(false);
   const fileRef=useRef();
 
-  const persist=(u)=>{setTxns(u);S.set(SK.BANK,u);};
+  const activeAcct = accounts.find(a=>a.id===activeAcctId) || accounts[0];
+  const openingBal = String(activeAcct?.openingBalance||0);
+
+  const saveAccounts=(u)=>{setAccounts(u);S.set(SK.BANK_ACCTS,u);};
+  const setOpeningBal=(v)=>{
+    saveAccounts(accounts.map(a=>a.id===activeAcctId?{...a,openingBalance:parseFloat(v)||0}:a));
+  };
+  const saveOpeningBal=()=>{ setEditingOB(false); toast.success('Opening balance saved'); };
+
+  const addAccount=()=>{
+    if(!newAcct.name.trim()){toast.error('Account name is required');return;}
+    const acct={id:'ACC'+Date.now().toString(36),name:newAcct.name.trim(),bankName:newAcct.bankName.trim(),accountNo:newAcct.accountNo.trim(),openingBalance:parseFloat(newAcct.openingBalance)||0};
+    saveAccounts([...accounts,acct]);
+    setActiveAcctId(acct.id);
+    setNewAcct({name:'',bankName:'',accountNo:'',openingBalance:''});
+    setShowAddAcct(false);
+    toast.success('Bank account added');
+  };
+  const deleteAccount=()=>{
+    if(accounts.length<=1){toast.error('You need at least one bank account');return;}
+    if(allTxns.some(t=>(t.acctId||'PRIMARY')===activeAcctId)){toast.error('Delete or move this account\'s transactions first');return;}
+    if(!window.confirm(`Delete "${activeAcct.name}"? This cannot be undone.`))return;
+    const remaining=accounts.filter(a=>a.id!==activeAcctId);
+    saveAccounts(remaining);
+    setActiveAcctId(remaining[0].id);
+  };
+
+  // Running balance: opening balance + every credit − every debit, in chronological order.
+  // Balances are keyed by transaction id so they stay correct no matter how the table is filtered.
+  const balanceById = useMemo(()=>{
+    const ob=parseFloat(openingBal)||0;
+    const chrono=[...txns].sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id)));
+    let bal=ob; const map={};
+    chrono.forEach(t=>{ bal += (t.type==='credit'?1:-1)*(parseFloat(t.amount)||0); map[t.id]=bal; });
+    return map;
+  },[txns,openingBal]);
+  const currentBalance = txns.length? balanceById[[...txns].sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id))).slice(-1)[0].id] : (parseFloat(openingBal)||0);
+  const totalIn = txns.filter(t=>t.type==='credit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+  const totalOut = txns.filter(t=>t.type==='debit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+
+  const persist=(u)=>{ // u = the full updated txn list for the ACTIVE account only
+    const merged=[...allTxns.filter(t=>(t.acctId||'PRIMARY')!==activeAcctId), ...u];
+    setAllTxns(merged); S.set(SK.BANK,merged);
+  };
 
   const addTxn=()=>{
     if(!form.desc||!form.amount){toast.error('Description and amount required');return;}
-    persist([...txns,{...form,amount:parseFloat(form.amount)}]);
+    persist([...txns,{...form,amount:parseFloat(form.amount),acctId:activeAcctId}]);
     setForm(blankTxn());
     toast.success('Transaction added');
   };
@@ -7097,18 +7201,48 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
         const wb=XLSX.read(ev.target.result,{type:'binary'});
         const ws=wb.Sheets[wb.SheetNames[0]];
         const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-        // Expect columns: Date, Description, Amount, Type (credit/debit) — tolerant to header case
+        // Expect columns: Date, Description, Amount, Type (credit/debit), Ref No — tolerant to header case
+        const toISODate=v=>{
+          if(v===undefined||v===null||v==='')return today();
+          if(typeof v==='number'){ // Excel date-serial (e.g. 45678) — convert to YYYY-MM-DD
+            const dt=new Date(Math.round((v-25569)*86400*1000));
+            return isNaN(dt)?today():dt.toISOString().split('T')[0];
+          }
+          if(v instanceof Date)return isNaN(v)?today():v.toISOString().split('T')[0];
+          const s=String(v).trim();
+          // Handle common DD/MM/YYYY or DD-MM-YYYY text dates from bank exports
+          const dmY=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+          if(dmY){const[,dd,mm,yy]=dmY;return`${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;}
+          return s||today();
+        };
         const imported=rows.map(r=>{
           const get=(...keys)=>keys.map(k=>r[k]).find(v=>v!==undefined&&v!=='');
-          const amtRaw=get('Amount','amount','AMOUNT')||get('Credit','credit')||get('Debit','debit')||0;
-          const isDebit = get('Debit','debit')!==undefined && parseFloat(get('Debit','debit')||0)>0;
+          const debitCol=get('Debit','debit');
+          const creditCol=get('Credit','credit');
+          const amtCol=get('Amount','amount','AMOUNT');
+          const typeCol=get('Type','type');
+          let isDebit, rawAmt;
+          if(debitCol!==undefined||creditCol!==undefined){
+            // Separate Debit / Credit columns
+            isDebit = debitCol!==undefined && parseFloat(debitCol||0)>0;
+            rawAmt = isDebit?debitCol:creditCol;
+          } else if(amtCol!==undefined){
+            // Single Amount column — sign tells direction: negative = money out (debit)
+            const n = parseFloat(amtCol)||0;
+            isDebit = typeCol ? typeCol.toLowerCase()==='debit' : n<0;
+            rawAmt = amtCol;
+          } else {
+            isDebit = typeCol ? typeCol.toLowerCase()==='debit' : false;
+            rawAmt = 0;
+          }
           return {
             id:Date.now().toString()+Math.random().toString(36).slice(2,6),
-            date:get('Date','date','DATE')||today(),
+            date:toISODate(get('Date','date','DATE')),
             desc:get('Description','description','Narration','narration')||'',
-            amount:Math.abs(parseFloat(amtRaw)||0),
-            type:isDebit?'debit':(get('Type','type')||'credit').toLowerCase(),
-            matched:false,matchedRef:'',matchedType:''
+            amount:Math.abs(parseFloat(rawAmt)||0),
+            type:isDebit?'debit':'credit',
+            refNo:get('Ref No','RefNo','Reference','Chq/Ref No','UTR','Ref')||'',
+            matched:false,matchedRef:'',matchedType:'',acctId:activeAcctId
           };
         }).filter(t=>t.desc||t.amount);
         if(imported.length===0){toast.error('No rows found — check the file has Date/Description/Amount columns');return;}
@@ -7120,37 +7254,141 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
     reader.readAsBinaryString(file);
   };
 
-  // Candidate matches for a transaction: unpaid invoices (credit txns) or expenses (debit txns) with the same amount
-  const candidatesFor=(t)=>{
+  // Every open item a transaction could be linked to. Credit (money in) → unpaid Sales Invoices.
+  // Debit (money out) → unpaid Purchases/Expenses. ALL open items are shown (not just exact-amount
+  // matches), closest amount first, since bank amounts rarely tie out to the paisa.
+  const optionsFor=(t)=>{
     if(t.type==='credit'){
-      return S.get(SK.INV,[]).filter(i=>i.status!=='Paid'&&i.status!=='Draft'&&Math.abs(Math.abs(getGrand(i))-t.amount)<1)
-        .map(i=>({ref:i.invNo,label:`${i.invNo} — ${i.billTo?.name||''} — ${fmt(Math.abs(getGrand(i)))}`,kind:'invoice'}));
+      return S.get(SK.INV,[]).filter(i=>(i.docType==='TAX INVOICE'||i.docType==='NON GST INVOICE'||i.docType==='DEBIT NOTE')&&i.status!=='Paid'&&i.status!=='Draft')
+        .map(i=>({ref:i.invNo,amt:Math.abs(getGrand(i)),label:`${i.invNo} — ${i.billTo?.name||'Unknown'} — ${fmt(Math.abs(getGrand(i)))}`,kind:'invoice'}))
+        .sort((a,b)=>Math.abs(a.amt-t.amount)-Math.abs(b.amt-t.amount));
     }
-    return S.get(SK.EXP,[]).filter(e=>!e.reconciled&&Math.abs((parseFloat(e.total)||0)-t.amount)<1)
-      .map(e=>({ref:e.id||e.vendor,label:`${e.vendor||''} — ${e.category||''} — ${fmt(parseFloat(e.total)||0)}`,kind:'expense'}));
+    return S.get(SK.EXP,[]).filter(e=>e.payStatus!=='Paid')
+      .map(e=>({ref:e.id,amt:parseFloat(e.total)||0,label:`${e.billNo?e.billNo+' — ':''}${e.vendor||'Unknown Vendor'} — ${e.category||''} — ${fmt(parseFloat(e.total)||0)}`,kind:'expense'}))
+      .sort((a,b)=>Math.abs(a.amt-t.amount)-Math.abs(b.amt-t.amount));
   };
 
-  const doMatch=(txnId,cand)=>{
-    const updatedTxns=txns.map(t=>t.id===txnId?{...t,matched:true,matchedRef:cand.ref,matchedType:cand.kind}:t);
+  // Scans every unmatched transaction in this account and auto-links any that has exactly ONE
+  // open invoice/expense whose amount matches to the paisa — the safe, unambiguous case only.
+  // Anything with zero or multiple exact matches is left for the user to review manually.
+  const autoMatchAll=()=>{
+    const candidates = txns.filter(t=>!t.matched).map(t=>{
+      const opts=optionsFor(t).filter(o=>Math.abs(o.amt-t.amount)<0.01);
+      return {t,exact:opts};
+    }).filter(x=>x.exact.length===1);
+    if(candidates.length===0){toast.info('No unambiguous exact-amount matches found. Link the rest manually.');return;}
+    if(!window.confirm(`Found ${candidates.length} transaction(s) with exactly one matching open invoice/expense at the same amount. Link them all now?`))return;
+    candidates.forEach(({t,exact})=>doMatch(t,exact[0]));
+    toast.success(`Auto-matched ${candidates.length} transaction(s)`);
+  };
+
+  const doMatch=(t,cand)=>{
+    if(!cand){toast.error('Pick something to link this transaction to');return;}
+    const updatedTxns=txns.map(x=>x.id===t.id?{...x,matched:true,matchedRef:cand.ref,matchedType:cand.kind}:x);
     persist(updatedTxns);
     if(cand.kind==='invoice'){
-      const invs=S.get(SK.INV,[]).map(i=>i.invNo===cand.ref?{...i,status:'Paid',paidDate:today()}:i);
+      const invs=S.get(SK.INV,[]).map(i=>i.invNo===cand.ref?{...i,status:'Paid',paidDate:t.date,paymentRef:t.refNo||''}:i);
       S.set(SK.INV,invs);
-      logAudit('INVOICE_MARKED_PAID',`${cand.ref} matched to bank transaction`,currentUser);
+      logAudit('INVOICE_MARKED_PAID',`${cand.ref} matched to bank transaction${t.refNo?' (ref '+t.refNo+')':''}`,currentUser);
     } else {
-      const exps=S.get(SK.EXP,[]).map(e=>(e.id||e.vendor)===cand.ref?{...e,reconciled:true}:e);
+      const exps=S.get(SK.EXP,[]).map(e=>e.id===cand.ref?{...e,payStatus:'Paid',paidAmount:e.total,reconciled:true,paidDate:t.date,paymentRef:t.refNo||''}:e);
       S.set(SK.EXP,exps);
+      logAudit('EXPENSE_MARKED_PAID',`${cand.ref} matched to bank transaction${t.refNo?' (ref '+t.refNo+')':''}`,currentUser);
     }
-    setMatchingId(null);
-    toast.success('Matched and marked reconciled!');
+    setMatchingId(null);setPickedRef('');
+    toast.success('Linked and marked paid!');
   };
 
-  const filtered = txns.filter(t=>filter==='all'||(filter==='matched'?t.matched:!t.matched));
+  // Money-in transaction with no matching invoice — record it directly as a lightweight Sale
+  // (shows up in the Sales section) rather than forcing it to sit unlinked or go to Expenses.
+  const createQuickSale=(t)=>{
+    const qs={
+      id:'QS-'+Date.now().toString()+Math.random().toString(36).slice(2,5),
+      date:t.date,
+      customer:qsCustomer.trim()||'Unknown / Walk-in',
+      desc:t.desc||qsNotes||'Bank credit',
+      notes:qsNotes.trim(),
+      amount:t.amount,
+      refNo:t.refNo||'',
+      source:'bank',
+      createdBy:currentUser?.username||currentUser?.name||'',
+      createdAt:new Date().toISOString()
+    };
+    S.set(SK.QSALE,[...S.get(SK.QSALE,[]),qs]);
+    const updatedTxns=txns.map(x=>x.id===t.id?{...x,matched:true,matchedRef:qs.id,matchedType:'quicksale'}:x);
+    persist(updatedTxns);
+    logAudit('QUICK_SALE_CREATED',`${qs.id} created from bank credit${t.refNo?' (ref '+t.refNo+')':''} — ${fmt(qs.amount)}`,currentUser);
+    setMatchingId(null);setPickedRef('');setQsCustomer('');setQsNotes('');
+    toast.success('Recorded as a new Sale');
+  };
+
+  const unlink=(t)=>{
+    const updatedTxns=txns.map(x=>x.id===t.id?{...x,matched:false,matchedRef:'',matchedType:''}:x);
+    persist(updatedTxns);
+    if(t.matchedType==='invoice'){
+      const invs=S.get(SK.INV,[]).map(i=>i.invNo===t.matchedRef?{...i,status:'Sent',paymentRef:''}:i);
+      S.set(SK.INV,invs);
+    } else if(t.matchedType==='expense'){
+      const exps=S.get(SK.EXP,[]).map(e=>e.id===t.matchedRef?{...e,payStatus:'Pending',reconciled:false,paymentRef:''}:e);
+      S.set(SK.EXP,exps);
+    } else if(t.matchedType==='quicksale'){
+      // The quick sale record only exists because of this link — remove it too
+      S.set(SK.QSALE,S.get(SK.QSALE,[]).filter(q=>q.id!==t.matchedRef));
+    }
+    toast.info('Unlinked');
+  };
+
+  const filtered = txns.filter(t=>filter==='all'||(filter==='matched'?t.matched:!t.matched))
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id)));
 
   return <div className={inline?"inline-card":"overlay"}>
     <div className={inline?"inline-card-inner":"modal"}>
       {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="bank" s={18}/> Bank Reconciliation</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
       <div className="modal-body">
+
+        {/* Bank account selector */}
+        <div style={{display:'flex',gap:8,marginBottom:14,alignItems:'center',flexWrap:'wrap'}}>
+          <Ic n="bank" s={15}/>
+          <select className="field-input" style={{maxWidth:260,fontWeight:600}} value={activeAcctId} onChange={e=>setActiveAcctId(e.target.value)}>
+            {accounts.map(a=><option key={a.id} value={a.id}>{a.name}{a.bankName?` — ${a.bankName}`:''}{a.accountNo?` (••${a.accountNo.slice(-4)})`:''}</option>)}
+          </select>
+          <button className="btn btn-sm btn-outline-primary" onClick={()=>setShowAddAcct(s=>!s)}><Ic n="plus" s={12}/> Add Account</button>
+          {accounts.length>1&&<button className="btn btn-sm btn-outline" style={{borderColor:'var(--red)',color:'var(--red)'}} onClick={deleteAccount}><Ic n="trash" s={11}/> Remove This Account</button>}
+        </div>
+        {showAddAcct&&(
+          <div className="card" style={{marginBottom:14}}>
+            <div style={{fontWeight:700,marginBottom:8,fontSize:13}}>New Bank Account</div>
+            <div className="g4">
+              <div className="field"><label className="field-label">Account Name</label><input className="field-input" value={newAcct.name} onChange={e=>setNewAcct(p=>({...p,name:e.target.value}))} placeholder="e.g. HDFC Current A/c"/></div>
+              <div className="field"><label className="field-label">Bank Name</label><input className="field-input" value={newAcct.bankName} onChange={e=>setNewAcct(p=>({...p,bankName:e.target.value}))} placeholder="Optional"/></div>
+              <div className="field"><label className="field-label">Account No.</label><input className="field-input" value={newAcct.accountNo} onChange={e=>setNewAcct(p=>({...p,accountNo:e.target.value}))} placeholder="Optional"/></div>
+              <div className="field"><label className="field-label">Opening Balance (₹)</label><input type="number" className="field-input" value={newAcct.openingBalance} onChange={e=>setNewAcct(p=>({...p,openingBalance:e.target.value}))} placeholder="0.00"/></div>
+            </div>
+            <div style={{display:'flex',gap:8,marginTop:8}}>
+              <button className="btn btn-primary btn-sm" onClick={addAccount}>Add Account</button>
+              <button className="btn btn-outline btn-sm" onClick={()=>setShowAddAcct(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {/* Balance strip */}
+        <div className="g4" style={{marginBottom:16}}>
+          <div className="stat-card">
+            {editingOB?(
+              <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                <input type="number" className="field-input" style={{fontSize:14}} value={openingBal} onChange={e=>setOpeningBal(e.target.value)} autoFocus/>
+                <button className="btn btn-sm btn-primary" onClick={saveOpeningBal}><Ic n="check" s={12}/></button>
+              </div>
+            ):(
+              <div className="stat-val" style={{fontSize:16,cursor:'pointer'}} onClick={()=>setEditingOB(true)} title="Click to edit">{fmt(parseFloat(openingBal)||0)}</div>
+            )}
+            <div className="stat-lbl">Opening Balance {!editingOB&&<span style={{textDecoration:'underline',cursor:'pointer'}} onClick={()=>setEditingOB(true)}>(edit)</span>}</div>
+          </div>
+          <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--green)'}}>+{fmt(totalIn)}</div><div className="stat-lbl">Total Money In</div></div>
+          <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--red)'}}>-{fmt(totalOut)}</div><div className="stat-lbl">Total Money Out</div></div>
+          <div className="stat-card" style={{borderLeft:'3px solid var(--primary)'}}><div className="stat-val" style={{fontSize:16,color:'var(--primary2)'}}>{fmt(currentBalance)}</div><div className="stat-lbl">Current Bank Balance</div></div>
+        </div>
+
         <div className="card" style={{marginBottom:16}}>
           <div style={{fontWeight:700,marginBottom:10,fontSize:13}}>Add Transaction</div>
           <div className="g4">
@@ -7159,61 +7397,1438 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
             <div className="field"><label className="field-label">Amount (₹)</label><input type="number" className="field-input" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))} placeholder="0.00"/></div>
             <div className="field"><label className="field-label">Type</label><select className="field-input" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}><option value="credit">Credit (money in)</option><option value="debit">Debit (money out)</option></select></div>
           </div>
+          <div className="field" style={{marginTop:8,maxWidth:260}}><label className="field-label">Transaction Ref No. / UTR</label><input className="field-input" value={form.refNo} onChange={e=>setForm(p=>({...p,refNo:e.target.value}))} placeholder="Optional"/></div>
           <div style={{display:'flex',gap:10,marginTop:8}}>
             <button className="btn btn-primary" onClick={addTxn}><Ic n="plus" s={13}/> Add</button>
             <input type="file" ref={fileRef} accept=".csv,.xlsx,.xls" style={{display:'none'}} onChange={importFile}/>
             <button className="btn btn-outline-primary" onClick={()=>fileRef.current?.click()}><Ic n="upload" s={13}/> Import Excel/CSV</button>
           </div>
-          <div style={{fontSize:11,color:'var(--text3)',marginTop:6}}>Import expects columns like Date, Description, Amount (or separate Debit/Credit columns) exported from your bank's statement.</div>
+          <div style={{fontSize:11,color:'var(--text3)',marginTop:6}}>Import expects columns like Date, Description, Amount (or separate Debit/Credit columns) and optionally a Ref No/UTR column, exported from your bank's statement.</div>
         </div>
 
-        <div style={{display:'flex',gap:8,marginBottom:12}}>
+        <div style={{display:'flex',gap:8,marginBottom:12,alignItems:'center',flexWrap:'wrap'}}>
           {[['unmatched','Unmatched'],['matched','Matched'],['all','All']].map(([k,l])=>(
             <button key={k} onClick={()=>setFilter(k)}
               style={{padding:'6px 14px',borderRadius:8,fontSize:12,fontWeight:filter===k?700:500,cursor:'pointer',
                 border:`2px solid ${filter===k?'var(--primary)':'var(--border2)'}`,
                 background:filter===k?'var(--primary-bg)':'transparent',color:filter===k?'var(--primary2)':'var(--text2)'}}>{l}</button>
           ))}
+          <div style={{flex:1}}/>
+          <button className="btn btn-sm btn-outline-primary" onClick={autoMatchAll}><Ic n="check" s={12}/> Auto-Match Exact Amounts</button>
         </div>
 
         {filtered.length===0?(
           <div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>No transactions here yet.</div>
         ):(
-          <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden'}}>
-            {filtered.map(t=>(
-              <div key={t.id} style={{padding:'10px 14px',borderBottom:'1px solid var(--border)'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}>
-                  <div style={{minWidth:0}}>
-                    <div style={{fontWeight:600,fontSize:13}}>{t.desc}</div>
-                    <div style={{fontSize:11,color:'var(--text3)'}}>{fmtDate?fmtDate(t.date):t.date} · {t.type==='credit'?'Money In':'Money Out'}</div>
-                  </div>
-                  <div style={{textAlign:'right',flexShrink:0}}>
-                    <div style={{fontWeight:700,color:t.type==='credit'?'var(--green)':'var(--red)'}}>{t.type==='credit'?'+':'-'}{fmt(t.amount)}</div>
-                    {t.matched?<span className="badge badge-green">Matched: {t.matchedRef}</span>:
-                      <div style={{display:'flex',gap:5,marginTop:4}}>
-                        <button className="btn btn-sm btn-outline-primary" onClick={()=>setMatchingId(matchingId===t.id?null:t.id)}>Match</button>
-                        <button className="btn btn-sm btn-danger btn-icon" onClick={()=>delTxn(t.id)}><Ic n="trash" s={11}/></button>
-                      </div>}
-                  </div>
-                </div>
-                {matchingId===t.id&&(
-                  <div style={{marginTop:8,padding:10,background:'var(--card2)',borderRadius:8}}>
-                    {candidatesFor(t).length===0?
-                      <div style={{fontSize:12,color:'var(--text3)'}}>No {t.type==='credit'?'unpaid invoice':'expense'} found with a matching amount.</div>
-                      :candidatesFor(t).map((c,i)=>(
-                        <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',fontSize:12}}>
-                          <span>{c.label}</span>
-                          <button className="btn btn-sm btn-primary" onClick={()=>doMatch(t.id,c)}>Confirm Match</button>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            ))}
+          <div className="dt-wrap">
+            <table className="dt" style={{width:'100%'}}>
+              <thead><tr>
+                <th>Description</th><th>Date</th><th>Ref No / UTR</th><th>Type</th><th style={{textAlign:'right'}}>Amount</th><th style={{textAlign:'right'}}>Balance</th><th>Status</th><th style={{width:150}}>Actions</th>
+              </tr></thead>
+              <tbody>
+                {filtered.map(t=>(
+                  <React.Fragment key={t.id}>
+                    <tr>
+                      <td style={{fontWeight:600}}>{t.desc}</td>
+                      <td>{fmtDate?fmtDate(t.date):t.date}</td>
+                      <td style={{color:'var(--text3)',fontSize:12}}>{t.refNo||'—'}</td>
+                      <td><span className={`badge ${t.type==='credit'?'badge-green':'badge-red'}`}>{t.type==='credit'?'Money In':'Money Out'}</span></td>
+                      <td style={{textAlign:'right',fontWeight:700,color:t.type==='credit'?'var(--green)':'var(--red)'}}>{t.type==='credit'?'+':'-'}{fmt(t.amount)}</td>
+                      <td style={{textAlign:'right',color:'var(--text3)',fontSize:12}}>{fmt(balanceById[t.id])}</td>
+                      <td>{t.matched?<span className="badge badge-green">{t.matchedType==='quicksale'?`New Sale: ${t.matchedRef}`:`Linked: ${t.matchedRef}`}</span>:<span className="badge badge-gold">Unmatched</span>}</td>
+                      <td>
+                        {t.matched?(
+                          <button className="btn btn-sm btn-outline" onClick={()=>unlink(t)}>Unlink</button>
+                        ):(
+                          <div style={{display:'flex',gap:5}}>
+                            <button className="btn btn-sm btn-outline-primary" onClick={()=>{
+                              const opening=matchingId!==t.id;
+                              setMatchingId(opening?t.id:null);
+                              setPickedRef(opening?(optionsFor(t)[0]?.ref||''):'');
+                            }}>Link</button>
+                            <button className="btn btn-sm btn-danger btn-icon" onClick={()=>delTxn(t.id)}><Ic n="trash" s={11}/></button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                    {matchingId===t.id&&(()=>{
+                      const opts=optionsFor(t);
+                      return <tr>
+                        <td colSpan={8} style={{background:'var(--card2)',padding:14}}>
+                          <div style={{fontSize:11,color:'var(--text3)',marginBottom:6}}>
+                            {t.type==='credit'?'Link this credit to an unpaid Sales Invoice:':'Link this debit to an unpaid Purchase / Expense:'}
+                          </div>
+                          {opts.length===0?
+                            <div style={{fontSize:12,color:'var(--text3)'}}>Nothing open to link — {t.type==='credit'?'all invoices are already paid.':'all purchases are already paid.'}</div>
+                            :<div style={{display:'flex',gap:8}}>
+                              <select className="field-input" style={{flex:1}} value={pickedRef} onChange={e=>setPickedRef(e.target.value)}>
+                                <option value="">Select {t.type==='credit'?'invoice':'purchase / expense'}…</option>
+                                {opts.map((o,i)=><option key={o.ref} value={o.ref}>{Math.abs(o.amt-t.amount)<0.01?'✓ Exact match — ':i===0?'⭐ Closest match — ':''}{o.label}</option>)}
+                              </select>
+                              <button className="btn btn-sm btn-primary" onClick={()=>doMatch(t,opts.find(o=>o.ref===pickedRef))}>Confirm Link</button>
+                            </div>}
+                          {t.type==='credit'&&<>
+                            <div style={{display:'flex',alignItems:'center',gap:8,margin:'10px 0'}}>
+                              <div style={{flex:1,height:1,background:'var(--border2)'}}/>
+                              <span style={{fontSize:11,color:'var(--text3)'}}>OR</span>
+                              <div style={{flex:1,height:1,background:'var(--border2)'}}/>
+                            </div>
+                            <div style={{fontSize:11,color:'var(--text3)',marginBottom:6}}>No matching invoice? Record this credit directly as a new Sale:</div>
+                            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                              <input className="field-input" style={{flex:'1 1 160px'}} placeholder="Customer name (optional)" value={qsCustomer} onChange={e=>setQsCustomer(e.target.value)}/>
+                              <input className="field-input" style={{flex:'1 1 160px'}} placeholder="Notes (optional)" value={qsNotes} onChange={e=>setQsNotes(e.target.value)}/>
+                              <button className="btn btn-sm btn-outline-primary" onClick={()=>createQuickSale(t)}><Ic n="plus" s={12}/> Record as New Sale</button>
+                            </div>
+                          </>}
+                        </td>
+                      </tr>;
+                    })()}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
     </div>
+  </div>;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ⭐ FEATURE: SALES SECTION — combined view of all Sales Invoices
+   plus lightweight "Quick Sales" recorded directly from unmatched
+   bank credits during reconciliation. Any status change made via
+   Bank Reconciliation (invoice marked Paid, or a quick sale created)
+   is reflected here automatically since both read straight from
+   storage.
+   ══════════════════════════════════════════════════════════════ */
+const SalesPage = ({inline=true, onClose, currentUser})=>{
+  const [tick,setTick]=useState(0); // bump to force a re-read from storage
+  const refresh=()=>setTick(x=>x+1);
+  const [view,setView]=useState('all'); // 'all' | 'customers'
+  const [selCustomer,setSelCustomer]=useState(null); // set → shows the customer detail screen
+  const [q,setQ]=useState('');
+  const [statusFilter,setStatusFilter]=useState('all');
+  const [custQ,setCustQ]=useState('');
+
+  const docLabel = dt => dt==='NON GST INVOICE'?'Non-GST Invoice':dt==='CREDIT NOTE'?'Credit Note':dt==='DEBIT NOTE'?'Debit Note':dt==='TAX INVOICE'?'Tax Invoice':(dt||'Invoice');
+
+  // Every row that represents a sale: normal/non-GST invoices and debit notes add to sales,
+  // credit notes reduce it (signed amount), plus quick sales created from unmatched bank credits.
+  const rows = useMemo(()=>{
+    const invoices = S.get(SK.INV,[]).filter(i=>['TAX INVOICE','NON GST INVOICE','DEBIT NOTE','CREDIT NOTE'].includes(i.docType));
+    const quickSales = S.get(SK.QSALE,[]);
+    const invRows = invoices.map(i=>{
+      const sign = i.docType==='CREDIT NOTE'?-1:1;
+      return {
+        id:i.invNo, kind:i.docType, kindLabel:docLabel(i.docType), ref:i.invNo, date:i.date,
+        customer:i.billTo?.name||'Unknown', amount:sign*getGrand(i),
+        status:i.status||'Draft', refNo:i.paymentRef||'', notes:docLabel(i.docType)
+      };
+    });
+    const qsRows = quickSales.map(qs=>({
+      id:qs.id, kind:'QUICK SALE', kindLabel:'Quick Sale', ref:qs.id, date:qs.date,
+      customer:qs.customer, amount:qs.amount,
+      status:'Paid', refNo:qs.refNo||'', notes:qs.desc||qs.notes||'Bank credit'
+    }));
+    return [...invRows,...qsRows].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    // eslint-disable-next-line
+  },[tick]);
+
+  const filteredRows = rows.filter(r=>{
+    if(statusFilter!=='all'&&r.status!==statusFilter)return false;
+    if(q&&!(`${r.ref} ${r.customer} ${r.notes}`.toLowerCase().includes(q.toLowerCase())))return false;
+    return true;
+  });
+
+  const totalAmt = filteredRows.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+  const paidAmt = filteredRows.filter(r=>r.status==='Paid').reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+
+  // Per-customer roll-up: total sales, received, outstanding, and a count of documents.
+  const customerStats = useMemo(()=>{
+    const map={};
+    rows.forEach(r=>{
+      const key=(r.customer||'Unknown').trim()||'Unknown';
+      if(!map[key])map[key]={name:key,totalSales:0,received:0,outstanding:0,count:0,lastDate:''};
+      const amt=parseFloat(r.amount)||0;
+      map[key].totalSales+=amt;
+      if(r.status==='Paid')map[key].received+=amt; else map[key].outstanding+=amt;
+      map[key].count+=1;
+      if(!map[key].lastDate||(r.date||'')>map[key].lastDate)map[key].lastDate=r.date;
+    });
+    return Object.values(map).sort((a,b)=>b.totalSales-a.totalSales);
+  },[rows]);
+
+  const filteredCustomers = customerStats.filter(c=>!custQ||c.name.toLowerCase().includes(custQ.toLowerCase()));
+  const custRows = selCustomer ? rows.filter(r=>(r.customer||'Unknown')===selCustomer).sort((a,b)=>(b.date||'').localeCompare(a.date||'')) : [];
+  const custSummary = selCustomer ? customerStats.find(c=>c.name===selCustomer) : null;
+
+  const renderTable = (rowsToShow, showCustomerCol=true)=>(
+    <div className="dt-wrap">
+      <table className="dt" style={{width:'100%'}}>
+        <thead><tr>
+          <th>Type</th><th>Ref</th><th>Date</th>{showCustomerCol&&<th>Customer</th>}<th>Notes</th><th>Bank Ref</th><th style={{textAlign:'right'}}>Amount</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          {rowsToShow.length===0?(
+            <tr><td colSpan={showCustomerCol?8:7} style={{textAlign:'center',padding:24,color:'var(--text3)'}}>No sales found.</td></tr>
+          ):rowsToShow.map(r=>(
+            <tr key={r.kind+r.id}>
+              <td><span className={`badge ${r.kind==='QUICK SALE'?'badge-blue':r.kind==='CREDIT NOTE'?'badge-gold':'badge'}`}>{r.kindLabel}</span></td>
+              <td style={{fontWeight:600}}>{r.ref}</td>
+              <td>{fmtDate?fmtDate(r.date):r.date}</td>
+              {showCustomerCol&&<td>{r.customer}</td>}
+              <td style={{color:'var(--text3)',fontSize:12}}>{r.notes}</td>
+              <td style={{color:'var(--text3)',fontSize:12}}>{r.refNo||'—'}</td>
+              <td style={{textAlign:'right',fontWeight:600,color:r.amount<0?'var(--red)':'inherit'}}>{fmt(r.amount)}</td>
+              <td><span className={`badge ${r.status==='Paid'?'badge-green':r.status==='Overdue'?'badge-red':'badge-gold'}`}>{r.status}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="bank" s={18}/> Sales</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
+      <div className="modal-body">
+
+        {/* ── Customer detail screen ── */}
+        {selCustomer?(
+          <>
+            <button className="btn btn-sm btn-outline" style={{marginBottom:14}} onClick={()=>setSelCustomer(null)}><span style={{display:'inline-block',transform:'rotate(180deg)'}}><Ic n="chevron" s={11}/></span> Back to Customers</button>
+            <div style={{fontWeight:700,fontSize:16,marginBottom:2}}>{selCustomer}</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginBottom:14}}>{custSummary?.count||0} transaction{custSummary?.count===1?'':'s'} · last activity {custSummary?.lastDate?(fmtDate?fmtDate(custSummary.lastDate):custSummary.lastDate):'—'}</div>
+            <div className="g3" style={{marginBottom:16}}>
+              <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{fmt(custSummary?.totalSales||0)}</div><div className="stat-lbl">Total Sales</div></div>
+              <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--green)'}}>{fmt(custSummary?.received||0)}</div><div className="stat-lbl">Received</div></div>
+              <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--red)'}}>{fmt(custSummary?.outstanding||0)}</div><div className="stat-lbl">Outstanding</div></div>
+            </div>
+            {renderTable(custRows,false)}
+          </>
+        ):(
+          <>
+            <div style={{display:'flex',gap:8,marginBottom:16}}>
+              {[['all','All Sales'],['customers','Customers']].map(([k,l])=>(
+                <button key={k} onClick={()=>setView(k)}
+                  style={{padding:'6px 14px',borderRadius:8,fontSize:12,fontWeight:view===k?700:500,cursor:'pointer',
+                    border:`2px solid ${view===k?'var(--primary)':'var(--border2)'}`,
+                    background:view===k?'var(--primary-bg)':'transparent',color:view===k?'var(--primary2)':'var(--text2)'}}>{l}</button>
+              ))}
+            </div>
+
+            {view==='all'?(
+              <>
+                <div style={{fontSize:12,color:'var(--text3)',marginBottom:12}}>Every sales invoice, credit/debit note, plus quick sales recorded directly from bank credits — in one place.</div>
+                <div className="g3" style={{marginBottom:16}}>
+                  <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{fmt(totalAmt)}</div><div className="stat-lbl">Total Sales ({filteredRows.length})</div></div>
+                  <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--green)'}}>{fmt(paidAmt)}</div><div className="stat-lbl">Received</div></div>
+                  <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--red)'}}>{fmt(totalAmt-paidAmt)}</div><div className="stat-lbl">Outstanding</div></div>
+                </div>
+                <div style={{display:'flex',gap:10,marginBottom:12,flexWrap:'wrap'}}>
+                  <input className="field-input" style={{maxWidth:260}} placeholder="Search ref, customer, notes…" value={q} onChange={e=>setQ(e.target.value)}/>
+                  <select className="field-input" style={{maxWidth:160}} value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
+                    <option value="all">All statuses</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Sent">Sent</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Overdue">Overdue</option>
+                  </select>
+                  <button className="btn btn-outline" onClick={refresh}><Ic n="refresh" s={13}/> Refresh</button>
+                </div>
+                {renderTable(filteredRows,true)}
+              </>
+            ):(
+              <>
+                <div style={{fontSize:12,color:'var(--text3)',marginBottom:12}}>Click a customer to see every transaction with them — sales, receipts, outstanding, and document type.</div>
+                <div style={{display:'flex',gap:10,marginBottom:12,flexWrap:'wrap'}}>
+                  <input className="field-input" style={{maxWidth:260}} placeholder="Search customer…" value={custQ} onChange={e=>setCustQ(e.target.value)}/>
+                  <button className="btn btn-outline" onClick={refresh}><Ic n="refresh" s={13}/> Refresh</button>
+                </div>
+                <div className="dt-wrap">
+                  <table className="dt" style={{width:'100%'}}>
+                    <thead><tr>
+                      <th>Customer</th><th># Docs</th><th>Last Activity</th><th style={{textAlign:'right'}}>Total Sales</th><th style={{textAlign:'right'}}>Received</th><th style={{textAlign:'right'}}>Outstanding</th>
+                    </tr></thead>
+                    <tbody>
+                      {filteredCustomers.length===0?(
+                        <tr><td colSpan={6} style={{textAlign:'center',padding:24,color:'var(--text3)'}}>No customers found.</td></tr>
+                      ):filteredCustomers.map(c=>(
+                        <tr key={c.name} style={{cursor:'pointer'}} onClick={()=>setSelCustomer(c.name)}>
+                          <td style={{fontWeight:600,color:'var(--primary2)'}}>{c.name}</td>
+                          <td>{c.count}</td>
+                          <td>{c.lastDate?(fmtDate?fmtDate(c.lastDate):c.lastDate):'—'}</td>
+                          <td style={{textAlign:'right',fontWeight:600}}>{fmt(c.totalSales)}</td>
+                          <td style={{textAlign:'right',color:'var(--green)'}}>{fmt(c.received)}</td>
+                          <td style={{textAlign:'right',color:'var(--red)'}}>{fmt(c.outstanding)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  </div>;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ⭐ FEATURE: FINANCIAL REPORTS — P&L, Balance Sheet, Trial Balance
+   These are simplified MANAGEMENT reports built live from your sales,
+   expense, inventory and bank data (this app doesn't keep a full
+   double-entry ledger, so Balance Sheet / Trial Balance use a single
+   computed "Capital & Reserves" balancing figure rather than real
+   ledger postings). Good for a quick health-check; not a substitute
+   for statutory financials from your CA.
+   ══════════════════════════════════════════════════════════════ */
+const getBankBalanceAsOf = (asOf)=>{
+  const accounts=S.get(SK.BANK_ACCTS,[]);
+  const allTxns=S.get(SK.BANK,[]);
+  return accounts.reduce((sum,acc)=>{
+    const bal = allTxns.filter(t=>(t.acctId||'PRIMARY')===acc.id && (!asOf||(t.date||'')<=asOf))
+      .reduce((b,t)=>b+(t.type==='credit'?1:-1)*(parseFloat(t.amount)||0), parseFloat(acc.openingBalance)||0);
+    return sum+bal;
+  },0);
+};
+const getStockValueNow = ()=>{
+  const map=buildFifoLayers();
+  let total=0;
+  Object.values(map).forEach(({layers})=>layers.forEach(l=>total+=l.qty*l.rate));
+  return total;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ⭐ DOUBLE-ENTRY ACCOUNTING ENGINE
+   A Chart of Accounts + a live Journal built automatically every time
+   it's needed from the Sales, Purchase, Bank and Inventory records
+   already in the app — plus Manual Journal Vouchers for adjustments
+   (depreciation, provisions, opening capital) that have no source
+   document. Nothing routine needs re-typing: every transaction is
+   posted for you, so the books can never drift out of sync with
+   Invoices / Purchases / Bank Reconciliation, and every debit always
+   has a matching credit.
+   ══════════════════════════════════════════════════════════════ */
+const COA = [
+  {key:'FIXED_ASSETS',       name:'Fixed Assets (Tangible)',                      type:'asset',     group:'Non-Current Assets'},
+  {key:'ACC_DEPRECIATION',   name:'Accumulated Depreciation',                     type:'asset',     group:'Non-Current Assets'},
+  {key:'INVESTMENTS',        name:'Non-Current Investments',                      type:'asset',     group:'Non-Current Assets'},
+  {key:'INVENTORY',          name:'Inventories',                                  type:'asset',     group:'Current Assets'},
+  {key:'TRADE_RECEIVABLE',   name:'Trade Receivables',                            type:'asset',     group:'Current Assets'},
+  {key:'BANK',               name:'Cash and Cash Equivalents',                    type:'asset',     group:'Current Assets'},
+  {key:'INPUT_GST',          name:'Balances with Govt. Authorities (Input GST)',  type:'asset',     group:'Current Assets'},
+  {key:'ADVANCES',           name:'Short-term Loans & Advances',                  type:'asset',     group:'Current Assets'},
+  {key:'SUSPENSE_OUT',       name:'Unidentified Bank Payments (Suspense)',        type:'asset',     group:'Current Assets'},
+  {key:'CAPITAL',            name:"Owner's Capital / Share Capital",              type:'equity',    group:'Equity'},
+  {key:'RETAINED_EARNINGS',  name:'Reserves & Surplus (Retained Earnings)',       type:'equity',    group:'Equity', computed:true},
+  {key:'LT_BORROWING',       name:'Long-term Borrowings',                         type:'liability', group:'Non-Current Liabilities'},
+  {key:'LT_PROVISION',       name:'Long-term Provisions',                         type:'liability', group:'Non-Current Liabilities'},
+  {key:'ST_BORROWING',       name:'Short-term Borrowings',                        type:'liability', group:'Current Liabilities'},
+  {key:'TRADE_PAYABLE',      name:'Trade Payables',                               type:'liability', group:'Current Liabilities'},
+  {key:'OUTPUT_GST',         name:'Balances with Govt. Authorities (Output GST)', type:'liability', group:'Current Liabilities'},
+  {key:'ST_PROVISION',       name:'Short-term Provisions',                        type:'liability', group:'Current Liabilities'},
+  {key:'SUSPENSE_IN',        name:'Unidentified Bank Receipts (Suspense)',        type:'liability', group:'Current Liabilities'},
+  {key:'OTHER_CURRENT_LIAB', name:'Other Current Liabilities',                    type:'liability', group:'Current Liabilities'},
+  {key:'SALES',              name:'Revenue from Operations (Sales)',              type:'income',    group:'Income'},
+  {key:'OTHER_INCOME',       name:'Other Income',                                 type:'income',    group:'Income'},
+  {key:'COGS',               name:'Cost of Materials Consumed',                   type:'expense',   group:'Expenses'},
+  {key:'EMPLOYEE_EXP',       name:'Employee Benefit Expense',                     type:'expense',   group:'Expenses'},
+  {key:'FINANCE_COST',       name:'Finance Costs',                                type:'expense',   group:'Expenses'},
+  {key:'DEPRECIATION',       name:'Depreciation and Amortisation Expense',        type:'expense',   group:'Expenses'},
+  {key:'RENT_EXP',           name:'Rent Expense',                                 type:'expense',   group:'Expenses'},
+  {key:'OTHER_EXP',          name:'Other Expenses',                               type:'expense',   group:'Expenses'},
+];
+const coaByKey = key => COA.find(a=>a.key===key) || {key, name:key, type:'asset', group:'Other'};
+
+const DEFAULT_POLICIES = `1. Basis of preparation: These financial statements are prepared on an accrual basis of accounting, under the historical cost convention.
+2. Revenue recognition: Revenue from sale of goods/services is recognised at the point of raising the invoice, net of GST and returns (Credit Notes).
+3. Inventory: Valued at cost, determined on a First-In-First-Out (FIFO) basis, or net realisable value, whichever is lower.
+4. Fixed assets & depreciation: Fixed assets are stated at cost less accumulated depreciation. Depreciation is provided as per the applicable rates/useful life on a systematic basis.
+5. GST: Input GST and Output GST are accounted for separately and shown under Current Assets / Current Liabilities respectively, pending set-off/refund.
+6. Trade Receivables/Payables: Recognised at invoice value and reviewed periodically for recoverability/ageing.`;
+const getPolicies = () => S.get(SK.POLICIES, DEFAULT_POLICIES);
+
+/* Free-text Purchase category → default expense ledger. A user override (via the Chart of
+   Accounts page) always wins over the keyword guess. */
+const guessExpenseAccount = (category)=>{
+  const c=(category||'').toLowerCase();
+  const map=S.get(SK.ACCMAP,{});
+  if(map[c]) return map[c];
+  if(/rent/.test(c)) return 'RENT_EXP';
+  if(/salary|wage|payroll|staff|employee/.test(c)) return 'EMPLOYEE_EXP';
+  if(/interest|bank charge|loan|finance/.test(c)) return 'FINANCE_COST';
+  if(/depreciation/.test(c)) return 'DEPRECIATION';
+  return 'OTHER_EXP';
+};
+const setExpenseAccountMap = (category, accKey)=>{
+  const map={...S.get(SK.ACCMAP,{})};
+  map[(category||'').toLowerCase().trim()]=accKey;
+  S.set(SK.ACCMAP,map);
+};
+
+const invTaxable = inv => (inv.items||[]).reduce((s,r)=>s+(parseFloat(r.taxable)||0),0);
+const invGstAmt  = inv => (inv.items||[]).reduce((s,r)=>s+(parseFloat(r.gstAmt)||0),0);
+
+/* Replays the stock ledger up to a date to get Inventory's value as of that date (not just "now") */
+const getStockValueAsOf = (asOf) => {
+  const log = stockLog().filter(l=>(l.date||'')<=asOf);
+  const {layers} = computeFIFO(log);
+  let total=0;
+  Object.values(layers).forEach(arr=>arr.forEach(l=>total+=(l.qty||0)*(l.rate||0)));
+  return total;
+};
+
+const OPENING_DATE = '1900-01-01'; // pseudo-date: opening balances always count cumulatively, but never fall inside a normal reporting period
+
+/* Builds the ENTIRE auto-posted journal fresh every time from source data, so it can never
+   drift out of sync. Each entry is a balanced {date, narration, srcType, srcId, lines:[{account,debit,credit}]}. */
+const buildAutoJournal = () => {
+  const entries=[];
+  const add=(date,narration,srcType,srcId,lines)=>{
+    const d=+lines.reduce((s,l)=>s+(l.debit||0),0).toFixed(2);
+    const c=+lines.reduce((s,l)=>s+(l.credit||0),0).toFixed(2);
+    if(Math.abs(d-c)<=0.02) entries.push({date:date||today(), narration, srcType, srcId, lines});
+  };
+
+  // Sales invoices, Non-GST invoices, Debit Notes & Credit Notes
+  S.get(SK.INV,[]).forEach(inv=>{
+    if(!['TAX INVOICE','NON GST INVOICE','DEBIT NOTE','CREDIT NOTE'].includes(inv.docType)) return;
+    if(inv.status==='Draft'||inv.status==='Cancelled') return;
+    const rev = inv.docType==='CREDIT NOTE' ? -1 : 1;
+    const grand = getGrand(inv)*rev, gst = invGstAmt(inv)*rev, taxable = +(grand-gst).toFixed(2);
+    const lines=[];
+    lines.push(grand>=0?{account:'TRADE_RECEIVABLE',debit:grand,credit:0}:{account:'TRADE_RECEIVABLE',debit:0,credit:-grand});
+    lines.push(taxable>=0?{account:'SALES',debit:0,credit:taxable}:{account:'SALES',debit:-taxable,credit:0});
+    if(Math.abs(gst)>0.004) lines.push(gst>=0?{account:'OUTPUT_GST',debit:0,credit:gst}:{account:'OUTPUT_GST',debit:-gst,credit:0});
+    add(inv.date, `${inv.docType} ${inv.invNo}${inv.billTo?.name?' — '+inv.billTo.name:''}`, 'INV', inv.invNo, lines);
+  });
+
+  // Quick sales (bank credits with no formal invoice)
+  S.get(SK.QSALE,[]).forEach(qs=>{
+    const amt=parseFloat(qs.amount)||0; if(!amt) return;
+    add(qs.date, `Quick Sale ${qs.id}${qs.customer?' — '+qs.customer:''}`, 'QSALE', qs.id, [
+      {account:'TRADE_RECEIVABLE',debit:amt,credit:0}, {account:'SALES',debit:0,credit:amt},
+    ]);
+  });
+
+  // Purchases / expense bills — stock lines go to Inventory, non-stock lines to the mapped expense account
+  S.get(SK.EXP,[]).forEach(exp=>{
+    const items=expItems(exp); if(!items.length) return;
+    const when = exp.billDate||exp.date;
+    const stockTaxable = items.filter(it=>it.toStock!==false).reduce((s,it)=>s+(parseFloat(it.taxable)||0),0);
+    const expTaxable   = items.filter(it=>it.toStock===false).reduce((s,it)=>s+(parseFloat(it.taxable)||0),0);
+    const gst = items.reduce((s,it)=>s+(parseFloat(it.gstAmt)||0),0);
+    const total = parseFloat(exp.total) || +(stockTaxable+expTaxable+gst).toFixed(2);
+    const lines=[];
+    if(stockTaxable>0.004) lines.push({account:'INVENTORY',debit:+stockTaxable.toFixed(2),credit:0});
+    if(expTaxable>0.004) lines.push({account:guessExpenseAccount(exp.category),debit:+expTaxable.toFixed(2),credit:0});
+    if(gst>0.004) lines.push({account:'INPUT_GST',debit:+gst.toFixed(2),credit:0});
+    lines.push({account:'TRADE_PAYABLE',debit:0,credit:+total.toFixed(2)});
+    add(when, `Purchase ${exp.billNo||exp.id}${exp.vendor?' — '+exp.vendor:''}`, 'EXP', exp.id, lines);
+  });
+
+  // Bank accounts' opening balances
+  S.get(SK.BANK_ACCTS,[]).forEach(acc=>{
+    const ob=parseFloat(acc.openingBalance)||0;
+    if(Math.abs(ob)<=0.004) return;
+    if(ob>=0) add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'BANK',debit:ob,credit:0},{account:'CAPITAL',debit:0,credit:ob}]);
+    else add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'CAPITAL',debit:-ob,credit:0},{account:'BANK',debit:0,credit:-ob}]);
+  });
+
+  // Every bank transaction — the cash side of a collection or a payment
+  S.get(SK.BANK,[]).forEach(t=>{
+    const amt=parseFloat(t.amount)||0; if(!amt) return;
+    if(t.type==='credit'){
+      const contra = (t.matchedType==='invoice'||t.matchedType==='quicksale') ? 'TRADE_RECEIVABLE' : 'SUSPENSE_IN';
+      add(t.date, `Receipt — ${t.desc||'Bank credit'}${t.matchedRef?' ('+t.matchedRef+')':''}`, 'BANKTXN', t.id, [
+        {account:'BANK',debit:amt,credit:0}, {account:contra,debit:0,credit:amt},
+      ]);
+    } else {
+      const contra = t.matchedType==='expense' ? 'TRADE_PAYABLE' : 'SUSPENSE_OUT';
+      add(t.date, `Payment — ${t.desc||'Bank debit'}${t.matchedRef?' ('+t.matchedRef+')':''}`, 'BANKTXN', t.id, [
+        {account:contra,debit:amt,credit:0}, {account:'BANK',debit:0,credit:amt},
+      ]);
+    }
+  });
+
+  // Cost of Goods Sold — recognised against Inventory the moment stock actually goes out for a sale
+  const {cogsByLine, rows} = computeFIFO();
+  rows.filter(r=>r.qty<0 && r.refType==='INVOICE' && (cogsByLine[r.id]||0)>0.004).forEach(r=>{
+    add(r.date, `COGS — ${r.product} (${r.ref})`, 'COGS', r.id, [
+      {account:'COGS',debit:+cogsByLine[r.id].toFixed(2),credit:0},
+      {account:'INVENTORY',debit:0,credit:+cogsByLine[r.id].toFixed(2)},
+    ]);
+  });
+
+  return entries;
+};
+
+/* Manual Journal Vouchers — the only actually-stored ledger data. Used for anything with no
+   source document: depreciation, provisions, capital introduced, write-offs, adjustments. */
+const getManualJournal = () => S.get(SK.JOURNAL,[]);
+const saveManualJournalEntry = (entry) => {
+  const list=getManualJournal();
+  const rec = {...entry, id:entry.id||('JV-'+Date.now().toString(36))};
+  const updated = entry.id ? list.map(e=>e.id===entry.id?rec:e) : [...list, rec];
+  S.set(SK.JOURNAL, updated);
+  return rec;
+};
+const deleteManualJournalEntry = (id) => S.set(SK.JOURNAL, getManualJournal().filter(e=>e.id!==id));
+
+/* Combined ledger = every auto entry + every manual voucher, exploded into flat lines */
+const getAllLedgerLines = () => {
+  const out=[];
+  [...buildAutoJournal(), ...getManualJournal()].forEach(entry=>{
+    (entry.lines||[]).forEach(l=>out.push({date:entry.date, account:l.account, debit:+(l.debit||0), credit:+(l.credit||0), narration:entry.narration, srcType:entry.srcType||'JV', srcId:entry.srcId||entry.id}));
+  });
+  return out;
+};
+
+/* Trial Balance — every account's net Dr/Cr balance, cumulative from inception up to a date */
+const getTrialBalance = (asOf) => {
+  const lines = getAllLedgerLines().filter(l=>(l.date||'')<=asOf);
+  const byAcc = {};
+  lines.forEach(l=>{
+    if(!byAcc[l.account]) byAcc[l.account]={account:l.account, debit:0, credit:0};
+    byAcc[l.account].debit += l.debit; byAcc[l.account].credit += l.credit;
+  });
+  return Object.values(byAcc).map(r=>({...r, debit:+r.debit.toFixed(2), credit:+r.credit.toFixed(2), balance:+(r.debit-r.credit).toFixed(2)}))
+    .filter(r=>Math.abs(r.debit)>0.004||Math.abs(r.credit)>0.004);
+};
+
+/* P&L — Accrual basis: every Income/Expense line dated inside the range (the statutory basis) */
+const getPLAccrual = (from,to) => {
+  const lines = getAllLedgerLines().filter(l=>(l.date||'')>=from && (l.date||'')<=to);
+  const byAcc = {};
+  lines.forEach(l=>{
+    const acc=coaByKey(l.account);
+    if(acc.type!=='income' && acc.type!=='expense') return;
+    if(!byAcc[l.account]) byAcc[l.account]={account:l.account, name:acc.name, amount:0};
+    byAcc[l.account].amount += acc.type==='income' ? (l.credit-l.debit) : (l.debit-l.credit);
+  });
+  const rows=Object.values(byAcc).map(r=>({...r, type:coaByKey(r.account).type})).filter(r=>Math.abs(r.amount)>0.004);
+  const income=rows.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
+  const expense=rows.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
+  return {rows, income:+income.toFixed(2), expense:+expense.toFixed(2), net:+(income-expense).toFixed(2)};
+};
+
+/* P&L — Cash / Receipts-and-Payments basis: counts only actual money movement in the range.
+   (Companies Act statements must be accrual — this basis is offered only in the Normal/internal view.) */
+const getPLCash = (from,to) => {
+  const txns = S.get(SK.BANK,[]).filter(t=>(t.date||'')>=from && (t.date||'')<=to);
+  const received = txns.filter(t=>t.type==='credit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+  const paid     = txns.filter(t=>t.type==='debit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+  let manualIn=0, manualOut=0;
+  getManualJournal().filter(e=>(e.date||'')>=from && (e.date||'')<=to)
+    .forEach(e=>(e.lines||[]).forEach(l=>{ if(l.account==='BANK'){ manualIn+=l.debit||0; manualOut+=l.credit||0; }}));
+  const income=+(received+manualIn).toFixed(2), expense=+(paid+manualOut).toFixed(2);
+  return {income, expense, net:+(income-expense).toFixed(2)};
+};
+
+/* Balance Sheet as of a date — built entirely from the Trial Balance, so Assets always equal
+   Liabilities + Equity exactly (Retained Earnings is the genuine cumulative Income − Expense
+   balance, not a plug). */
+const getBalanceSheet = (asOf) => {
+  const tb = getTrialBalance(asOf);
+  const val = key => { const r=tb.find(x=>x.account===key); return r? r.balance : 0; };
+  const assets=[], liabilities=[], equity=[];
+  COA.forEach(a=>{
+    if(a.key==='RETAINED_EARNINGS') return;
+    const bal = val(a.key);
+    if(Math.abs(bal)<0.004) return;
+    if(a.type==='asset') assets.push({key:a.key, name:a.name, group:a.group, amount:+bal.toFixed(2)});
+    else if(a.type==='liability') liabilities.push({key:a.key, name:a.name, group:a.group, amount:+(-bal).toFixed(2)});
+    else if(a.type==='equity') equity.push({key:a.key, name:a.name, group:a.group, amount:+(-bal).toFixed(2)});
+  });
+  let netProfit=0;
+  tb.forEach(r=>{ const a=coaByKey(r.account); if(a.type==='income') netProfit += -r.balance; else if(a.type==='expense') netProfit -= r.balance; });
+  equity.push({key:'RETAINED_EARNINGS', name:'Reserves & Surplus (Retained Earnings)', group:'Equity', amount:+netProfit.toFixed(2)});
+  const totalAssets = +assets.reduce((s,a)=>s+a.amount,0).toFixed(2);
+  const totalLiab   = +liabilities.reduce((s,a)=>s+a.amount,0).toFixed(2);
+  const totalEquity = +equity.reduce((s,a)=>s+a.amount,0).toFixed(2);
+  return {assets, liabilities, equity, totalAssets, totalLiab, totalEquity, tallies: Math.abs(totalAssets-(totalLiab+totalEquity))<0.5};
+};
+
+/* Small shared control for picking any Chart-of-Accounts account, grouped by type */
+const AccountSelect = ({value,onChange,style})=>{
+  const groups = [['asset','Assets'],['liability','Liabilities'],['equity','Equity'],['income','Income'],['expense','Expenses']];
+  return <select className="field-input" style={style} value={value} onChange={e=>onChange(e.target.value)}>
+    <option value="">Select account…</option>
+    {groups.map(([t,label])=>(
+      <optgroup key={t} label={label}>
+        {COA.filter(a=>a.type===t).map(a=><option key={a.key} value={a.key}>{a.name}</option>)}
+      </optgroup>
+    ))}
+  </select>;
+};
+
+/* ══ Chart of Accounts — structure view + Purchase-category → Ledger mapping ══ */
+const ChartOfAccountsPage = ({inline=true})=>{
+  const [map,setMap]=useState(S.get(SK.ACCMAP,{}));
+  const cats = useMemo(()=>{
+    const s=new Set();
+    S.get(SK.EXP,[]).forEach(e=>{ if(e.category) s.add(e.category); });
+    return [...s].sort();
+  },[]);
+  const groups = [['asset','Assets'],['liability','Liabilities'],['equity','Equity'],['income','Income'],['expense','Expenses']];
+  const updateMap=(cat,accKey)=>{
+    setExpenseAccountMap(cat,accKey);
+    setMap(S.get(SK.ACCMAP,{}));
+    toast.success(`"${cat}" now posts to ${coaByKey(accKey).name}`);
+  };
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      <div className="modal-body">
+        <div className="alert" style={{background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.2)',marginBottom:16,borderRadius:10,fontSize:12}}>
+          Every account below is posted to automatically by your Invoices, Purchases and Bank Reconciliation — you don't post to these directly. Use Journal Vouchers for manual entries (depreciation, provisions, opening capital).
+        </div>
+        {groups.map(([t,label])=>(
+          <div key={t} className="dt-wrap" style={{marginBottom:16}}>
+            <table className="dt" style={{width:'100%'}}>
+              <thead><tr><th colSpan={2}>{label}</th></tr></thead>
+              <tbody>
+                {COA.filter(a=>a.type===t).map(a=>(
+                  <tr key={a.key}><td>{a.name}</td><td style={{color:'var(--text3)',fontSize:11.5,textAlign:'right'}}>{a.group}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+        <div className="dt-wrap">
+          <table className="dt" style={{width:'100%'}}>
+            <thead><tr><th>Purchase / Expense Category (as typed on bills)</th><th>Posts to Ledger Account</th></tr></thead>
+            <tbody>
+              {cats.length===0?(
+                <tr><td colSpan={2} style={{color:'var(--text3)',textAlign:'center'}}>No categorised purchase bills yet</td></tr>
+              ):cats.map(cat=>(
+                <tr key={cat}>
+                  <td>{cat}</td>
+                  <td><AccountSelect value={map[cat.toLowerCase().trim()]||guessExpenseAccount(cat)} onChange={v=>updateMap(cat,v)}/></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{marginTop:16}}>
+          <label className="field-label">Accounting Policies (shown on the Companies Act format statements)</label>
+          <textarea className="field-input" rows={7} defaultValue={getPolicies()}
+            onBlur={e=>{S.set(SK.POLICIES,e.target.value);toast.success('Accounting policies updated');}} style={{width:'100%',fontFamily:'inherit',fontSize:12.5}}/>
+        </div>
+      </div>
+    </div>
+  </div>;
+};
+
+/* ══ Journal Vouchers — manual double-entry postings for anything with no source document ══ */
+const blankJVLine = ()=>({account:'',debit:'',credit:''});
+const JournalVouchersPage = ({inline=true, currentUser})=>{
+  const [list,setList]=useState(getManualJournal());
+  const [adding,setAdding]=useState(false);
+  const [date,setDate]=useState(today());
+  const [narration,setNarration]=useState('');
+  const [lines,setLines]=useState([blankJVLine(),blankJVLine()]);
+  const isAdmin = currentUser?.role==='admin'||currentUser?.role==='superadmin';
+
+  const totalDr = lines.reduce((s,l)=>s+(parseFloat(l.debit)||0),0);
+  const totalCr = lines.reduce((s,l)=>s+(parseFloat(l.credit)||0),0);
+  const balanced = Math.abs(totalDr-totalCr)<0.01 && totalDr>0;
+
+  const upLine=(i,k,v)=>setLines(p=>p.map((l,idx)=>idx===i?{...l,[k]:v}:l));
+  const addLine=()=>setLines(p=>[...p,blankJVLine()]);
+  const delLine=(i)=>setLines(p=>p.length>2?p.filter((_,idx)=>idx!==i):p);
+
+  const reset=()=>{setDate(today());setNarration('');setLines([blankJVLine(),blankJVLine()]);setAdding(false);};
+
+  const save=()=>{
+    if(!narration.trim()){toast.error('Add a narration describing this entry');return;}
+    const validLines = lines.filter(l=>l.account && (parseFloat(l.debit)||parseFloat(l.credit)));
+    if(validLines.length<2){toast.error('A journal entry needs at least two lines');return;}
+    const d=+validLines.reduce((s,l)=>s+(parseFloat(l.debit)||0),0).toFixed(2);
+    const c=+validLines.reduce((s,l)=>s+(parseFloat(l.credit)||0),0).toFixed(2);
+    if(Math.abs(d-c)>0.01){toast.error(`Debit (${fmt(d)}) and Credit (${fmt(c)}) must be equal`);return;}
+    const entry={date, narration, srcType:'JV', lines:validLines.map(l=>({account:l.account,debit:+(parseFloat(l.debit)||0).toFixed(2),credit:+(parseFloat(l.credit)||0).toFixed(2)})), createdBy:currentUser?.email||'', createdAt:new Date().toISOString()};
+    saveManualJournalEntry(entry);
+    setList(getManualJournal());
+    logAudit('JOURNAL_VOUCHER_ADDED',`${narration} — Dr/Cr ${fmt(d)}`,currentUser);
+    toast.success('Journal voucher posted');
+    reset();
+  };
+  const del=(id)=>{
+    if(!isAdmin){toast.error('Only Admin can delete journal vouchers');return;}
+    if(!window.confirm('Delete this journal voucher?'))return;
+    deleteManualJournalEntry(id);
+    setList(getManualJournal());
+    toast.info('Journal voucher deleted');
+  };
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      <div className="modal-body">
+        <div className="alert" style={{background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.2)',marginBottom:16,borderRadius:10,fontSize:12}}>
+          Use this only for entries with no source document — depreciation, provisions, opening capital, write-offs. Sales, Purchases and Bank transactions post themselves.
+        </div>
+        {!adding?(
+          <button className="btn btn-primary" onClick={()=>setAdding(true)} style={{marginBottom:16}}>+ New Journal Voucher</button>
+        ):(
+          <div className="card" style={{marginBottom:16,padding:16}}>
+            <div style={{display:'flex',gap:10,marginBottom:10,flexWrap:'wrap'}}>
+              <div className="field"><label className="field-label">Date</label><input type="date" className="field-input" value={date} onChange={e=>setDate(e.target.value)}/></div>
+              <div className="field" style={{flex:1,minWidth:220}}><label className="field-label">Narration</label><input className="field-input" value={narration} onChange={e=>setNarration(e.target.value)} placeholder="e.g. Depreciation for March 2026"/></div>
+            </div>
+            <div className="dt-wrap">
+              <table className="dt" style={{width:'100%'}}>
+                <thead><tr><th>Account</th><th style={{width:130}}>Debit</th><th style={{width:130}}>Credit</th><th style={{width:36}}/></tr></thead>
+                <tbody>
+                  {lines.map((l,i)=>(
+                    <tr key={i}>
+                      <td><AccountSelect value={l.account} onChange={v=>upLine(i,'account',v)}/></td>
+                      <td><input type="number" className="field-input" value={l.debit} onChange={e=>upLine(i,'debit',e.target.value)} placeholder="0.00"/></td>
+                      <td><input type="number" className="field-input" value={l.credit} onChange={e=>upLine(i,'credit',e.target.value)} placeholder="0.00"/></td>
+                      <td><button className="close-btn" onClick={()=>delLine(i)}><Ic n="x" s={14}/></button></td>
+                    </tr>
+                  ))}
+                  <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}>
+                    <td>Total</td><td>{fmtN(totalDr)}</td><td>{fmtN(totalCr)}</td><td/>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style={{display:'flex',gap:8,marginTop:12}}>
+              <button className="btn btn-outline" onClick={addLine}>+ Add Line</button>
+              <button className="btn btn-primary" onClick={save} disabled={!balanced} style={{opacity:balanced?1:0.5}}>Post Journal Voucher</button>
+              <button className="btn btn-outline" onClick={reset}>Cancel</button>
+              {!balanced&&<span style={{color:'var(--red)',fontSize:12,alignSelf:'center'}}>Debit must equal Credit to post</span>}
+            </div>
+          </div>
+        )}
+        <div className="dt-wrap">
+          <table className="dt" style={{width:'100%'}}>
+            <thead><tr><th>Date</th><th>Narration</th><th>Lines</th><th style={{textAlign:'right'}}>Amount</th><th/></tr></thead>
+            <tbody>
+              {list.length===0?(
+                <tr><td colSpan={5} style={{color:'var(--text3)',textAlign:'center'}}>No journal vouchers yet</td></tr>
+              ):[...list].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(e=>(
+                <tr key={e.id}>
+                  <td>{fmtDate(e.date)}</td>
+                  <td>{e.narration}</td>
+                  <td style={{fontSize:11.5,color:'var(--text3)'}}>{(e.lines||[]).map(l=>`${coaByKey(l.account).name} ${l.debit?'Dr '+fmtN(l.debit):'Cr '+fmtN(l.credit)}`).join(' · ')}</td>
+                  <td style={{textAlign:'right'}}>{fmt((e.lines||[]).reduce((s,l)=>s+(l.debit||0),0))}</td>
+                  <td><button className="close-btn" onClick={()=>del(e.id)}><Ic n="x" s={14}/></button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>;
+};
+
+/* ══ General Ledger — every posting for one account, running balance ══ */
+const GeneralLedgerPage = ({inline=true})=>{
+  const [account,setAccount]=useState('BANK');
+  const fyStart = `${getFY()}-04-01`;
+  const [fromDate,setFromDate]=useState(fyStart);
+  const [toDate,setToDate]=useState(today());
+
+  const {opening, rows, closing} = useMemo(()=>{
+    const all = getAllLedgerLines().filter(l=>l.account===account).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    const before = all.filter(l=>(l.date||'')<fromDate);
+    const inRange = all.filter(l=>(l.date||'')>=fromDate && (l.date||'')<=toDate);
+    const acc = coaByKey(account);
+    const natural = (acc.type==='asset'||acc.type==='expense') ? 1 : -1;
+    let bal = before.reduce((s,l)=>s+natural*(l.debit-l.credit),0);
+    const opening = bal;
+    const rows = inRange.map(l=>{ bal += natural*(l.debit-l.credit); return {...l, running:bal}; });
+    return {opening, rows, closing:bal};
+  },[account,fromDate,toDate]);
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      <div className="modal-body">
+        <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap',alignItems:'flex-end'}}>
+          <div className="field" style={{minWidth:260}}><label className="field-label">Account</label><AccountSelect value={account} onChange={setAccount}/></div>
+          <div className="field"><label className="field-label">From</label><input type="date" className="field-input" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></div>
+          <div className="field"><label className="field-label">To</label><input type="date" className="field-input" value={toDate} onChange={e=>setToDate(e.target.value)}/></div>
+        </div>
+        <div className="g3" style={{marginBottom:16}}>
+          <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{fmt(opening)}</div><div className="stat-lbl">Opening Balance</div></div>
+          <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{rows.length}</div><div className="stat-lbl">Postings in Range</div></div>
+          <div className="stat-card" style={{borderLeft:'3px solid var(--primary)'}}><div className="stat-val" style={{fontSize:16}}>{fmt(closing)}</div><div className="stat-lbl">Closing Balance</div></div>
+        </div>
+        <div className="dt-wrap">
+          <table className="dt" style={{width:'100%'}}>
+            <thead><tr><th>Date</th><th>Narration</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th><th style={{textAlign:'right'}}>Balance</th></tr></thead>
+            <tbody>
+              <tr style={{background:'var(--card2)'}}><td colSpan={4} style={{fontStyle:'italic'}}>Opening Balance</td><td style={{textAlign:'right',fontWeight:700}}>{fmt(opening)}</td></tr>
+              {rows.length===0?(
+                <tr><td colSpan={5} style={{color:'var(--text3)',textAlign:'center'}}>No postings in this range</td></tr>
+              ):rows.map((r,i)=>(
+                <tr key={i}>
+                  <td>{fmtDate(r.date)}</td><td>{r.narration}</td>
+                  <td style={{textAlign:'right'}}>{r.debit?fmtN(r.debit):''}</td>
+                  <td style={{textAlign:'right'}}>{r.credit?fmtN(r.credit):''}</td>
+                  <td style={{textAlign:'right',fontWeight:600}}>{fmtN(r.running)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>;
+};
+
+/* ══ Trial Balance ══ */
+const TrialBalancePage = ({inline=true})=>{
+  const [asOf,setAsOf]=useState(today());
+  const tb = useMemo(()=>getTrialBalance(asOf),[asOf]);
+  const debitTotal = tb.filter(r=>r.balance>=0).reduce((s,r)=>s+r.balance,0);
+  const creditTotal = tb.filter(r=>r.balance<0).reduce((s,r)=>s-r.balance,0);
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      <div className="modal-body">
+        <div className="field" style={{maxWidth:220,marginBottom:16}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+        <div className="dt-wrap">
+          <table className="dt" style={{width:'100%'}}>
+            <thead><tr><th>Account</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th></tr></thead>
+            <tbody>
+              {tb.sort((a,b)=>COA.findIndex(x=>x.key===a.account)-COA.findIndex(x=>x.key===b.account)).map(r=>(
+                <tr key={r.account}>
+                  <td>{coaByKey(r.account).name}</td>
+                  <td style={{textAlign:'right'}}>{r.balance>=0?fmtN(r.balance):''}</td>
+                  <td style={{textAlign:'right'}}>{r.balance<0?fmtN(-r.balance):''}</td>
+                </tr>
+              ))}
+              <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}>
+                <td>Total</td><td style={{textAlign:'right'}}>{fmtN(debitTotal)}</td><td style={{textAlign:'right'}}>{fmtN(creditTotal)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        {Math.abs(debitTotal-creditTotal)>0.5&&<div className="alert" style={{marginTop:12,color:'var(--red)'}}>Trial Balance does not tie out — please check recent Journal Vouchers.</div>}
+      </div>
+    </div>
+  </div>;
+};
+
+const SCHEDULE3_EXP_ORDER = ['COGS','EMPLOYEE_EXP','FINANCE_COST','DEPRECIATION','RENT_EXP','OTHER_EXP'];
+
+const ReportsPage = ({inline=true, onClose, currentUser})=>{
+  const [tab,setTab]=useState('pl');
+  const [format,setFormat]=useState('schedule3'); // 'schedule3' | 'normal'
+  const [basis,setBasis]=useState('accrual');       // 'accrual' | 'cash' — Normal format only; Schedule III is always accrual
+  const fyStart = `${getFY()}-04-01`;
+  const [fromDate,setFromDate]=useState(fyStart);
+  const [toDate,setToDate]=useState(today());
+  const [asOf,setAsOf]=useState(today());
+  const co = S.get(SK.CO,{});
+
+  const effBasis = format==='schedule3' ? 'accrual' : basis;
+  const pl = useMemo(()=> effBasis==='cash' ? getPLCash(fromDate,toDate) : getPLAccrual(fromDate,toDate), [fromDate,toDate,effBasis]);
+  const bs = useMemo(()=> getBalanceSheet(asOf), [asOf]);
+  const tb = useMemo(()=> getTrialBalance(asOf), [asOf]);
+  const tbDebit = tb.filter(r=>r.balance>=0).reduce((s,r)=>s+r.balance,0);
+  const tbCredit = tb.filter(r=>r.balance<0).reduce((s,r)=>s-r.balance,0);
+
+  const expByKey = key => (pl.rows||[]).find(r=>r.account===key)?.amount||0;
+  const otherIncome = (pl.rows||[]).filter(r=>r.type==='income'&&r.account!=='SALES').reduce((s,r)=>s+r.amount,0);
+  const salesRevenue = expByKey('SALES');
+
+  const groupBS = (list) => {
+    const byGroup={};
+    list.forEach(a=>{ (byGroup[a.group]=byGroup[a.group]||[]).push(a); });
+    return byGroup;
+  };
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="chart" s={18}/> Financial Statements</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
+      <div className="modal-body">
+        <div className="alert" style={{background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.2)',marginBottom:16,borderRadius:10,fontSize:12}}>
+          Generated from a full double-entry ledger (see Chart of Accounts, Journal Vouchers, General Ledger & Trial Balance) — posted automatically from your Sales, Purchases and Bank Reconciliation. Not a substitute for statements reviewed and signed off by your CA.
+        </div>
+
+        <div style={{display:'flex',gap:16,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
+          <div style={{display:'flex',gap:8}}>
+            {[['pl','Profit & Loss'],['bs','Balance Sheet'],['tb','Trial Balance']].map(([k,l])=>(
+              <button key={k} onClick={()=>setTab(k)}
+                style={{padding:'6px 14px',borderRadius:8,fontSize:12,fontWeight:tab===k?700:500,cursor:'pointer',
+                  border:`2px solid ${tab===k?'var(--primary)':'var(--border2)'}`,
+                  background:tab===k?'var(--primary-bg)':'transparent',color:tab===k?'var(--primary2)':'var(--text2)'}}>{l}</button>
+            ))}
+          </div>
+          {(tab==='pl'||tab==='bs')&&<div style={{display:'flex',gap:8}}>
+            {[['schedule3','Companies Act Format'],['normal','Normal Format']].map(([k,l])=>(
+              <button key={k} onClick={()=>setFormat(k)}
+                style={{padding:'6px 14px',borderRadius:8,fontSize:11.5,fontWeight:format===k?700:500,cursor:'pointer',
+                  border:`2px solid ${format===k?'var(--green)':'var(--border2)'}`,
+                  background:format===k?'rgba(46,160,67,0.12)':'transparent',color:format===k?'var(--green)':'var(--text2)'}}>{l}</button>
+            ))}
+          </div>}
+          {tab==='pl'&&format==='normal'&&<div style={{display:'flex',gap:8}}>
+            {[['accrual','Accrual Basis'],['cash','Cash Basis']].map(([k,l])=>(
+              <button key={k} onClick={()=>setBasis(k)}
+                style={{padding:'6px 14px',borderRadius:8,fontSize:11.5,fontWeight:basis===k?700:500,cursor:'pointer',
+                  border:`2px solid ${basis===k?'var(--gold)':'var(--border2)'}`,
+                  background:basis===k?'rgba(245,166,35,0.12)':'transparent',color:basis===k?'var(--gold)':'var(--text2)'}}>{l}</button>
+            ))}
+          </div>}
+        </div>
+
+        {/* ══════════ PROFIT & LOSS ══════════ */}
+        {tab==='pl'&&(
+          <>
+            <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap',alignItems:'flex-end'}}>
+              <div className="field"><label className="field-label">From</label><input type="date" className="field-input" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></div>
+              <div className="field"><label className="field-label">To</label><input type="date" className="field-input" value={toDate} onChange={e=>setToDate(e.target.value)}/></div>
+            </div>
+            <div className="g3" style={{marginBottom:16}}>
+              <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--green)'}}>{fmt(pl.income)}</div><div className="stat-lbl">Total Income ({effBasis==='cash'?'Cash':'Accrual'})</div></div>
+              <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--red)'}}>{fmt(pl.expense)}</div><div className="stat-lbl">Total Expenses</div></div>
+              <div className="stat-card" style={{borderLeft:`3px solid ${pl.net>=0?'var(--green)':'var(--red)'}`}}><div className="stat-val" style={{fontSize:16,color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</div><div className="stat-lbl">{effBasis==='cash'?'Net Cash Surplus':'Profit for the Period'}</div></div>
+            </div>
+
+            {effBasis==='cash'?(
+              <div className="dt-wrap">
+                <table className="dt" style={{width:'100%'}}>
+                  <thead><tr><th>Head</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
+                  <tbody>
+                    <tr><td>Total Receipts (Bank credits in period)</td><td style={{textAlign:'right',fontWeight:600}}>{fmt(pl.income)}</td></tr>
+                    <tr><td>Total Payments (Bank debits in period)</td><td style={{textAlign:'right'}}>{fmt(pl.expense)}</td></tr>
+                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Net Cash Surplus / (Deficit)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
+                  </tbody>
+                </table>
+                <div style={{fontSize:11.5,color:'var(--text3)',marginTop:8}}>Receipts & Payments basis — counts only actual money that moved through the Bank in this period, ignoring unpaid invoices/bills. Companies Act statements must use the Accrual basis.</div>
+              </div>
+            ):format==='schedule3'?(
+              <div className="dt-wrap">
+                <table className="dt" style={{width:'100%'}}>
+                  <thead><tr><th colSpan={2}>Statement of Profit & Loss — for the period {fmtDate(fromDate)} to {fmtDate(toDate)}</th></tr></thead>
+                  <tbody>
+                    <tr><td>I. Revenue from Operations</td><td style={{textAlign:'right'}}>{fmt(salesRevenue)}</td></tr>
+                    <tr><td>II. Other Income</td><td style={{textAlign:'right'}}>{fmt(otherIncome)}</td></tr>
+                    <tr style={{fontWeight:700}}><td>III. Total Income (I + II)</td><td style={{textAlign:'right'}}>{fmt(pl.income)}</td></tr>
+                    <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>IV. Expenses</td></tr>
+                    {SCHEDULE3_EXP_ORDER.map(key=>{
+                      const amt=expByKey(key); if(Math.abs(amt)<0.005) return null;
+                      return <tr key={key}><td style={{paddingLeft:20}}>{coaByKey(key).name}</td><td style={{textAlign:'right'}}>{fmt(amt)}</td></tr>;
+                    })}
+                    <tr style={{fontWeight:700,borderTop:'1px solid var(--border)'}}><td>Total Expenses</td><td style={{textAlign:'right'}}>{fmt(pl.expense)}</td></tr>
+                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>V. Profit Before Tax (III − IV)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
+                    <tr><td style={{paddingLeft:20,color:'var(--text3)'}}>Tax Expense (to be computed by your CA)</td><td style={{textAlign:'right',color:'var(--text3)'}}>—</td></tr>
+                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>VI. Profit for the Period</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
+                  </tbody>
+                </table>
+                <div style={{fontSize:11.5,color:'var(--text3)',marginTop:10,whiteSpace:'pre-line'}}><b>Notes — Significant Accounting Policies:</b>{'\n'}{getPolicies()}</div>
+              </div>
+            ):(
+              <div className="dt-wrap">
+                <table className="dt" style={{width:'100%'}}>
+                  <thead><tr><th>Head</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
+                  <tbody>
+                    <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>Income</td></tr>
+                    <tr><td>Sales</td><td style={{textAlign:'right',fontWeight:600}}>{fmt(salesRevenue)}</td></tr>
+                    {otherIncome>0.005&&<tr><td>Other Income</td><td style={{textAlign:'right'}}>{fmt(otherIncome)}</td></tr>}
+                    <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>Expenses</td></tr>
+                    {(pl.rows||[]).filter(r=>r.type==='expense').length===0?(
+                      <tr><td colSpan={2} style={{color:'var(--text3)',textAlign:'center'}}>No expenses in this period</td></tr>
+                    ):(pl.rows||[]).filter(r=>r.type==='expense').sort((a,b)=>b.amount-a.amount).map(r=>(
+                      <tr key={r.account}><td>{r.name}</td><td style={{textAlign:'right'}}>{fmt(r.amount)}</td></tr>
+                    ))}
+                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Net Profit / (Loss)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══════════ BALANCE SHEET ══════════ */}
+        {tab==='bs'&&(
+          <>
+            <div className="field" style={{maxWidth:220,marginBottom:16}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+            {format==='schedule3'?(
+              <>
+                <div className="dt-wrap" style={{marginBottom:16}}>
+                  <table className="dt" style={{width:'100%'}}>
+                    <thead><tr><th colSpan={2}>Balance Sheet as at {fmtDate(asOf)} — {co.name||'Company'}</th></tr></thead>
+                    <tbody>
+                      <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>I. EQUITY AND LIABILITIES</td></tr>
+                      <tr style={{fontWeight:600}}><td>1. Shareholders' Funds</td><td/></tr>
+                      {bs.equity.map(e=><tr key={e.key}><td style={{paddingLeft:20}}>{e.name}</td><td style={{textAlign:'right'}}>{fmt(e.amount)}</td></tr>)}
+                      {['Non-Current Liabilities','Current Liabilities'].map(g=>{
+                        const rows=bs.liabilities.filter(l=>l.group===g); if(!rows.length) return null;
+                        return <React.Fragment key={g}>
+                          <tr style={{fontWeight:600}}><td>{g==='Non-Current Liabilities'?'2. Non-Current Liabilities':'3. Current Liabilities'}</td><td/></tr>
+                          {rows.map(r=><tr key={r.key}><td style={{paddingLeft:20}}>{r.name}</td><td style={{textAlign:'right'}}>{fmt(r.amount)}</td></tr>)}
+                        </React.Fragment>;
+                      })}
+                      <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>TOTAL</td><td style={{textAlign:'right'}}>{fmt(bs.totalLiab+bs.totalEquity)}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="dt-wrap">
+                  <table className="dt" style={{width:'100%'}}>
+                    <thead><tr><th colSpan={2}>II. ASSETS</th></tr></thead>
+                    <tbody>
+                      {['Non-Current Assets','Current Assets'].map(g=>{
+                        const rows=bs.assets.filter(a=>a.group===g); if(!rows.length) return null;
+                        return <React.Fragment key={g}>
+                          <tr style={{fontWeight:600}}><td>{g==='Non-Current Assets'?'1. Non-Current Assets':'2. Current Assets'}</td><td/></tr>
+                          {rows.map(r=><tr key={r.key}><td style={{paddingLeft:20}}>{r.name}</td><td style={{textAlign:'right'}}>{fmt(r.amount)}</td></tr>)}
+                        </React.Fragment>;
+                      })}
+                      <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>TOTAL</td><td style={{textAlign:'right'}}>{fmt(bs.totalAssets)}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                {!bs.tallies&&<div className="alert" style={{marginTop:12,color:'var(--red)'}}>Balance Sheet does not tie out exactly — check the Trial Balance / recent Journal Vouchers.</div>}
+                <div style={{fontSize:11.5,color:'var(--text3)',marginTop:10,whiteSpace:'pre-line'}}><b>Notes — Significant Accounting Policies:</b>{'\n'}{getPolicies()}</div>
+              </>
+            ):(
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+                <div className="dt-wrap">
+                  <table className="dt" style={{width:'100%'}}>
+                    <thead><tr><th colSpan={2}>Assets</th></tr></thead>
+                    <tbody>
+                      {bs.assets.map(a=><tr key={a.key}><td>{a.name}</td><td style={{textAlign:'right'}}>{fmt(a.amount)}</td></tr>)}
+                      <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total Assets</td><td style={{textAlign:'right'}}>{fmt(bs.totalAssets)}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="dt-wrap">
+                  <table className="dt" style={{width:'100%'}}>
+                    <thead><tr><th colSpan={2}>Liabilities & Equity</th></tr></thead>
+                    <tbody>
+                      {[...bs.liabilities,...bs.equity].map(a=><tr key={a.key}><td>{a.name}</td><td style={{textAlign:'right'}}>{fmt(a.amount)}</td></tr>)}
+                      <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total Liabilities & Equity</td><td style={{textAlign:'right'}}>{fmt(bs.totalLiab+bs.totalEquity)}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══════════ TRIAL BALANCE ══════════ */}
+        {tab==='tb'&&(
+          <>
+            <div className="field" style={{maxWidth:220,marginBottom:16}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+            <div className="dt-wrap">
+              <table className="dt" style={{width:'100%'}}>
+                <thead><tr><th>Account</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th></tr></thead>
+                <tbody>
+                  {[...tb].sort((a,b)=>COA.findIndex(x=>x.key===a.account)-COA.findIndex(x=>x.key===b.account)).map(r=>(
+                    <tr key={r.account}>
+                      <td>{coaByKey(r.account).name}</td>
+                      <td style={{textAlign:'right'}}>{r.balance>=0?fmtN(r.balance):''}</td>
+                      <td style={{textAlign:'right'}}>{r.balance<0?fmtN(-r.balance):''}</td>
+                    </tr>
+                  ))}
+                  <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total</td><td style={{textAlign:'right'}}>{fmtN(tbDebit)}</td><td style={{textAlign:'right'}}>{fmtN(tbCredit)}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  </div>;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ⭐ FEATURE: SALES-CYCLE DOCUMENTS
+   Quotations/Estimates, Delivery Challans, Recurring Invoices,
+   and Payment Reminders. These use a simpler item shape (desc/
+   qty/rate) rather than the full GST invoice engine, and convert
+   into a real NON GST INVOICE (already a supported doc type) when
+   turned into an actual sale, so they show up correctly in
+   History, Sales, Ageing and GSTR reports without any special-casing.
+   ══════════════════════════════════════════════════════════════ */
+const advanceDate = (dateStr, freq)=>{
+  const d = new Date(dateStr||today());
+  if(freq==='Weekly') d.setDate(d.getDate()+7);
+  else if(freq==='Quarterly') d.setMonth(d.getMonth()+3);
+  else if(freq==='Yearly') d.setFullYear(d.getFullYear()+1);
+  else d.setMonth(d.getMonth()+1); // Monthly (default)
+  return d.toISOString().split('T')[0];
+};
+const nextDocNo = (label)=>{
+  const key = SK.CTR+'_'+label+'_'+getFY();
+  const c = S.get(key,1);
+  return { no:`${label}/${getFYShort()}/${String(c).padStart(3,'0')}`, commit:()=>S.set(key,c+1) };
+};
+const blankSimpleItem = ()=>({desc:'',qty:1,rate:'',unit:'Nos'});
+const blankSimpleCustomer = ()=>({name:'',address:'',phone:'',email:'',gstin:''});
+
+// Turns a list of simple {desc,qty,rate} items + a customer into a real NON GST INVOICE
+// and saves it, so it behaves exactly like any other invoice everywhere else in the app.
+const convertItemsToInvoice = (customer, items, notes, user)=>{
+  const mapped = items.filter(it=>it.desc).map(it=>{
+    const qty=parseFloat(it.qty)||0, rate=parseFloat(it.rate)||0;
+    return { desc:it.desc, qty, rate, total:+(qty*rate).toFixed(2) };
+  });
+  if(mapped.length===0) return null;
+  const subtotal = +mapped.reduce((s,it)=>s+it.total,0).toFixed(2);
+  const invNo = peekInvNo('NON GST INVOICE');
+  commitInvNo('NON GST INVOICE');
+  const inv = { ...newInvoice(user,'NON GST INVOICE'), invNo,
+    billTo:{...blankSimpleCustomer(),...customer}, items:mapped,
+    subtotal, grand:subtotal, notes:notes||'', status:'Sent' };
+  S.set(SK.INV,[...S.get(SK.INV,[]),inv]);
+  return inv;
+};
+
+const QuotationsPage = ({inline=true,onClose,currentUser})=>{
+  const [list,setList]=useState(()=>S.get(SK.QUOTE,[]));
+  const blank=()=>({id:Date.now().toString(),quoteNo:'',date:today(),validTill:addDaysStr(today(),15),customer:blankSimpleCustomer(),items:[blankSimpleItem()],notes:'',status:'Draft',convertedInvNo:''});
+  const [form,setForm]=useState(null);
+  const persist=u=>{setList(u);S.set(SK.QUOTE,u);};
+
+  const total = f => (f.items||[]).reduce((s,it)=>s+((parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)),0);
+
+  const save=()=>{
+    if(!form.customer.name){toast.error('Customer name required');return;}
+    let f=form;
+    if(!f.quoteNo){ const {no,commit}=nextDocNo('QUO'); f={...f,quoteNo:no}; commit(); }
+    const exists=list.some(q=>q.id===f.id);
+    persist(exists?list.map(q=>q.id===f.id?f:q):[...list,f]);
+    setForm(null);
+    toast.success('Quotation saved');
+  };
+  const del=id=>{if(!window.confirm('Delete this quotation?'))return;persist(list.filter(q=>q.id!==id));};
+  const setStatus=(id,status)=>{persist(list.map(q=>q.id===id?{...q,status}:q));};
+  const convert=(q)=>{
+    if(!window.confirm(`Convert ${q.quoteNo} into a real invoice for ${fmt(total(q))}?`))return;
+    const inv=convertItemsToInvoice(q.customer,q.items,`Converted from Quotation ${q.quoteNo}`,currentUser);
+    if(!inv){toast.error('Add at least one item first');return;}
+    persist(list.map(x=>x.id===q.id?{...x,status:'Converted',convertedInvNo:inv.invNo}:x));
+    logAudit('QUOTATION_CONVERTED',`${q.quoteNo} → invoice ${inv.invNo}`,currentUser);
+    toast.success(`Converted to invoice ${inv.invNo}`);
+  };
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="file" s={18}/> Quotations / Estimates</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
+      <div className="modal-body">
+        {!form?(
+          <>
+            <button className="btn btn-primary" style={{marginBottom:14}} onClick={()=>setForm(blank())}><Ic n="plus" s={13}/> New Quotation</button>
+            <div className="dt-wrap">
+              <table className="dt" style={{width:'100%'}}>
+                <thead><tr><th>No.</th><th>Date</th><th>Customer</th><th>Valid Till</th><th style={{textAlign:'right'}}>Amount</th><th>Status</th><th style={{width:220}}>Actions</th></tr></thead>
+                <tbody>
+                  {list.length===0?(<tr><td colSpan={7} style={{textAlign:'center',padding:24,color:'var(--text3)'}}>No quotations yet.</td></tr>):
+                    [...list].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(q=>(
+                    <tr key={q.id}>
+                      <td style={{fontWeight:600}}>{q.quoteNo}</td>
+                      <td>{fmtDate(q.date)}</td>
+                      <td>{q.customer?.name}</td>
+                      <td>{fmtDate(q.validTill)}</td>
+                      <td style={{textAlign:'right',fontWeight:600}}>{fmt(total(q))}</td>
+                      <td><span className={`badge ${q.status==='Accepted'||q.status==='Converted'?'badge-green':q.status==='Rejected'?'badge-red':'badge-gold'}`}>{q.status}</span></td>
+                      <td>
+                        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                          <button className="btn btn-sm btn-outline" onClick={()=>setForm(q)}>Edit</button>
+                          {q.status!=='Converted'&&<button className="btn btn-sm btn-outline-primary" onClick={()=>convert(q)}>Convert</button>}
+                          {q.status==='Draft'&&<button className="btn btn-sm btn-outline" onClick={()=>setStatus(q.id,'Sent')}>Mark Sent</button>}
+                          {q.status==='Sent'&&<>
+                            <button className="btn btn-sm btn-outline" onClick={()=>setStatus(q.id,'Accepted')}>Accepted</button>
+                            <button className="btn btn-sm btn-outline" onClick={()=>setStatus(q.id,'Rejected')}>Rejected</button>
+                          </>}
+                          <button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(q.id)}><Ic n="trash" s={11}/></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ):(
+          <>
+            <button className="btn btn-sm btn-outline" style={{marginBottom:14}} onClick={()=>setForm(null)}>← Back to list</button>
+            <div className="g4" style={{marginBottom:12}}>
+              <div className="field"><label className="field-label">Date</label><input type="date" className="field-input" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></div>
+              <div className="field"><label className="field-label">Valid Till</label><input type="date" className="field-input" value={form.validTill} onChange={e=>setForm(p=>({...p,validTill:e.target.value}))}/></div>
+              <div className="field"><label className="field-label">Customer Name</label><input className="field-input" value={form.customer.name} onChange={e=>setForm(p=>({...p,customer:{...p.customer,name:e.target.value}}))}/></div>
+              <div className="field"><label className="field-label">Phone</label><input className="field-input" value={form.customer.phone} onChange={e=>setForm(p=>({...p,customer:{...p.customer,phone:e.target.value}}))}/></div>
+            </div>
+            <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>Items</div>
+            {form.items.map((it,i)=>(
+              <div key={i} style={{display:'flex',gap:8,marginBottom:6}}>
+                <input className="field-input" style={{flex:3}} placeholder="Description" value={it.desc} onChange={e=>setForm(p=>({...p,items:p.items.map((x,j)=>j===i?{...x,desc:e.target.value}:x)}))}/>
+                <input type="number" className="field-input" style={{flex:1}} placeholder="Qty" value={it.qty} onChange={e=>setForm(p=>({...p,items:p.items.map((x,j)=>j===i?{...x,qty:e.target.value}:x)}))}/>
+                <input type="number" className="field-input" style={{flex:1}} placeholder="Rate" value={it.rate} onChange={e=>setForm(p=>({...p,items:p.items.map((x,j)=>j===i?{...x,rate:e.target.value}:x)}))}/>
+                <div style={{width:100,alignSelf:'center',textAlign:'right',fontWeight:600}}>{fmt((parseFloat(it.qty)||0)*(parseFloat(it.rate)||0))}</div>
+                <button className="btn btn-sm btn-danger btn-icon" onClick={()=>setForm(p=>({...p,items:p.items.filter((_,j)=>j!==i)}))}><Ic n="trash" s={11}/></button>
+              </div>
+            ))}
+            <button className="btn btn-sm btn-outline-primary" onClick={()=>setForm(p=>({...p,items:[...p.items,blankSimpleItem()]}))}><Ic n="plus" s={11}/> Add Item</button>
+            <div style={{textAlign:'right',fontWeight:700,fontSize:15,margin:'12px 0'}}>Total: {fmt(total(form))}</div>
+            <div className="field" style={{marginBottom:12}}><label className="field-label">Notes</label><textarea className="field-input" value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}/></div>
+            <button className="btn btn-primary" onClick={save}>Save Quotation</button>
+          </>
+        )}
+      </div>
+    </div>
+  </div>;
+};
+
+const DeliveryChallanPage = ({inline=true,onClose,currentUser})=>{
+  const [list,setList]=useState(()=>S.get(SK.DC,[]));
+  const blank=()=>({id:Date.now().toString(),dcNo:'',date:today(),customer:blankSimpleCustomer(),items:[blankSimpleItem()],purpose:'Job Work',vehicleNo:'',transporter:'',notes:'',status:'Dispatched'});
+  const [form,setForm]=useState(null);
+  const persist=u=>{setList(u);S.set(SK.DC,u);};
+
+  const save=()=>{
+    if(!form.customer.name){toast.error('Customer name required');return;}
+    let f=form;
+    if(!f.dcNo){ const {no,commit}=nextDocNo('DC'); f={...f,dcNo:no}; commit(); }
+    const exists=list.some(d=>d.id===f.id);
+    persist(exists?list.map(d=>d.id===f.id?f:d):[...list,f]);
+    setForm(null);
+    toast.success('Delivery Challan saved');
+  };
+  const del=id=>{if(!window.confirm('Delete this delivery challan?'))return;persist(list.filter(d=>d.id!==id));};
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="package" s={18}/> Delivery Challans</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
+      <div className="modal-body">
+        {!form?(
+          <>
+            <button className="btn btn-primary" style={{marginBottom:14}} onClick={()=>setForm(blank())}><Ic n="plus" s={13}/> New Delivery Challan</button>
+            <div className="dt-wrap">
+              <table className="dt" style={{width:'100%'}}>
+                <thead><tr><th>No.</th><th>Date</th><th>Customer</th><th>Purpose</th><th># Items</th><th>Status</th><th style={{width:140}}>Actions</th></tr></thead>
+                <tbody>
+                  {list.length===0?(<tr><td colSpan={7} style={{textAlign:'center',padding:24,color:'var(--text3)'}}>No delivery challans yet.</td></tr>):
+                    [...list].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(d=>(
+                    <tr key={d.id}>
+                      <td style={{fontWeight:600}}>{d.dcNo}</td>
+                      <td>{fmtDate(d.date)}</td>
+                      <td>{d.customer?.name}</td>
+                      <td>{d.purpose}</td>
+                      <td>{(d.items||[]).filter(it=>it.desc).length}</td>
+                      <td><span className={`badge ${d.status==='Delivered'?'badge-green':'badge-gold'}`}>{d.status}</span></td>
+                      <td>
+                        <div style={{display:'flex',gap:4}}>
+                          <button className="btn btn-sm btn-outline" onClick={()=>setForm(d)}>Edit</button>
+                          {d.status!=='Delivered'&&<button className="btn btn-sm btn-outline-primary" onClick={()=>persist(list.map(x=>x.id===d.id?{...x,status:'Delivered'}:x))}>Mark Delivered</button>}
+                          <button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(d.id)}><Ic n="trash" s={11}/></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ):(
+          <>
+            <button className="btn btn-sm btn-outline" style={{marginBottom:14}} onClick={()=>setForm(null)}>← Back to list</button>
+            <div className="g4" style={{marginBottom:12}}>
+              <div className="field"><label className="field-label">Date</label><input type="date" className="field-input" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></div>
+              <div className="field"><label className="field-label">Purpose</label>
+                <select className="field-input" value={form.purpose} onChange={e=>setForm(p=>({...p,purpose:e.target.value}))}>
+                  <option>Job Work</option><option>Sale on Approval</option><option>Return</option><option>Other</option>
+                </select>
+              </div>
+              <div className="field"><label className="field-label">Vehicle No.</label><input className="field-input" value={form.vehicleNo} onChange={e=>setForm(p=>({...p,vehicleNo:e.target.value}))}/></div>
+              <div className="field"><label className="field-label">Transporter</label><input className="field-input" value={form.transporter} onChange={e=>setForm(p=>({...p,transporter:e.target.value}))}/></div>
+            </div>
+            <div className="field" style={{marginBottom:12,maxWidth:400}}><label className="field-label">Customer Name</label><input className="field-input" value={form.customer.name} onChange={e=>setForm(p=>({...p,customer:{...p.customer,name:e.target.value}}))}/></div>
+            <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>Items</div>
+            {form.items.map((it,i)=>(
+              <div key={i} style={{display:'flex',gap:8,marginBottom:6}}>
+                <input className="field-input" style={{flex:3}} placeholder="Description" value={it.desc} onChange={e=>setForm(p=>({...p,items:p.items.map((x,j)=>j===i?{...x,desc:e.target.value}:x)}))}/>
+                <input type="number" className="field-input" style={{flex:1}} placeholder="Qty" value={it.qty} onChange={e=>setForm(p=>({...p,items:p.items.map((x,j)=>j===i?{...x,qty:e.target.value}:x)}))}/>
+                <input className="field-input" style={{flex:1}} placeholder="Unit" value={it.unit} onChange={e=>setForm(p=>({...p,items:p.items.map((x,j)=>j===i?{...x,unit:e.target.value}:x)}))}/>
+                <button className="btn btn-sm btn-danger btn-icon" onClick={()=>setForm(p=>({...p,items:p.items.filter((_,j)=>j!==i)}))}><Ic n="trash" s={11}/></button>
+              </div>
+            ))}
+            <button className="btn btn-sm btn-outline-primary" onClick={()=>setForm(p=>({...p,items:[...p.items,blankSimpleItem()]}))}><Ic n="plus" s={11}/> Add Item</button>
+            <div className="field" style={{margin:'12px 0'}}><label className="field-label">Notes</label><textarea className="field-input" value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}/></div>
+            <button className="btn btn-primary" onClick={save}>Save Delivery Challan</button>
+          </>
+        )}
+      </div>
+    </div>
+  </div>;
+};
+
+const RecurringInvoicesPage = ({inline=true,onClose,currentUser})=>{
+  const [list,setList]=useState(()=>S.get(SK.RECUR,[]));
+  const blank=()=>({id:Date.now().toString(),name:'',customer:blankSimpleCustomer(),items:[blankSimpleItem()],frequency:'Monthly',startDate:today(),nextRunDate:today(),active:true,generatedCount:0,lastGeneratedInvNo:''});
+  const [form,setForm]=useState(null);
+  const persist=u=>{setList(u);S.set(SK.RECUR,u);};
+  const total=f=>(f.items||[]).reduce((s,it)=>s+((parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)),0);
+
+  const save=()=>{
+    if(!form.name||!form.customer.name){toast.error('Template name and customer are required');return;}
+    const exists=list.some(r=>r.id===form.id);
+    persist(exists?list.map(r=>r.id===form.id?form:r):[...list,form]);
+    setForm(null);
+    toast.success('Recurring template saved');
+  };
+  const del=id=>{if(!window.confirm('Delete this recurring template?'))return;persist(list.filter(r=>r.id!==id));};
+  const generateNow=(r)=>{
+    const inv=convertItemsToInvoice(r.customer,r.items,`Recurring invoice — ${r.name}`,currentUser);
+    if(!inv){toast.error('Add at least one item first');return;}
+    persist(list.map(x=>x.id===r.id?{...x,nextRunDate:advanceDate(x.nextRunDate,x.frequency),generatedCount:(x.generatedCount||0)+1,lastGeneratedInvNo:inv.invNo}:x));
+    logAudit('RECURRING_INVOICE_GENERATED',`${r.name} → invoice ${inv.invNo}`,currentUser);
+    toast.success(`Invoice ${inv.invNo} generated`);
+  };
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="refresh" s={18}/> Recurring Invoices</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
+      <div className="modal-body">
+        {!form?(
+          <>
+            <button className="btn btn-primary" style={{marginBottom:14}} onClick={()=>setForm(blank())}><Ic n="plus" s={13}/> New Recurring Template</button>
+            <div className="dt-wrap">
+              <table className="dt" style={{width:'100%'}}>
+                <thead><tr><th>Template</th><th>Customer</th><th>Frequency</th><th style={{textAlign:'right'}}>Amount</th><th>Next Run</th><th>Generated</th><th style={{width:180}}>Actions</th></tr></thead>
+                <tbody>
+                  {list.length===0?(<tr><td colSpan={7} style={{textAlign:'center',padding:24,color:'var(--text3)'}}>No recurring templates yet.</td></tr>):
+                    list.map(r=>{
+                    const due = r.active && r.nextRunDate<=today();
+                    return <tr key={r.id} style={due?{background:'rgba(245,166,35,0.06)'}:{}}>
+                      <td style={{fontWeight:600}}>{r.name}{!r.active&&<span className="badge badge-gray" style={{marginLeft:6}}>Paused</span>}</td>
+                      <td>{r.customer?.name}</td>
+                      <td>{r.frequency}</td>
+                      <td style={{textAlign:'right'}}>{fmt(total(r))}</td>
+                      <td>{fmtDate(r.nextRunDate)} {due&&<span className="badge badge-gold" style={{marginLeft:4}}>Due</span>}</td>
+                      <td>{r.generatedCount||0}{r.lastGeneratedInvNo?` (last: ${r.lastGeneratedInvNo})`:''}</td>
+                      <td>
+                        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                          <button className="btn btn-sm btn-outline-primary" onClick={()=>generateNow(r)}>Generate Now</button>
+                          <button className="btn btn-sm btn-outline" onClick={()=>setForm(r)}>Edit</button>
+                          <button className="btn btn-sm btn-outline" onClick={()=>persist(list.map(x=>x.id===r.id?{...x,active:!x.active}:x))}>{r.active?'Pause':'Resume'}</button>
+                          <button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(r.id)}><Ic n="trash" s={11}/></button>
+                        </div>
+                      </td>
+                    </tr>;
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ):(
+          <>
+            <button className="btn btn-sm btn-outline" style={{marginBottom:14}} onClick={()=>setForm(null)}>← Back to list</button>
+            <div className="g4" style={{marginBottom:12}}>
+              <div className="field"><label className="field-label">Template Name</label><input className="field-input" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="e.g. Monthly Retainer — ABC Corp"/></div>
+              <div className="field"><label className="field-label">Customer Name</label><input className="field-input" value={form.customer.name} onChange={e=>setForm(p=>({...p,customer:{...p.customer,name:e.target.value}}))}/></div>
+              <div className="field"><label className="field-label">Frequency</label>
+                <select className="field-input" value={form.frequency} onChange={e=>setForm(p=>({...p,frequency:e.target.value}))}>
+                  <option>Weekly</option><option>Monthly</option><option>Quarterly</option><option>Yearly</option>
+                </select>
+              </div>
+              <div className="field"><label className="field-label">Next Run Date</label><input type="date" className="field-input" value={form.nextRunDate} onChange={e=>setForm(p=>({...p,nextRunDate:e.target.value}))}/></div>
+            </div>
+            <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>Items</div>
+            {form.items.map((it,i)=>(
+              <div key={i} style={{display:'flex',gap:8,marginBottom:6}}>
+                <input className="field-input" style={{flex:3}} placeholder="Description" value={it.desc} onChange={e=>setForm(p=>({...p,items:p.items.map((x,j)=>j===i?{...x,desc:e.target.value}:x)}))}/>
+                <input type="number" className="field-input" style={{flex:1}} placeholder="Qty" value={it.qty} onChange={e=>setForm(p=>({...p,items:p.items.map((x,j)=>j===i?{...x,qty:e.target.value}:x)}))}/>
+                <input type="number" className="field-input" style={{flex:1}} placeholder="Rate" value={it.rate} onChange={e=>setForm(p=>({...p,items:p.items.map((x,j)=>j===i?{...x,rate:e.target.value}:x)}))}/>
+                <div style={{width:100,alignSelf:'center',textAlign:'right',fontWeight:600}}>{fmt((parseFloat(it.qty)||0)*(parseFloat(it.rate)||0))}</div>
+                <button className="btn btn-sm btn-danger btn-icon" onClick={()=>setForm(p=>({...p,items:p.items.filter((_,j)=>j!==i)}))}><Ic n="trash" s={11}/></button>
+              </div>
+            ))}
+            <button className="btn btn-sm btn-outline-primary" onClick={()=>setForm(p=>({...p,items:[...p.items,blankSimpleItem()]}))}><Ic n="plus" s={11}/> Add Item</button>
+            <div style={{textAlign:'right',fontWeight:700,fontSize:15,margin:'12px 0'}}>Amount per invoice: {fmt(total(form))}</div>
+            <button className="btn btn-primary" onClick={save}>Save Template</button>
+          </>
+        )}
+      </div>
+    </div>
+  </div>;
+};
+
+const RemindersPage = ({inline=true,onClose,currentUser})=>{
+  const [tick,setTick]=useState(0);
+  const invs = S.get(SK.INV,[]).filter(i=>['TAX INVOICE','NON GST INVOICE'].includes(i.docType)&&i.status!=='Paid'&&i.status!=='Draft'&&i.status!=='Cancelled');
+  const rows = useMemo(()=>invs.map(i=>{
+    const due = i.dueDate||i.date;
+    const daysOver = Math.floor((new Date(today())-new Date(due))/(1000*60*60*24));
+    return {...i,daysOver};
+  }).sort((a,b)=>b.daysOver-a.daysOver),[tick]);
+
+  const sendWhatsApp=(inv)=>{
+    const phone=(inv.billTo?.phone||'').replace(/\D/g,'');
+    if(!phone){toast.error('No phone number on file for this customer');return;}
+    const msg=`Hi ${inv.billTo?.name||''}, this is a friendly reminder that invoice ${inv.invNo} dated ${fmtDate(inv.date)} for ${fmt(getGrand(inv))} is ${inv.daysOver>0?`overdue by ${inv.daysOver} day(s)`:'due soon'}. Please arrange payment at your earliest convenience. Thank you!`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+    const invs2=S.get(SK.INV,[]).map(x=>x.invNo===inv.invNo?{...x,lastReminderSent:new Date().toISOString()}:x);
+    S.set(SK.INV,invs2);
+    logAudit('PAYMENT_REMINDER_SENT',`WhatsApp reminder sent for ${inv.invNo}`,currentUser);
+    setTick(x=>x+1);
+    toast.success('Reminder opened in WhatsApp');
+  };
+  const sendEmail=(inv)=>{
+    const email=inv.billTo?.email;
+    if(!email){toast.error('No email on file for this customer');return;}
+    const subject=`Payment Reminder — Invoice ${inv.invNo}`;
+    const body=`Hi ${inv.billTo?.name||''},\n\nThis is a reminder that invoice ${inv.invNo} dated ${fmtDate(inv.date)} for ${fmt(getGrand(inv))} is ${inv.daysOver>0?`overdue by ${inv.daysOver} day(s)`:'due soon'}.\n\nPlease arrange payment at your earliest convenience.\n\nThank you!`;
+    window.location.href=`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const invs2=S.get(SK.INV,[]).map(x=>x.invNo===inv.invNo?{...x,lastReminderSent:new Date().toISOString()}:x);
+    S.set(SK.INV,invs2);
+    setTick(x=>x+1);
+  };
+
+  return <div className={inline?"inline-card":"overlay"}>
+    <div className={inline?"inline-card-inner":"modal"}>
+      {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="alert" s={18}/> Payment Reminders</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
+      <div className="modal-body">
+        <div style={{fontSize:12,color:'var(--text3)',marginBottom:14}}>Every unpaid invoice, sorted with the most overdue first. Send a one-click WhatsApp or email nudge straight from here.</div>
+        <div className="dt-wrap">
+          <table className="dt" style={{width:'100%'}}>
+            <thead><tr><th>Invoice</th><th>Customer</th><th>Due Date</th><th style={{textAlign:'right'}}>Amount</th><th>Status</th><th>Last Reminder</th><th style={{width:180}}>Send</th></tr></thead>
+            <tbody>
+              {rows.length===0?(<tr><td colSpan={7} style={{textAlign:'center',padding:24,color:'var(--text3)'}}>Nothing outstanding — all caught up!</td></tr>):
+                rows.map(i=>(
+                <tr key={i.invNo} style={i.daysOver>0?{background:'rgba(255,77,106,0.05)'}:{}}>
+                  <td style={{fontWeight:600}}>{i.invNo}</td>
+                  <td>{i.billTo?.name}</td>
+                  <td>{fmtDate(i.dueDate||i.date)}</td>
+                  <td style={{textAlign:'right',fontWeight:600}}>{fmt(getGrand(i))}</td>
+                  <td>{i.daysOver>0?<span className="badge badge-red">{i.daysOver}d overdue</span>:<span className="badge badge-gold">Due soon</span>}</td>
+                  <td style={{fontSize:11,color:'var(--text3)'}}>{i.lastReminderSent?new Date(i.lastReminderSent).toLocaleDateString():'Never'}</td>
+                  <td>
+                    <div style={{display:'flex',gap:4}}>
+                      <button className="btn btn-sm btn-outline-primary" onClick={()=>sendWhatsApp(i)}><Ic n="whatsapp" s={11}/> WhatsApp</button>
+                      <button className="btn btn-sm btn-outline" onClick={()=>sendEmail(i)}><Ic n="mail" s={11}/> Email</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>;
+};
+
+const NavGroup = ({icon, label, page, childKeys, children})=>{
+  const anyActive = childKeys.some(k=>k===page);
+  const [open,setOpen]=useState(anyActive);
+  useEffect(()=>{ if(anyActive) setOpen(true); },[anyActive]);
+  return <div className="nav-group">
+    <div className={`nav-item nav-group-toggle${anyActive?' active':''}`} onClick={()=>setOpen(o=>!o)}>
+      <span className="nav-icon">{icon}</span>
+      <span className="nav-label">{label}</span>
+      <span className="nav-chevron" style={{marginLeft:'auto',transform:open?'rotate(90deg)':'rotate(0deg)'}}><Ic n="chevron" s={12}/></span>
+    </div>
+    {open&&<div className="nav-subitems">{children}</div>}
   </div>;
 };
 
@@ -7222,6 +8837,8 @@ const App = ()=>{
   const [theme,setTheme]=useState('dark');
   const [modal,setModal]=useState(null);
   const [page,setPage]=useState('invoice'); // 'invoice','history','pohistory','expenses'(=Purchases),'customers','inventory','aging'
+  const [invView,setInvView]=useState('summary');
+  const [agingView,setAgingView]=useState('ar');
   const [loadedInv,setLoadedInv]=useState(null);
   const [loadedPO,setLoadedPO]=useState(null);
   const [formKey,setFormKey]=useState(0);
@@ -7344,34 +8961,73 @@ const App = ()=>{
         <NavItem icon={<Ic n="receipt" s={17}/>} label="Purchases"
           onClick={()=>{setPage('expenses');setModal(null);setMobSidebarOpen(false);}} active={page==='expenses'&&!modal}/>
 
-        {canSee(user.role,'customers')&&<NavItem icon={<Ic n="users" s={17}/>} label="Customers"
-          onClick={()=>{setPage('customers');setModal(null);setMobSidebarOpen(false);}} active={page==='customers'&&!modal}/>}
+        {canSee(user.role,'inventory')&&
+        <NavGroup icon={<Ic n="package" s={17}/>} label="Inventory" page={page} childKeys={['inventory']}>
+          <NavItem icon={<Ic n="package" s={14}/>} label="Stock Summary" onClick={()=>{setPage('inventory');setInvView('summary');setModal(null);}} active={page==='inventory'&&invView==='summary'}/>
+          <NavItem icon={<Ic n="clock" s={14}/>} label="Inventory Ageing" onClick={()=>{setPage('inventory');setInvView('ageing');setModal(null);}} active={page==='inventory'&&invView==='ageing'}/>
+          <NavItem icon={<Ic n="chart" s={14}/>} label="Product-wise Movement" onClick={()=>{setPage('inventory');setInvView('product');setModal(null);}} active={page==='inventory'&&invView==='product'}/>
+          <NavItem icon={<Ic n="cart" s={14}/>} label="Bill-wise (Purchases)" onClick={()=>{setPage('inventory');setInvView('purchdoc');setModal(null);}} active={page==='inventory'&&invView==='purchdoc'}/>
+          <NavItem icon={<Ic n="receipt" s={14}/>} label="Invoice-wise (Sales)" onClick={()=>{setPage('inventory');setInvView('salesdoc');setModal(null);}} active={page==='inventory'&&invView==='salesdoc'}/>
+          <NavItem icon={<Ic n="file" s={14}/>} label="All Documents In / Out" onClick={()=>{setPage('inventory');setInvView('alldoc');setModal(null);}} active={page==='inventory'&&invView==='alldoc'}/>
+          <NavItem icon={<Ic n="dollar" s={14}/>} label="Valuation & Slow Moving" onClick={()=>{setPage('inventory');setInvView('valuation');setModal(null);}} active={page==='inventory'&&invView==='valuation'}/>
+          <NavItem icon={<Ic n="list" s={14}/>} label="Full Stock Ledger" onClick={()=>{setPage('inventory');setInvView('log');setModal(null);}} active={page==='inventory'&&invView==='log'}/>
+        </NavGroup>}
 
-        {canSee(user.role,'inventory')&&<NavItem icon={<Ic n="tag" s={17}/>} label="Product Master"
-          onClick={()=>{setModal('products');setMobSidebarOpen(false);}} active={modal==='products'}/>}
-
-        {canSee(user.role,'inventory')&&<NavItem icon={<Ic n="package" s={17}/>} label="Inventory"
-          onClick={()=>{setPage('inventory');setModal(null);setMobSidebarOpen(false);}} active={page==='inventory'&&!modal}/>}
-
-        {canSee(user.role,'aging')&&<NavItem icon={<Ic n="clock" s={17}/>} label="Ageing & Outstanding"
-          onClick={()=>{setPage('aging');setModal(null);setMobSidebarOpen(false);}} active={page==='aging'&&!modal}/>}
+        {canSee(user.role,'aging')&&
+        <NavGroup icon={<Ic n="clock" s={17}/>} label="Ageing & Outstanding" page={page} childKeys={['aging']}>
+          <NavItem icon={<Ic n="chart" s={14}/>} label="Summary" onClick={()=>{setPage('aging');setAgingView('summary');setModal(null);}} active={page==='aging'&&agingView==='summary'}/>
+          <NavItem icon={<Ic n="users" s={14}/>} label="Trade Receivables" onClick={()=>{setPage('aging');setAgingView('ar');setModal(null);}} active={page==='aging'&&agingView==='ar'}/>
+          <NavItem icon={<Ic n="receipt" s={14}/>} label="Receivables — Bill-wise" onClick={()=>{setPage('aging');setAgingView('arbill');setModal(null);}} active={page==='aging'&&agingView==='arbill'}/>
+          <NavItem icon={<Ic n="cart" s={14}/>} label="Trade Payables" onClick={()=>{setPage('aging');setAgingView('ap');setModal(null);}} active={page==='aging'&&agingView==='ap'}/>
+          <NavItem icon={<Ic n="file" s={14}/>} label="Payables — Bill-wise" onClick={()=>{setPage('aging');setAgingView('apbill');setModal(null);}} active={page==='aging'&&agingView==='apbill'}/>
+        </NavGroup>}
 
         {canSee(user.role,'bankrecon')&&<NavItem icon={<Ic n="bank" s={17}/>} label="Bank Reconciliation"
           onClick={()=>{setPage('bankrecon');setModal(null);setMobSidebarOpen(false);}} active={page==='bankrecon'&&!modal}/>}
 
-        {canSee(user.role,'company')&&<>
+        {canSee(user.role,'salesview')&&<NavItem icon={<Ic n="dollar" s={17}/>} label="Sales"
+          onClick={()=>{setPage('salesview');setModal(null);setMobSidebarOpen(false);}} active={page==='salesview'&&!modal}/>}
+
+        {canSee(user.role,'reports')&&
+        <NavGroup icon={<Ic n="chart" s={17}/>} label="Accounting" page={page} childKeys={['reports','coa','journal','ledger','trialbalance']}>
+          <NavItem icon={<Ic n="chart" s={14}/>} label="Financial Statements" onClick={()=>{setPage('reports');setModal(null);setMobSidebarOpen(false);}} active={page==='reports'&&!modal}/>
+          <NavItem icon={<Ic n="list" s={14}/>} label="Chart of Accounts" onClick={()=>{setPage('coa');setModal(null);setMobSidebarOpen(false);}} active={page==='coa'&&!modal}/>
+          <NavItem icon={<Ic n="file" s={14}/>} label="Journal Vouchers" onClick={()=>{setPage('journal');setModal(null);setMobSidebarOpen(false);}} active={page==='journal'&&!modal}/>
+          <NavItem icon={<Ic n="history" s={14}/>} label="General Ledger" onClick={()=>{setPage('ledger');setModal(null);setMobSidebarOpen(false);}} active={page==='ledger'&&!modal}/>
+          <NavItem icon={<Ic n="dollar" s={14}/>} label="Trial Balance" onClick={()=>{setPage('trialbalance');setModal(null);setMobSidebarOpen(false);}} active={page==='trialbalance'&&!modal}/>
+        </NavGroup>}
+
+        {(canSee(user.role,'quotations')||canSee(user.role,'dc')||canSee(user.role,'recurring')||canSee(user.role,'reminders'))&&
+        <NavGroup icon={<Ic n="file" s={17}/>} label="Sales Tools" page={page} childKeys={['quotations','dc','recurring','reminders']}>
+          {canSee(user.role,'quotations')&&<NavItem icon={<Ic n="file" s={16}/>} label="Quotations / Estimates"
+            onClick={()=>{setPage('quotations');setModal(null);setMobSidebarOpen(false);}} active={page==='quotations'&&!modal}/>}
+          {canSee(user.role,'dc')&&<NavItem icon={<Ic n="package" s={16}/>} label="Delivery Challans"
+            onClick={()=>{setPage('dc');setModal(null);setMobSidebarOpen(false);}} active={page==='dc'&&!modal}/>}
+          {canSee(user.role,'recurring')&&<NavItem icon={<Ic n="refresh" s={16}/>} label="Recurring Invoices"
+            onClick={()=>{setPage('recurring');setModal(null);setMobSidebarOpen(false);}} active={page==='recurring'&&!modal}/>}
+          {canSee(user.role,'reminders')&&<NavItem icon={<Ic n="alert" s={16}/>} label="Payment Reminders"
+            onClick={()=>{setPage('reminders');setModal(null);setMobSidebarOpen(false);}} active={page==='reminders'&&!modal}/>}
+        </NavGroup>}
+
+        {(canSee(user.role,'customers')||canSee(user.role,'inventory')||canSee(user.role,'company')||canSee(user.role,'terms'))&&<>
         <div className="nav-sep"/>
-        <div className="sidebar-section-label">Settings</div>
+        <NavGroup icon={<Ic n="settings" s={17}/>} label="Settings" page={page} childKeys={['customers','company','hsn','terms']}>
+          {canSee(user.role,'customers')&&<NavItem icon={<Ic n="users" s={14}/>} label="Customers"
+            onClick={()=>{setPage('customers');setModal(null);}} active={page==='customers'&&!modal}/>}
 
-        <NavItem icon={<Ic n="building" s={17}/>} label="Company" extraCls="nav-item-gold"
-          onClick={()=>{setPage('company');setModal(null);setMobSidebarOpen(false);}} active={page==='company'}/>
+          {canSee(user.role,'inventory')&&<NavItem icon={<Ic n="tag" s={14}/>} label="Product Master"
+            onClick={()=>{setModal('products');}} active={modal==='products'}/>}
 
-        <NavItem icon={<Ic n="tag" s={17}/>} label="HSN / SAC" extraCls="nav-item-gold"
-          onClick={()=>{setPage('hsn');setModal(null);setMobSidebarOpen(false);}} active={page==='hsn'}/>
+          {canSee(user.role,'company')&&<NavItem icon={<Ic n="building" s={14}/>} label="Company"
+            onClick={()=>{setPage('company');setModal(null);}} active={page==='company'}/>}
+
+          {canSee(user.role,'company')&&<NavItem icon={<Ic n="tag" s={14}/>} label="HSN / SAC"
+            onClick={()=>{setPage('hsn');setModal(null);}} active={page==='hsn'}/>}
+
+          {canSee(user.role,'terms')&&<NavItem icon={<Ic n="file" s={14}/>} label="Terms & Conditions"
+            onClick={()=>{setPage('terms');setModal(null);}} active={page==='terms'}/>}
+        </NavGroup>
         </>}
-
-        {canSee(user.role,'terms')&&<NavItem icon={<Ic n="file" s={17}/>} label="Terms & Conditions"
-          onClick={()=>{setPage('terms');setModal(null);setMobSidebarOpen(false);}} active={page==='terms'}/>}
 
         {isAdmin&&<>
           <div className="nav-sep"/>
@@ -7436,7 +9092,9 @@ const App = ()=>{
             expenses:'Purchases',customers:'Customer Database',
             dashboard:'Dashboard',company:'Company Settings',hsn:'HSN / SAC Database',
             terms:'Terms & Conditions',admin:'Admin Panel',
-            inventory:'Inventory & Stock',aging:'Ageing — Receivables & Payables',bankrecon:'Bank Reconciliation'
+            inventory:'Inventory & Stock',aging:'Ageing — Receivables & Payables',bankrecon:'Bank Reconciliation',salesview:'Sales',reports:'Financial Statements',
+            coa:'Chart of Accounts',journal:'Journal Vouchers',ledger:'General Ledger',trialbalance:'Trial Balance',
+            quotations:'Quotations / Estimates',dc:'Delivery Challans',recurring:'Recurring Invoices',reminders:'Payment Reminders'
           }[page]||'BluBills'}</span>
           <span className="topbar-page-sep">|</span>
           <span className="topbar-page-sub">BluBills</span>
@@ -7489,9 +9147,19 @@ const App = ()=>{
         {page==='company'&&<CompanyModal onClose={()=>setPage('invoice')} currentUser={user} inline={true}/>}
         {page==='hsn'&&<HSNModal onClose={()=>setPage('invoice')} inline={true} searchQuery={searchQuery}/>}
         {page==='terms'&&canSee(user.role,'terms')&&<TermsModal onClose={()=>setPage('invoice')} inline={true}/>}
-        {page==='inventory'&&canSee(user.role,'inventory')&&<InventoryPage currentUser={user}/>}
-        {page==='aging'&&canSee(user.role,'aging')&&<AgingReportPage/>}
+        {page==='inventory'&&canSee(user.role,'inventory')&&<InventoryPage currentUser={user} initialTab={invView}/>}
+        {page==='aging'&&canSee(user.role,'aging')&&<AgingReportPage initialTab={agingView}/>}
         {page==='bankrecon'&&canSee(user.role,'bankrecon')&&<BankReconPage currentUser={user}/>}
+        {page==='salesview'&&canSee(user.role,'salesview')&&<SalesPage currentUser={user}/>}
+        {page==='reports'&&canSee(user.role,'reports')&&<ReportsPage currentUser={user}/>}
+        {page==='coa'&&canSee(user.role,'reports')&&<ChartOfAccountsPage/>}
+        {page==='journal'&&canSee(user.role,'reports')&&<JournalVouchersPage currentUser={user}/>}
+        {page==='ledger'&&canSee(user.role,'reports')&&<GeneralLedgerPage/>}
+        {page==='trialbalance'&&canSee(user.role,'reports')&&<TrialBalancePage/>}
+        {page==='quotations'&&canSee(user.role,'quotations')&&<QuotationsPage currentUser={user}/>}
+        {page==='dc'&&canSee(user.role,'dc')&&<DeliveryChallanPage currentUser={user}/>}
+        {page==='recurring'&&canSee(user.role,'recurring')&&<RecurringInvoicesPage currentUser={user}/>}
+        {page==='reminders'&&canSee(user.role,'reminders')&&<RemindersPage currentUser={user}/>}
         {page==='admin'&&isAdmin&&<AdminPanel currentUser={user} onClose={()=>setPage('invoice')} inline={true}/>}
       </div>
     </div>
