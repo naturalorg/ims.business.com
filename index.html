@@ -35,7 +35,7 @@
   --border:#DDD9FF;--border2:#C4BFFF;--border3:#A8A0FF;
   --primary:#4338CA;--primary2:#6366F1;--primary-dark:#3730A3;--primary-bg:rgba(99,102,241,0.07);
   --gold:#D97706;--gold2:#F59E0B;--gold-bg:rgba(217,119,6,0.07);--gold-bg2:rgba(217,119,6,0.14);
-  --text:#0A0828;--text2:#3730A3;--text3:#818CF8;
+  --text:#0A0828;--text2:#3730A3;--text3:#8B87A8;
   --green:#059669;--red:#DC2626;--blue:#2563EB;--cyan:#0891B2;--purple:#7C3AED;
   --shadow:0 4px 32px rgba(67,56,202,0.15);--shadow2:0 2px 14px rgba(67,56,202,0.1);
   --glass:rgba(255,255,255,0.95);
@@ -534,9 +534,9 @@ select.field-input{cursor:pointer;appearance:none;background-image:url("data:ima
 
 /* DATA TABLE */
 .dt{width:100%;border-collapse:collapse}
-.dt th{background:var(--card2);border-bottom:2px solid var(--border2);padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px}
+.dt th{background:var(--card2);border-bottom:2px solid var(--border2);padding:6px 10px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;z-index:3}
 [data-theme="dark"] .dt th{background:#21262D;color:#8B949E}
-.dt td{border-bottom:1px solid var(--border);padding:10px 12px;font-size:13px}
+.dt td{border-bottom:1px solid var(--border);padding:5px 10px;font-size:12.5px;line-height:1.3}
 .dt tr:hover td{background:var(--primary-bg)}
 .dt-wrap{border:1px solid var(--border);border-radius:12px;overflow:hidden;max-height:420px;overflow-y:auto}
 [data-theme="dark"] .dt-wrap{border-color:#30363D}
@@ -684,7 +684,7 @@ body,html{overflow-x:hidden;max-width:100vw;box-sizing:border-box}
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ── CONSTANTS ── */
-const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series', STOCK:'ip_stock', BANK:'ip_bank', QSALE:'ip_quicksales', BANK_OB:'ip_bank_ob', BANK_ACCTS:'ip_bank_accounts', QUOTE:'ip_quotations', DC:'ip_delivery_challans', RECUR:'ip_recurring', JOURNAL:'ip_journal', ACCMAP:'ip_acc_map', POLICIES:'ip_policies' };
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series', STOCK:'ip_stock', BANK:'ip_bank', QSALE:'ip_quicksales', BANK_OB:'ip_bank_ob', BANK_ACCTS:'ip_bank_accounts', QUOTE:'ip_quotations', DC:'ip_delivery_challans', RECUR:'ip_recurring', JOURNAL:'ip_journal', ACCMAP:'ip_acc_map', POLICIES:'ip_policies', COA_CUSTOM:'ip_coa_custom', REFSEQ:'ip_ref_seq' };
 
 /* ── ROLE-BASED PAGE ACCESS — 'user','admin','superadmin' keep full access (unchanged).
    'sales' and 'accountant' are new, narrower roles — adjust freely later. ── */
@@ -748,15 +748,22 @@ const getDb = () => {
   return _fbDb;
 };
 
-/* ── STORAGE — in-memory cache synced with Firebase Realtime DB ── */
+/* ── STORAGE — in-memory cache synced with Firebase Realtime DB ──
+   _cloudReady only becomes true once we've had a CONFIRMED successful read from Firebase this
+   session. Until then, S.set() refuses to write anywhere — this is the single choke point that
+   stops a slow/failed load from ever pushing a thin local snapshot back over your real cloud data
+   (which is exactly how whole tables got wiped after a redeploy in the past). */
 const _cache = {};
+let _cloudReady = false;
 
-// Load ALL keys from Firebase into local cache on startup (one read, fast)
-const loadCache = async () => {
+// Load ALL keys from Firebase into local cache on startup. Retries once on failure/timeout before
+// giving up — a cold Firebase connection right after a redeploy is exactly the case that used to
+// trigger data loss, so we give it a genuine second chance before falling back to a read-only view.
+const loadCache = async (attempt=1) => {
   try {
     const result = await Promise.race([
       getDb().ref('invoicepro').once('value'),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase timeout after 8s')), 8000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase timeout after 15s')), 15000))
     ]);
     const data = result.val();
     if(data) Object.entries(data).forEach(([k,v]) => {
@@ -769,13 +776,22 @@ const loadCache = async () => {
         _cache[k] = v;
       }
     });
+    _cloudReady = true;
     console.log('✅ Firebase loaded', Object.keys(_cache).length, 'keys');
+    return true;
   } catch(e) {
-    console.warn('⚠️ Firebase load failed, using localStorage fallback:', e.message);
+    if(attempt < 2){
+      console.warn(`⚠️ Firebase load attempt ${attempt} failed (${e.message}), retrying…`);
+      await new Promise(r=>setTimeout(r, 1500));
+      return loadCache(attempt+1);
+    }
+    console.warn('⚠️ Firebase load failed after retry — showing a READ-ONLY local copy, writes are blocked:', e.message);
     for(let i=0; i<localStorage.length; i++){
       const k = localStorage.key(i);
       try{ _cache[k] = JSON.parse(localStorage.getItem(k)); }catch(e){}
     }
+    _cloudReady = false;
+    return false;
   }
 };
 
@@ -785,15 +801,51 @@ const S = {
     return v !== undefined ? v : d;
   },
   set: (k, v) => {
+    if(!_cloudReady){
+      // Refuse the write outright rather than silently accepting it — accepting it here is exactly
+      // what let a thin/incomplete snapshot become "the truth" and get pushed to Firebase once
+      // connectivity returned. Better to lose this one edit visibly than corrupt everything silently.
+      console.warn(`⛔ Write to "${k}" blocked — not connected to the cloud yet.`);
+      toast.error('Not connected to the cloud — this change was NOT saved. Please check your connection and retry.');
+      return false;
+    }
     _cache[k] = v;
     // Backup to localStorage
     try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){}
     // Write to Firebase async (non-blocking, never slows the UI)
     getDb().ref('invoicepro/' + k).set(v)
       .catch(e => console.warn('Firebase write failed:', e.message));
+    return true;
   }
 };
+
+/* ── UNIQUE VOUCHER NUMBERS ──
+   Every Invoice, Expense/Purchase bill, and Journal Voucher gets its own permanent 10-digit
+   Voucher No. the moment it's first saved (distinct from "Ref No." elsewhere in the app, which
+   is the bank/PO's own external reference — this one is ours). Every journal line the double-
+   entry engine posts from that source document (both the debit side and the credit side, and
+   everything that later clears against it) carries this same voucherNo, so any entry can be
+   traced straight back to the exact source document it came from — on screen, in the General
+   Ledger, and in every export. Numbers are drawn from one global counter, so they're unique
+   across invoices, expenses and journal vouchers alike. */
+const nextVoucherNo = () => {
+  const n = (parseInt(S.get(SK.REFSEQ, 0), 10) || 0) + 1;
+  S.set(SK.REFSEQ, n);
+  return String(n).padStart(10,'0');
+};
 const fmt  = n => '₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+/* Company letterhead rows — prepended to the main sheet of every register/report export so a
+   spreadsheet handed to someone else (a client, an auditor, your CA) is self-identifying. */
+const companyHeaderRows = () => {
+  const co = S.get(SK.CO,{});
+  const addr = [co.address,co.city,co.state,co.pin].filter(Boolean).join(', ');
+  const rows = [];
+  if(co.name) rows.push([co.name]);
+  if(addr) rows.push([addr]);
+  if(co.gstin) rows.push(['GSTIN: '+co.gstin]);
+  if(rows.length) rows.push([]);
+  return rows;
+};
 const fmtN = n => Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const today  = ()=>new Date().toISOString().split('T')[0];
 const fmtDate= d=>{
@@ -1605,7 +1657,7 @@ const makePurchaseExcel = (expenses) => {
 
   // ── Purchase Register Sheet — one row per line item ──
   const headers = [
-    'Sl.No','Date','Vendor / Supplier Name','Vendor GSTIN','Vendor State',
+    'Sl.No','Date','Voucher No.','Vendor / Supplier Name','Vendor GSTIN','Vendor State',
     'Bill No / Ref No','Bill Date','Due Date','Category','Product','Description',
     'HSN / SAC','Unit','Qty','Rate (Rs.)','Taxable Amount (Rs.)',
     'GST Type','Tax Rate %','CGST %','CGST Amount (Rs.)','SGST %','SGST Amount (Rs.)',
@@ -1613,7 +1665,7 @@ const makePurchaseExcel = (expenses) => {
     'Bill Total (Rs.)','Amount Paid (Rs.)','Balance Payable (Rs.)',
     'Payment Mode','Payment Status','Paid Date','Notes','Recorded By'
   ];
-  const rows = [headers];
+  const rows = [...companyHeaderRows(), headers];
   let sl = 1;
   expenses.forEach(e => {
     const gt = e.gstType || 'INTRA';
@@ -1623,7 +1675,7 @@ const makePurchaseExcel = (expenses) => {
       const tax = parseFloat(it.taxable) || 0;
       const gst = parseFloat(it.gstAmt)  || 0;
       rows.push([
-        sl++, e.date || '', e.vendor || '', (e.vendorGSTIN || '').toUpperCase(), e.vendorState || '',
+        sl++, e.date || '', e.voucherNo || '', e.vendor || '', (e.vendorGSTIN || '').toUpperCase(), e.vendorState || '',
         e.billNo || '', e.billDate || '', expDueDate(e), e.category || '',
         it.product || '', it.desc || '',
         it.hsnCode || '', it.unit || 'Nos', parseFloat(it.qty) || 0, parseFloat(it.rate) || 0,
@@ -1643,7 +1695,7 @@ const makePurchaseExcel = (expenses) => {
     });
   });
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:5},{wch:12},{wch:24},{wch:20},{wch:14},{wch:16},{wch:12},{wch:12},{wch:16},{wch:24},{wch:24},
+  ws['!cols'] = [{wch:5},{wch:12},{wch:14},{wch:24},{wch:20},{wch:14},{wch:16},{wch:12},{wch:12},{wch:16},{wch:24},{wch:24},
     {wch:10},{wch:8},{wch:8},{wch:12},{wch:18},{wch:10},{wch:8},{wch:8},{wch:14},{wch:8},{wch:14},
     {wch:8},{wch:14},{wch:14},{wch:16},{wch:12},{wch:16},{wch:16},{wch:18},{wch:16},{wch:14},{wch:12},{wch:24},{wch:20}];
   XLSX.utils.book_append_sheet(wb, ws, 'Purchase Register');
@@ -2054,7 +2106,7 @@ const makeExcel = (invoices) => {
     'SGST Amount (Rs.)','IGST %','IGST Amount (Rs.)','Total Tax (Rs.)','Invoice Total (Rs.)',
     'Payment Status','Due Date','PO/Reference No','Notes','Created By'
   ];
-  const rows=[headers];
+  const rows=[...companyHeaderRows(), headers];
   let sl=1;
   invoices.forEach(inv=>{
     const items=(inv.items||[]).filter(r=>r.desc);
@@ -2503,11 +2555,11 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
     const calc = {...calcPurchase(form), vendorGSTIN:(form.vendorGSTIN||'').toUpperCase()};
     let updated, rec;
     if(editId){
-      rec = {...calc, id:editId};
+      rec = {...calc, id:editId, voucherNo: calc.voucherNo||nextVoucherNo()};
       updated = expenses.map(e=>e.id===editId?rec:e);
       logAudit('EXPENSE_EDITED',`${calc.vendor} — ${calc.billNo} — ₹${calc.total}`,currentUser);
     } else {
-      rec = {...calc, id:calc.id||Date.now().toString(), createdAt:new Date().toISOString()};
+      rec = {...calc, id:calc.id||Date.now().toString(), createdAt:new Date().toISOString(), voucherNo:nextVoucherNo()};
       updated = [...expenses, rec];
       logAudit('EXPENSE_ADDED',`${calc.vendor} — ${calc.billNo} — ₹${calc.total}`,currentUser);
     }
@@ -2632,7 +2684,7 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
                     <div style={{fontSize:12,color:'var(--text3)',fontWeight:500}}>{fmtDate(e.date)}</div>
                     <div style={{minWidth:0}}>
                       <div style={{fontWeight:700,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.vendor}</div>
-                      <div style={{fontSize:11,color:'var(--text3)',fontFamily:'monospace'}}>{e.billNo||'—'} · {items.length} item(s)</div>
+                      <div style={{fontSize:11,color:'var(--text3)',fontFamily:'monospace'}}>{e.billNo||'—'} · {items.length} item(s){e.voucherNo?` · V# ${e.voucherNo}`:''}</div>
                     </div>
                     <div><span style={{display:'inline-block',fontSize:11,color:'var(--primary2)',background:'var(--primary-bg)',
                       padding:'3px 10px',borderRadius:20,border:'1px solid rgba(99,102,241,0.2)',fontWeight:600,
@@ -3044,6 +3096,7 @@ const HistoryModal = ({onClose,onLoad,currentUser,inline=false,searchQuery=''})=
                     </td>
                     <td style={{padding:'10px 10px',fontFamily:'monospace',fontWeight:700,color:'var(--gold)',fontSize:12,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
                       {inv.invNo}
+                      {inv.voucherNo&&<div style={{fontSize:9.5,fontWeight:500,color:'var(--text3)',marginTop:1}} title="Accounting Voucher No.">V# {inv.voucherNo}</div>}
                     </td>
                     <td style={{padding:'10px 10px',color:'var(--text)',fontSize:13,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                       {inv.billTo?.name||'Unknown'}
@@ -4502,7 +4555,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     const grandVal = isCN ? -Math.abs(computedGrand) : Math.abs(computedGrand);
     // Always store GSTIN in uppercase
     const cleanBillTo = {...inv.billTo, gstin:(inv.billTo?.gstin||'').toUpperCase()};
-    const toSave = {...inv, grand: grandVal, billTo: cleanBillTo};
+    const toSave = {...inv, grand: grandVal, billTo: cleanBillTo, voucherNo: inv.voucherNo||nextVoucherNo()};
     const invs=S.get(SK.INV,[]);
     const ex=invs.findIndex(i=>i.invNo===inv.invNo);
     let updated;
@@ -5272,7 +5325,7 @@ const makePOExcel = (orders) => {
   const headers=['Sl.No','PO Number','PO Date','Delivery By','Vendor Name','Vendor GSTIN',
     'Vendor Address','Deliver To','Description','HSN/SAC','Qty','Unit','Rate (Rs.)','Amount (Rs.)',
     'Sub Total','Taxes','Grand Total','Status','Ref No','Terms','Created By'];
-  const rows=[headers]; let sl=1;
+  const rows=[...companyHeaderRows(), headers]; let sl=1;
   orders.forEach(po=>{
     const items=(po.items||[]).filter(r=>r.desc);
     const grand=(po.items||[]).reduce((s,r)=>s+(r.qty||0)*(r.rate||0),0)+Number(po.taxes||0);
@@ -7310,6 +7363,7 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
       notes:qsNotes.trim(),
       amount:t.amount,
       refNo:t.refNo||'',
+      voucherNo:nextVoucherNo(),
       source:'bank',
       createdBy:currentUser?.username||currentUser?.name||'',
       createdAt:new Date().toISOString()
@@ -7712,36 +7766,77 @@ const getStockValueNow = ()=>{
    Invoices / Purchases / Bank Reconciliation, and every debit always
    has a matching credit.
    ══════════════════════════════════════════════════════════════ */
+/* Every account has a broad "group" (used to order/section the statement — Non-Current Assets,
+   Current Assets, etc.) and a "scheduleGroup" — the actual caption printed on the statement.
+   Several ledgers can share one scheduleGroup (e.g. many custom expense ledgers can all roll
+   up into the "Other Expenses" caption), which is what makes the group → ledger → transaction
+   drill-down possible. */
 const COA = [
-  {key:'FIXED_ASSETS',       name:'Fixed Assets (Tangible)',                      type:'asset',     group:'Non-Current Assets'},
-  {key:'ACC_DEPRECIATION',   name:'Accumulated Depreciation',                     type:'asset',     group:'Non-Current Assets'},
-  {key:'INVESTMENTS',        name:'Non-Current Investments',                      type:'asset',     group:'Non-Current Assets'},
-  {key:'INVENTORY',          name:'Inventories',                                  type:'asset',     group:'Current Assets'},
-  {key:'TRADE_RECEIVABLE',   name:'Trade Receivables',                            type:'asset',     group:'Current Assets'},
-  {key:'BANK',               name:'Cash and Cash Equivalents',                    type:'asset',     group:'Current Assets'},
-  {key:'INPUT_GST',          name:'Balances with Govt. Authorities (Input GST)',  type:'asset',     group:'Current Assets'},
-  {key:'ADVANCES',           name:'Short-term Loans & Advances',                  type:'asset',     group:'Current Assets'},
-  {key:'SUSPENSE_OUT',       name:'Unidentified Bank Payments (Suspense)',        type:'asset',     group:'Current Assets'},
-  {key:'CAPITAL',            name:"Owner's Capital / Share Capital",              type:'equity',    group:'Equity'},
-  {key:'RETAINED_EARNINGS',  name:'Reserves & Surplus (Retained Earnings)',       type:'equity',    group:'Equity', computed:true},
-  {key:'LT_BORROWING',       name:'Long-term Borrowings',                         type:'liability', group:'Non-Current Liabilities'},
-  {key:'LT_PROVISION',       name:'Long-term Provisions',                         type:'liability', group:'Non-Current Liabilities'},
-  {key:'ST_BORROWING',       name:'Short-term Borrowings',                        type:'liability', group:'Current Liabilities'},
-  {key:'TRADE_PAYABLE',      name:'Trade Payables',                               type:'liability', group:'Current Liabilities'},
-  {key:'OUTPUT_GST',         name:'Balances with Govt. Authorities (Output GST)', type:'liability', group:'Current Liabilities'},
-  {key:'ST_PROVISION',       name:'Short-term Provisions',                        type:'liability', group:'Current Liabilities'},
-  {key:'SUSPENSE_IN',        name:'Unidentified Bank Receipts (Suspense)',        type:'liability', group:'Current Liabilities'},
-  {key:'OTHER_CURRENT_LIAB', name:'Other Current Liabilities',                    type:'liability', group:'Current Liabilities'},
-  {key:'SALES',              name:'Revenue from Operations (Sales)',              type:'income',    group:'Income'},
-  {key:'OTHER_INCOME',       name:'Other Income',                                 type:'income',    group:'Income'},
-  {key:'COGS',               name:'Cost of Materials Consumed',                   type:'expense',   group:'Expenses'},
-  {key:'EMPLOYEE_EXP',       name:'Employee Benefit Expense',                     type:'expense',   group:'Expenses'},
-  {key:'FINANCE_COST',       name:'Finance Costs',                                type:'expense',   group:'Expenses'},
-  {key:'DEPRECIATION',       name:'Depreciation and Amortisation Expense',        type:'expense',   group:'Expenses'},
-  {key:'RENT_EXP',           name:'Rent Expense',                                 type:'expense',   group:'Expenses'},
-  {key:'OTHER_EXP',          name:'Other Expenses',                               type:'expense',   group:'Expenses'},
+  {key:'FIXED_ASSETS',       name:'Fixed Assets (Tangible)',                      type:'asset',     group:'Non-Current Assets',   scheduleGroup:'Fixed Assets (Tangible)'},
+  {key:'ACC_DEPRECIATION',   name:'Accumulated Depreciation',                     type:'asset',     group:'Non-Current Assets',   scheduleGroup:'Accumulated Depreciation'},
+  {key:'INVESTMENTS',        name:'Non-Current Investments',                      type:'asset',     group:'Non-Current Assets',   scheduleGroup:'Non-Current Investments'},
+  {key:'INVENTORY',          name:'Inventories',                                  type:'asset',     group:'Current Assets',       scheduleGroup:'Inventories'},
+  {key:'TRADE_RECEIVABLE',   name:'Trade Receivables',                            type:'asset',     group:'Current Assets',       scheduleGroup:'Trade Receivables'},
+  {key:'BANK',               name:'Cash and Cash Equivalents',                    type:'asset',     group:'Current Assets',       scheduleGroup:'Cash and Cash Equivalents'},
+  {key:'INPUT_GST',          name:'Balances with Govt. Authorities (Input GST)',  type:'asset',     group:'Current Assets',       scheduleGroup:'Balances with Govt. Authorities'},
+  {key:'ADVANCES',           name:'Short-term Loans & Advances',                  type:'asset',     group:'Current Assets',       scheduleGroup:'Short-term Loans & Advances'},
+  {key:'PREPAID_EXP',        name:'Prepaid Expenses',                             type:'asset',     group:'Current Assets',       scheduleGroup:'Prepaid Expenses'},
+  {key:'SUSPENSE_OUT',       name:'Unidentified Bank Payments (Suspense)',        type:'asset',     group:'Current Assets',       scheduleGroup:'Other Current Assets'},
+  {key:'CAPITAL',            name:"Owner's Capital / Share Capital",              type:'equity',    group:'Equity',               scheduleGroup:'Equity'},
+  {key:'RETAINED_EARNINGS',  name:'Reserves & Surplus (Retained Earnings)',       type:'equity',    group:'Equity',               scheduleGroup:'Equity', computed:true},
+  {key:'LT_BORROWING',       name:'Long-term Borrowings',                         type:'liability', group:'Non-Current Liabilities', scheduleGroup:'Long-term Borrowings'},
+  {key:'LT_PROVISION',       name:'Long-term Provisions',                         type:'liability', group:'Non-Current Liabilities', scheduleGroup:'Long-term Provisions'},
+  {key:'ST_BORROWING',       name:'Short-term Borrowings',                        type:'liability', group:'Current Liabilities', scheduleGroup:'Short-term Borrowings'},
+  {key:'TRADE_PAYABLE',      name:'Trade Payables',                               type:'liability', group:'Current Liabilities', scheduleGroup:'Trade Payables'},
+  {key:'OUTPUT_GST',         name:'Balances with Govt. Authorities (Output GST)', type:'liability', group:'Current Liabilities', scheduleGroup:'Balances with Govt. Authorities'},
+  {key:'ST_PROVISION',       name:'Short-term Provisions',                        type:'liability', group:'Current Liabilities', scheduleGroup:'Short-term Provisions'},
+  {key:'SUSPENSE_IN',        name:'Unidentified Bank Receipts (Suspense)',        type:'liability', group:'Current Liabilities', scheduleGroup:'Other Current Liabilities'},
+  {key:'OTHER_CURRENT_LIAB', name:'Other Current Liabilities',                    type:'liability', group:'Current Liabilities', scheduleGroup:'Other Current Liabilities'},
+  {key:'SALES',              name:'Revenue from Operations (Sales)',              type:'income',    group:'Income',   scheduleGroup:'Revenue from Operations'},
+  {key:'OTHER_INCOME',       name:'Other Income',                                 type:'income',    group:'Income',   scheduleGroup:'Other Income'},
+  {key:'COGS',               name:'Cost of Materials Consumed',                   type:'expense',   group:'Expenses', scheduleGroup:'Cost of Materials Consumed'},
+  {key:'EMPLOYEE_EXP',       name:'Employee Benefit Expense',                     type:'expense',   group:'Expenses', scheduleGroup:'Employee Benefit Expense'},
+  {key:'FINANCE_COST',       name:'Finance Costs',                                type:'expense',   group:'Expenses', scheduleGroup:'Finance Costs'},
+  {key:'DEPRECIATION',       name:'Depreciation and Amortisation Expense',        type:'expense',   group:'Expenses', scheduleGroup:'Depreciation and Amortisation Expense'},
+  {key:'RENT_EXP',           name:'Rent Expense',                                 type:'expense',   group:'Expenses', scheduleGroup:'Rent Expense'},
+  {key:'OTHER_EXP',          name:'Other Expenses',                               type:'expense',   group:'Expenses', scheduleGroup:'Other Expenses'},
 ];
-const coaByKey = key => COA.find(a=>a.key===key) || {key, name:key, type:'asset', group:'Other'};
+
+/* Standard captions offered when creating a new ledger, per type — user can also type a brand-new one. */
+const SCHEDULE_CAPTIONS = {
+  asset:     ['Fixed Assets (Tangible)','Non-Current Investments','Inventories','Trade Receivables','Cash and Cash Equivalents','Balances with Govt. Authorities','Short-term Loans & Advances','Prepaid Expenses','Other Current Assets'],
+  liability: ['Long-term Borrowings','Long-term Provisions','Short-term Borrowings','Trade Payables','Balances with Govt. Authorities','Short-term Provisions','Other Current Liabilities'],
+  equity:    ['Equity'],
+  income:    ['Revenue from Operations','Other Income'],
+  expense:   ['Cost of Materials Consumed','Employee Benefit Expense','Finance Costs','Depreciation and Amortisation Expense','Rent Expense','Other Expenses'],
+};
+const GROUP_OPTIONS = {
+  asset:     ['Non-Current Assets','Current Assets'],
+  liability: ['Non-Current Liabilities','Current Liabilities'],
+  equity:    ['Equity'],
+  income:    ['Income'],
+  expense:   ['Expenses'],
+};
+
+const getCustomAccounts = () => S.get(SK.COA_CUSTOM,[]);
+const getAllAccounts = () => [...COA, ...getCustomAccounts()];
+const coaByKey = key => getAllAccounts().find(a=>a.key===key) || {key, name:key, type:'asset', group:'Other', scheduleGroup:'Other'};
+
+/* Creates a brand-new ledger account the user can post to from Journal Vouchers or map a
+   Purchase category to. Returns the generated key. */
+const createLedgerAccount = ({name, type, group, scheduleGroup}) => {
+  const slug = (name||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,24) || 'ACC';
+  const key = 'CUST_' + slug + '_' + Date.now().toString(36).slice(-4);
+  const rec = {key, name:name.trim(), type, group, scheduleGroup: scheduleGroup||name.trim(), custom:true, createdAt:new Date().toISOString()};
+  S.set(SK.COA_CUSTOM, [...getCustomAccounts(), rec]);
+  return key;
+};
+const deleteLedgerAccount = (key) => {
+  const inUse = getAllLedgerLines().some(l=>l.account===key);
+  if(inUse) return {ok:false, reason:'This ledger already has transactions posted to it — it can\'t be deleted.'};
+  S.set(SK.COA_CUSTOM, getCustomAccounts().filter(a=>a.key!==key));
+  return {ok:true};
+};
 
 const DEFAULT_POLICIES = `1. Basis of preparation: These financial statements are prepared on an accrual basis of accounting, under the historical cost convention.
 2. Revenue recognition: Revenue from sale of goods/services is recognised at the point of raising the invoice, net of GST and returns (Credit Notes).
@@ -7787,23 +7882,29 @@ const OPENING_DATE = '1900-01-01'; // pseudo-date: opening balances always count
    drift out of sync. Each entry is a balanced {date, narration, srcType, srcId, lines:[{account,debit,credit}]}. */
 const buildAutoJournal = () => {
   const entries=[];
-  const add=(date,narration,srcType,srcId,lines)=>{
+  const add=(date,narration,srcType,srcId,lines,voucherNo)=>{
     const d=+lines.reduce((s,l)=>s+(l.debit||0),0).toFixed(2);
     const c=+lines.reduce((s,l)=>s+(l.credit||0),0).toFixed(2);
-    if(Math.abs(d-c)<=0.02) entries.push({date:date||today(), narration, srcType, srcId, lines});
+    if(Math.abs(d-c)<=0.02) entries.push({date:date||today(), narration, srcType, srcId, voucherNo:voucherNo||'', lines});
   };
+  const invByNo = {}; S.get(SK.INV,[]).forEach(i=>{ invByNo[i.invNo]=i; });
+  const expById = {}; S.get(SK.EXP,[]).forEach(e=>{ expById[e.id]=e; });
+  const qsById  = {}; S.get(SK.QSALE,[]).forEach(q=>{ qsById[q.id]=q; });
 
   // Sales invoices, Non-GST invoices, Debit Notes & Credit Notes
   S.get(SK.INV,[]).forEach(inv=>{
     if(!['TAX INVOICE','NON GST INVOICE','DEBIT NOTE','CREDIT NOTE'].includes(inv.docType)) return;
     if(inv.status==='Draft'||inv.status==='Cancelled') return;
     const rev = inv.docType==='CREDIT NOTE' ? -1 : 1;
-    const grand = getGrand(inv)*rev, gst = invGstAmt(inv)*rev, taxable = +(grand-gst).toFixed(2);
+    // inv.grand is already stored negative for Credit Notes (see the invoice save handler), but
+    // line items keep their positive taxable/GST amounts — so normalise everything to a positive
+    // magnitude first and apply the direction exactly once, rather than risking a double-negation.
+    const grand = Math.abs(getGrand(inv)) * rev, gst = Math.abs(invGstAmt(inv)) * rev, taxable = +(grand-gst).toFixed(2);
     const lines=[];
     lines.push(grand>=0?{account:'TRADE_RECEIVABLE',debit:grand,credit:0}:{account:'TRADE_RECEIVABLE',debit:0,credit:-grand});
     lines.push(taxable>=0?{account:'SALES',debit:0,credit:taxable}:{account:'SALES',debit:-taxable,credit:0});
     if(Math.abs(gst)>0.004) lines.push(gst>=0?{account:'OUTPUT_GST',debit:0,credit:gst}:{account:'OUTPUT_GST',debit:-gst,credit:0});
-    add(inv.date, `${inv.docType} ${inv.invNo}${inv.billTo?.name?' — '+inv.billTo.name:''}`, 'INV', inv.invNo, lines);
+    add(inv.date, `${inv.docType} ${inv.invNo}${inv.billTo?.name?' — '+inv.billTo.name:''}`, 'INV', inv.invNo, lines, inv.voucherNo);
   });
 
   // Quick sales (bank credits with no formal invoice)
@@ -7811,15 +7912,24 @@ const buildAutoJournal = () => {
     const amt=parseFloat(qs.amount)||0; if(!amt) return;
     add(qs.date, `Quick Sale ${qs.id}${qs.customer?' — '+qs.customer:''}`, 'QSALE', qs.id, [
       {account:'TRADE_RECEIVABLE',debit:amt,credit:0}, {account:'SALES',debit:0,credit:amt},
-    ]);
+    ], qs.voucherNo);
   });
 
-  // Purchases / expense bills — stock lines go to Inventory, non-stock lines to the mapped expense account
+  // Purchases / expense bills — a line only becomes Inventory if it's ALSO a genuine tracked-stock
+  // product (the same test applyStockForPurchase uses); otherwise it's an expense regardless of the
+  // "Add to Stock" checkbox default, so Rent/Travel/Tax-style lines never get silently capitalised.
+  const productsForStockCheck = S.get(SK.PRODUCTS,[]);
+  const isStockLine = (it) => {
+    if(it.toStock===false) return false;
+    const name = it.product || it.desc;
+    const prod = productsForStockCheck.find(p=>(p.name||'').toLowerCase()===String(name||'').toLowerCase());
+    return !!(prod && prod.trackStock);
+  };
   S.get(SK.EXP,[]).forEach(exp=>{
     const items=expItems(exp); if(!items.length) return;
     const when = exp.billDate||exp.date;
-    const stockTaxable = items.filter(it=>it.toStock!==false).reduce((s,it)=>s+(parseFloat(it.taxable)||0),0);
-    const expTaxable   = items.filter(it=>it.toStock===false).reduce((s,it)=>s+(parseFloat(it.taxable)||0),0);
+    const stockTaxable = items.filter(isStockLine).reduce((s,it)=>s+(parseFloat(it.taxable)||0),0);
+    const expTaxable   = items.filter(it=>!isStockLine(it)).reduce((s,it)=>s+(parseFloat(it.taxable)||0),0);
     const gst = items.reduce((s,it)=>s+(parseFloat(it.gstAmt)||0),0);
     const total = parseFloat(exp.total) || +(stockTaxable+expTaxable+gst).toFixed(2);
     const lines=[];
@@ -7827,40 +7937,59 @@ const buildAutoJournal = () => {
     if(expTaxable>0.004) lines.push({account:guessExpenseAccount(exp.category),debit:+expTaxable.toFixed(2),credit:0});
     if(gst>0.004) lines.push({account:'INPUT_GST',debit:+gst.toFixed(2),credit:0});
     lines.push({account:'TRADE_PAYABLE',debit:0,credit:+total.toFixed(2)});
-    add(when, `Purchase ${exp.billNo||exp.id}${exp.vendor?' — '+exp.vendor:''}`, 'EXP', exp.id, lines);
+    add(when, `Purchase ${exp.billNo||exp.id}${exp.vendor?' — '+exp.vendor:''}`, 'EXP', exp.id, lines, exp.voucherNo);
+  });
+
+  // Opening stock — every tracked product's opening quantity is inventory value that exists before
+  // any purchase was ever posted, so it needs its own balancing entry (mirrors the Bank opening logic).
+  // These are systemic, one-off entries with no source document of their own, so they get a stable
+  // derived tag (not drawn from the voucher counter) rather than a real sequential Voucher No.
+  productsForStockCheck.filter(p=>p.trackStock && (parseFloat(p.openingStock)||0)>0).forEach(p=>{
+    const val = (parseFloat(p.openingStock)||0) * (parseFloat(p.openingRate||p.rate)||0);
+    if(val>0.004) add(OPENING_DATE, `Opening stock — ${p.name}`, 'STOCKOB', p.name, [
+      {account:'INVENTORY',debit:+val.toFixed(2),credit:0}, {account:'CAPITAL',debit:0,credit:+val.toFixed(2)},
+    ], 'OPEN-'+p.name.replace(/\s+/g,'').slice(0,8).toUpperCase());
   });
 
   // Bank accounts' opening balances
   S.get(SK.BANK_ACCTS,[]).forEach(acc=>{
     const ob=parseFloat(acc.openingBalance)||0;
     if(Math.abs(ob)<=0.004) return;
-    if(ob>=0) add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'BANK',debit:ob,credit:0},{account:'CAPITAL',debit:0,credit:ob}]);
-    else add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'CAPITAL',debit:-ob,credit:0},{account:'BANK',debit:0,credit:-ob}]);
+    const obVoucher = 'OPEN-'+String(acc.id).replace(/\s+/g,'').slice(0,8).toUpperCase();
+    if(ob>=0) add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'BANK',debit:ob,credit:0},{account:'CAPITAL',debit:0,credit:ob}], obVoucher);
+    else add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'CAPITAL',debit:-ob,credit:0},{account:'BANK',debit:0,credit:-ob}], obVoucher);
   });
 
-  // Every bank transaction — the cash side of a collection or a payment
+  // Every bank transaction — the cash side of a collection or a payment. It inherits the SAME
+  // Voucher No. as the invoice/expense it's settling, so the whole lifecycle of one transaction
+  // (raised → paid) is traceable under a single number, not a fresh one per leg.
   S.get(SK.BANK,[]).forEach(t=>{
     const amt=parseFloat(t.amount)||0; if(!amt) return;
+    let settleVoucher = '';
+    if(t.matchedType==='invoice') settleVoucher = invByNo[t.matchedRef]?.voucherNo||'';
+    else if(t.matchedType==='quicksale') settleVoucher = qsById[t.matchedRef]?.voucherNo||'';
+    else if(t.matchedType==='expense') settleVoucher = expById[t.matchedRef]?.voucherNo||'';
     if(t.type==='credit'){
       const contra = (t.matchedType==='invoice'||t.matchedType==='quicksale') ? 'TRADE_RECEIVABLE' : 'SUSPENSE_IN';
       add(t.date, `Receipt — ${t.desc||'Bank credit'}${t.matchedRef?' ('+t.matchedRef+')':''}`, 'BANKTXN', t.id, [
         {account:'BANK',debit:amt,credit:0}, {account:contra,debit:0,credit:amt},
-      ]);
+      ], settleVoucher);
     } else {
       const contra = t.matchedType==='expense' ? 'TRADE_PAYABLE' : 'SUSPENSE_OUT';
       add(t.date, `Payment — ${t.desc||'Bank debit'}${t.matchedRef?' ('+t.matchedRef+')':''}`, 'BANKTXN', t.id, [
         {account:contra,debit:amt,credit:0}, {account:'BANK',debit:0,credit:amt},
-      ]);
+      ], settleVoucher);
     }
   });
 
-  // Cost of Goods Sold — recognised against Inventory the moment stock actually goes out for a sale
+  // Cost of Goods Sold — recognised against Inventory the moment stock actually goes out for a sale.
+  // Inherits the originating sale's Voucher No., since the COGS entry only exists because of that sale.
   const {cogsByLine, rows} = computeFIFO();
   rows.filter(r=>r.qty<0 && r.refType==='INVOICE' && (cogsByLine[r.id]||0)>0.004).forEach(r=>{
     add(r.date, `COGS — ${r.product} (${r.ref})`, 'COGS', r.id, [
       {account:'COGS',debit:+cogsByLine[r.id].toFixed(2),credit:0},
       {account:'INVENTORY',debit:0,credit:+cogsByLine[r.id].toFixed(2)},
-    ]);
+    ], invByNo[r.ref]?.voucherNo||'');
   });
 
   return entries;
@@ -7871,7 +8000,7 @@ const buildAutoJournal = () => {
 const getManualJournal = () => S.get(SK.JOURNAL,[]);
 const saveManualJournalEntry = (entry) => {
   const list=getManualJournal();
-  const rec = {...entry, id:entry.id||('JV-'+Date.now().toString(36))};
+  const rec = {...entry, id:entry.id||('JV-'+Date.now().toString(36)), voucherNo: entry.voucherNo||nextVoucherNo()};
   const updated = entry.id ? list.map(e=>e.id===entry.id?rec:e) : [...list, rec];
   S.set(SK.JOURNAL, updated);
   return rec;
@@ -7882,7 +8011,14 @@ const deleteManualJournalEntry = (id) => S.set(SK.JOURNAL, getManualJournal().fi
 const getAllLedgerLines = () => {
   const out=[];
   [...buildAutoJournal(), ...getManualJournal()].forEach(entry=>{
-    (entry.lines||[]).forEach(l=>out.push({date:entry.date, account:l.account, debit:+(l.debit||0), credit:+(l.credit||0), narration:entry.narration, srcType:entry.srcType||'JV', srcId:entry.srcId||entry.id}));
+    const rm = entry.reportingMethod || 'both';
+    (entry.lines||[]).forEach(l=>out.push({date:entry.date, account:l.account, debit:+(l.debit||0), credit:+(l.credit||0), narration:entry.narration, srcType:entry.srcType||'JV', srcId:entry.srcId||entry.id, voucherNo:entry.voucherNo||'', reportingMethod:rm}));
+    // Auto-reversal: on the reverse date, post the same lines with Debit/Credit swapped — so an
+    // accrual recognised in one period (a provision, a prepaid amortisation) automatically backs
+    // itself out once the real transaction arrives, without a second manual entry to remember.
+    if(entry.reverseDate){
+      (entry.lines||[]).forEach(l=>out.push({date:entry.reverseDate, account:l.account, debit:+(l.credit||0), credit:+(l.debit||0), narration:(entry.narration||'')+' (Reversal)', srcType:entry.srcType||'JV', srcId:(entry.srcId||entry.id)+'-REV', voucherNo:entry.voucherNo||'', reportingMethod:rm}));
+    }
   });
   return out;
 };
@@ -7901,12 +8037,12 @@ const getTrialBalance = (asOf) => {
 
 /* P&L — Accrual basis: every Income/Expense line dated inside the range (the statutory basis) */
 const getPLAccrual = (from,to) => {
-  const lines = getAllLedgerLines().filter(l=>(l.date||'')>=from && (l.date||'')<=to);
+  const lines = getAllLedgerLines().filter(l=>(l.date||'')>=from && (l.date||'')<=to && l.reportingMethod!=='cash');
   const byAcc = {};
   lines.forEach(l=>{
     const acc=coaByKey(l.account);
     if(acc.type!=='income' && acc.type!=='expense') return;
-    if(!byAcc[l.account]) byAcc[l.account]={account:l.account, name:acc.name, amount:0};
+    if(!byAcc[l.account]) byAcc[l.account]={account:l.account, name:acc.name, scheduleGroup:acc.scheduleGroup, amount:0};
     byAcc[l.account].amount += acc.type==='income' ? (l.credit-l.debit) : (l.debit-l.credit);
   });
   const rows=Object.values(byAcc).map(r=>({...r, type:coaByKey(r.account).type})).filter(r=>Math.abs(r.amount)>0.004);
@@ -7922,7 +8058,7 @@ const getPLCash = (from,to) => {
   const received = txns.filter(t=>t.type==='credit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
   const paid     = txns.filter(t=>t.type==='debit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
   let manualIn=0, manualOut=0;
-  getManualJournal().filter(e=>(e.date||'')>=from && (e.date||'')<=to)
+  getManualJournal().filter(e=>(e.date||'')>=from && (e.date||'')<=to && (e.reportingMethod||'both')!=='accrual')
     .forEach(e=>(e.lines||[]).forEach(l=>{ if(l.account==='BANK'){ manualIn+=l.debit||0; manualOut+=l.credit||0; }}));
   const income=+(received+manualIn).toFixed(2), expense=+(paid+manualOut).toFixed(2);
   return {income, expense, net:+(income-expense).toFixed(2)};
@@ -7935,39 +8071,190 @@ const getBalanceSheet = (asOf) => {
   const tb = getTrialBalance(asOf);
   const val = key => { const r=tb.find(x=>x.account===key); return r? r.balance : 0; };
   const assets=[], liabilities=[], equity=[];
-  COA.forEach(a=>{
+  getAllAccounts().forEach(a=>{
     if(a.key==='RETAINED_EARNINGS') return;
     const bal = val(a.key);
     if(Math.abs(bal)<0.004) return;
-    if(a.type==='asset') assets.push({key:a.key, name:a.name, group:a.group, amount:+bal.toFixed(2)});
-    else if(a.type==='liability') liabilities.push({key:a.key, name:a.name, group:a.group, amount:+(-bal).toFixed(2)});
-    else if(a.type==='equity') equity.push({key:a.key, name:a.name, group:a.group, amount:+(-bal).toFixed(2)});
+    if(a.type==='asset') assets.push({key:a.key, name:a.name, group:a.group, scheduleGroup:a.scheduleGroup, amount:+bal.toFixed(2)});
+    else if(a.type==='liability') liabilities.push({key:a.key, name:a.name, group:a.group, scheduleGroup:a.scheduleGroup, amount:+(-bal).toFixed(2)});
+    else if(a.type==='equity') equity.push({key:a.key, name:a.name, group:a.group, scheduleGroup:a.scheduleGroup, amount:+(-bal).toFixed(2)});
   });
   let netProfit=0;
   tb.forEach(r=>{ const a=coaByKey(r.account); if(a.type==='income') netProfit += -r.balance; else if(a.type==='expense') netProfit -= r.balance; });
-  equity.push({key:'RETAINED_EARNINGS', name:'Reserves & Surplus (Retained Earnings)', group:'Equity', amount:+netProfit.toFixed(2)});
+  equity.push({key:'RETAINED_EARNINGS', name:'Reserves & Surplus (Retained Earnings)', group:'Equity', scheduleGroup:'Equity', amount:+netProfit.toFixed(2)});
   const totalAssets = +assets.reduce((s,a)=>s+a.amount,0).toFixed(2);
   const totalLiab   = +liabilities.reduce((s,a)=>s+a.amount,0).toFixed(2);
   const totalEquity = +equity.reduce((s,a)=>s+a.amount,0).toFixed(2);
   return {assets, liabilities, equity, totalAssets, totalLiab, totalEquity, tallies: Math.abs(totalAssets-(totalLiab+totalEquity))<0.5};
 };
 
+/* Groups a flat list of {scheduleGroup, amount, ...} rows into statement captions, each caption
+   carrying its constituent ledgers — this is what powers the caption → ledger drill-down. */
+const groupByCaption = (rows, order=[]) => {
+  const byCap = {};
+  rows.forEach(r=>{
+    const cap = r.scheduleGroup || r.name;
+    if(!byCap[cap]) byCap[cap]={caption:cap, amount:0, accounts:[]};
+    byCap[cap].amount += r.amount;
+    byCap[cap].accounts.push(r);
+  });
+  const all = Object.values(byCap);
+  const known = order.filter(o=>all.some(x=>x.caption===o)).map(o=>all.find(x=>x.caption===o));
+  const rest = all.filter(x=>!order.includes(x.caption)).sort((a,b)=>a.caption.localeCompare(b.caption));
+  return [...known, ...rest];
+};
+const EXP_CAPTION_ORDER = ['Cost of Materials Consumed','Employee Benefit Expense','Finance Costs','Depreciation and Amortisation Expense','Rent Expense','Other Expenses'];
+const INC_CAPTION_ORDER = ['Revenue from Operations','Other Income'];
+
+/* ── Export: Excel / CSV / PDF, used by every accounting screen ── */
+const downloadBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+};
+const exportTableAs = (format, filename, title, headers, rows) => {
+  try{
+    const co = S.get(SK.CO,{});
+    const addr = [co.address,co.city,co.state,co.pin].filter(Boolean).join(', ');
+    if(format==='xlsx'){
+      const X = window.XLSX;
+      const wb = X.utils.book_new();
+      const ws = X.utils.aoa_to_sheet([...companyHeaderRows(), [title],[],headers,...rows]);
+      X.utils.book_append_sheet(wb, ws, 'Report');
+      X.writeFile(wb, `${filename}.xlsx`);
+    } else if(format==='csv'){
+      const X = window.XLSX;
+      const ws = X.utils.aoa_to_sheet([...companyHeaderRows(), [title],[],headers,...rows]);
+      const csv = X.utils.sheet_to_csv(ws);
+      downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8;'}), `${filename}.csv`);
+    } else if(format==='pdf'){
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({unit:'mm', format:'a4'});
+      let y=14;
+      if(co.name){ doc.setFontSize(12); doc.setFont(undefined,'bold'); doc.text(co.name, 14, y); doc.setFont(undefined,'normal'); y+=5; }
+      if(addr){ doc.setFontSize(8); doc.text(addr, 14, y); y+=4; }
+      if(co.gstin){ doc.setFontSize(8); doc.text('GSTIN: '+co.gstin, 14, y); y+=4; }
+      y+=2; doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.text(title, 14, y); doc.setFont(undefined,'normal'); y+=4;
+      doc.autoTable({ head:[headers], body:rows, startY:y+2, styles:{fontSize:8, cellPadding:2}, headStyles:{fillColor:[80,90,220]}, margin:{left:10,right:10} });
+      doc.save(`${filename}.pdf`);
+    }
+    toast.success(`Exported as ${format.toUpperCase()}`);
+  }catch(err){ toast.error('Export failed: '+err.message); }
+};
+/* Small shared export control — dropdown format + Export button, optionally with a date-range filter */
+const ExportBar = ({onExport, from, to, onFromChange, onToChange, showDateFilter=false, label='Export'})=>{
+  const [fmt,setFmt]=useState('xlsx');
+  return <div style={{display:'flex',gap:8,alignItems:'flex-end',flexWrap:'wrap'}}>
+    {showDateFilter&&<>
+      <div className="field"><label className="field-label">From</label><input type="date" className="field-input" value={from} onChange={e=>onFromChange(e.target.value)}/></div>
+      <div className="field"><label className="field-label">To</label><input type="date" className="field-input" value={to} onChange={e=>onToChange(e.target.value)}/></div>
+    </>}
+    <div className="field">
+      <label className="field-label">Format</label>
+      <select className="field-input" value={fmt} onChange={e=>setFmt(e.target.value)}>
+        <option value="xlsx">Excel (.xlsx)</option>
+        <option value="csv">CSV</option>
+        <option value="pdf">PDF</option>
+      </select>
+    </div>
+    <button className="btn btn-outline" onClick={()=>onExport(fmt)}><Ic n="save" s={14}/> {label}</button>
+  </div>;
+};
+
+/* Ledger data + a reusable ledger table (used by the standalone General Ledger page AND every
+   "click a caption → click a ledger → see its transactions" drill-down). */
+const useLedgerData = (account, fromDate, toDate) => useMemo(()=>{
+  const all = getAllLedgerLines().filter(l=>l.account===account).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const before = all.filter(l=>(l.date||'')<fromDate);
+  const inRange = all.filter(l=>(l.date||'')>=fromDate && (l.date||'')<=toDate);
+  const acc = coaByKey(account);
+  const natural = (acc.type==='asset'||acc.type==='expense') ? 1 : -1;
+  let bal = before.reduce((s,l)=>s+natural*(l.debit-l.credit),0);
+  const opening = bal;
+  const rows = inRange.map(l=>{ bal += natural*(l.debit-l.credit); return {...l, running:bal}; });
+  return {opening, rows, closing:bal};
+},[account,fromDate,toDate]);
+
+const LedgerTable = ({account, fromDate, toDate})=>{
+  const {opening, rows, closing} = useLedgerData(account, fromDate, toDate);
+  const accName = coaByKey(account).name;
+  const doExport = (fmt)=>{
+    const headers=['Date','Voucher No.','Narration','Debit','Credit','Balance'];
+    const body=[['', '', 'Opening Balance', '', '', fmtN(opening)], ...rows.map(r=>[fmtDate(r.date), r.voucherNo||'', r.narration, r.debit?fmtN(r.debit):'', r.credit?fmtN(r.credit):'', fmtN(r.running)])];
+    exportTableAs(fmt, `Ledger_${accName.replace(/\s+/g,'_')}_${fromDate}_to_${toDate}`, `${accName} — Ledger (${fmtDate(fromDate)} to ${fmtDate(toDate)})`, headers, body);
+  };
+  return <>
+    <div style={{display:'flex',alignItems:'flex-end',flexWrap:'wrap',gap:20,marginBottom:16}}>
+      <div className="g3" style={{flex:1,minWidth:280}}>
+        <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{fmt(opening)}</div><div className="stat-lbl">Opening Balance</div></div>
+        <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{rows.length}</div><div className="stat-lbl">Postings in Range</div></div>
+        <div className="stat-card" style={{borderLeft:'3px solid var(--primary)'}}><div className="stat-val" style={{fontSize:16}}>{fmt(closing)}</div><div className="stat-lbl">Closing Balance</div></div>
+      </div>
+    </div>
+    <div style={{marginBottom:12}}><ExportBar onExport={doExport} label="Export Ledger"/></div>
+    <div className="dt-wrap">
+      <table className="dt" style={{width:'100%'}}>
+        <thead><tr><th>Date</th><th>Voucher No.</th><th>Narration</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th><th style={{textAlign:'right'}}>Balance</th></tr></thead>
+        <tbody>
+          <tr style={{background:'var(--card2)'}}><td colSpan={5} style={{fontStyle:'italic'}}>Opening Balance</td><td style={{textAlign:'right',fontWeight:700}}>{fmt(opening)}</td></tr>
+          {rows.length===0?(
+            <tr><td colSpan={6} style={{color:'var(--text3)',textAlign:'center'}}>No postings in this range</td></tr>
+          ):rows.map((r,i)=>(
+            <tr key={i}>
+              <td>{fmtDate(r.date)}</td>
+              <td style={{fontFamily:'monospace',fontSize:11.5,color:'var(--text3)'}}>{r.voucherNo||'—'}</td>
+              <td>{r.narration}</td>
+              <td style={{textAlign:'right'}}>{r.debit?fmtN(r.debit):''}</td>
+              <td style={{textAlign:'right'}}>{r.credit?fmtN(r.credit):''}</td>
+              <td style={{textAlign:'right',fontWeight:600}}>{fmtN(r.running)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </>;
+};
+/* Breadcrumb shown above any drilled-into view */
+const Breadcrumb = ({items})=>(
+  <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',marginBottom:14,fontSize:12.5}}>
+    {items.map((it,i)=>(
+      <React.Fragment key={i}>
+        {i>0&&<span style={{color:'var(--text3)'}}>›</span>}
+        {it.onClick?(
+          <span onClick={it.onClick} style={{color:'var(--primary2)',cursor:'pointer',fontWeight:i===items.length-1?700:500}}>{it.label}</span>
+        ):(
+          <span style={{fontWeight:700}}>{it.label}</span>
+        )}
+      </React.Fragment>
+    ))}
+  </div>
+);
+
 /* Small shared control for picking any Chart-of-Accounts account, grouped by type */
 const AccountSelect = ({value,onChange,style})=>{
   const groups = [['asset','Assets'],['liability','Liabilities'],['equity','Equity'],['income','Income'],['expense','Expenses']];
+  const all = getAllAccounts();
   return <select className="field-input" style={style} value={value} onChange={e=>onChange(e.target.value)}>
     <option value="">Select account…</option>
     {groups.map(([t,label])=>(
       <optgroup key={t} label={label}>
-        {COA.filter(a=>a.type===t).map(a=><option key={a.key} value={a.key}>{a.name}</option>)}
+        {all.filter(a=>a.type===t).map(a=><option key={a.key} value={a.key}>{a.name}{a.custom?' (custom)':''}</option>)}
       </optgroup>
     ))}
   </select>;
 };
 
-/* ══ Chart of Accounts — structure view + Purchase-category → Ledger mapping ══ */
-const ChartOfAccountsPage = ({inline=true})=>{
+/* ══ Chart of Accounts — structure view + custom ledger creation + Purchase-category mapping ══ */
+const blankNewLedger = ()=>({name:'',type:'expense',group:GROUP_OPTIONS.expense[0],scheduleGroup:SCHEDULE_CAPTIONS.expense[0],customCaption:false,customCaptionText:''});
+const ChartOfAccountsPage = ({inline=true, isAdmin})=>{
   const [map,setMap]=useState(S.get(SK.ACCMAP,{}));
+  const [customAccs,setCustomAccs]=useState(getCustomAccounts());
+  const [adding,setAdding]=useState(false);
+  const [nl,setNl]=useState(blankNewLedger());
+  const [drillAccount,setDrillAccount]=useState(null);
+
   const cats = useMemo(()=>{
     const s=new Set();
     S.get(SK.EXP,[]).forEach(e=>{ if(e.category) s.add(e.category); });
@@ -7979,24 +8266,112 @@ const ChartOfAccountsPage = ({inline=true})=>{
     setMap(S.get(SK.ACCMAP,{}));
     toast.success(`"${cat}" now posts to ${coaByKey(accKey).name}`);
   };
+
+  const upNl = (k,v) => setNl(p=>{
+    const next={...p,[k]:v};
+    if(k==='type'){ next.group=GROUP_OPTIONS[v][0]; next.scheduleGroup=SCHEDULE_CAPTIONS[v][0]; next.customCaption=false; }
+    return next;
+  });
+  const saveNewLedger = () => {
+    if(!nl.name.trim()){toast.error('Give the ledger a name');return;}
+    const scheduleGroup = nl.customCaption ? (nl.customCaptionText.trim()||nl.name.trim()) : nl.scheduleGroup;
+    const key = createLedgerAccount({name:nl.name, type:nl.type, group:nl.group, scheduleGroup});
+    setCustomAccs(getCustomAccounts());
+    logAudit('LEDGER_CREATED',`${nl.name} (${nl.type}) under "${scheduleGroup}"`,null);
+    toast.success(`Ledger "${nl.name}" created — it's now available in every account picker`);
+    setNl(blankNewLedger()); setAdding(false);
+  };
+  const removeLedger = (key,name) => {
+    if(!isAdmin){toast.error('Only Admin can delete ledger accounts');return;}
+    if(!window.confirm(`Delete the "${name}" ledger?`)) return;
+    const r = deleteLedgerAccount(key);
+    if(!r.ok){toast.error(r.reason);return;}
+    setCustomAccs(getCustomAccounts());
+    toast.info('Ledger deleted');
+  };
+
+  const doExportCOA = (fmt) => {
+    const headers=['Type','Ledger Account','Statement Caption','Custom?'];
+    const rows = getAllAccounts().map(a=>[a.type, a.name, a.scheduleGroup||'', a.custom?'Yes':'No']);
+    exportTableAs(fmt, `ChartOfAccounts_${today()}`, 'Chart of Accounts', headers, rows);
+  };
+
+  if(drillAccount){
+    return <div className={inline?"inline-card":"overlay"}>
+      <div className={inline?"inline-card-inner":"modal"}>
+        <div className="modal-body">
+          <Breadcrumb items={[{label:'Chart of Accounts', onClick:()=>setDrillAccount(null)}, {label:coaByKey(drillAccount).name}]}/>
+          <LedgerTable account={drillAccount} fromDate={`${getFY()-5}-04-01`} toDate={today()}/>
+        </div>
+      </div>
+    </div>;
+  }
+
   return <div className={inline?"inline-card":"overlay"}>
     <div className={inline?"inline-card-inner":"modal"}>
       <div className="modal-body">
         <div className="alert" style={{background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.2)',marginBottom:16,borderRadius:10,fontSize:12}}>
-          Every account below is posted to automatically by your Invoices, Purchases and Bank Reconciliation — you don't post to these directly. Use Journal Vouchers for manual entries (depreciation, provisions, opening capital).
+          Standard accounts are posted to automatically by your Invoices, Purchases and Bank Reconciliation. Click any ledger below to see every transaction posted to it. Need a ledger that doesn't exist yet (a new expense head, a deposit account, etc.)? Create it below — it'll show up in every account picker, including Journal Vouchers and category mapping.
         </div>
+
+        <div style={{display:'flex',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:20}}>
+          {!adding?<button className="btn btn-primary" onClick={()=>setAdding(true)}>+ New Ledger Account</button>:<span/>}
+          <ExportBar onExport={doExportCOA} label="Export Chart of Accounts"/>
+        </div>
+
+        {adding&&(
+          <div className="card" style={{padding:16,marginBottom:16}}>
+            <div style={{display:'flex',gap:10,marginBottom:10,flexWrap:'wrap'}}>
+              <div className="field" style={{flex:1,minWidth:200}}><label className="field-label">Ledger Name</label><input className="field-input" value={nl.name} onChange={e=>upNl('name',e.target.value)} placeholder="e.g. Printing & Stationery"/></div>
+              <div className="field"><label className="field-label">Type</label>
+                <select className="field-input" value={nl.type} onChange={e=>upNl('type',e.target.value)}>
+                  <option value="asset">Asset</option><option value="liability">Liability</option><option value="equity">Equity</option><option value="income">Income</option><option value="expense">Expense</option>
+                </select>
+              </div>
+              <div className="field"><label className="field-label">Group</label>
+                <select className="field-input" value={nl.group} onChange={e=>setNl(p=>({...p,group:e.target.value}))}>
+                  {GROUP_OPTIONS[nl.type].map(g=><option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+              <div className="field"><label className="field-label">Statement Caption</label>
+                {!nl.customCaption?(
+                  <select className="field-input" value={nl.scheduleGroup} onChange={e=>e.target.value==='__new__'?setNl(p=>({...p,customCaption:true})):setNl(p=>({...p,scheduleGroup:e.target.value}))}>
+                    {SCHEDULE_CAPTIONS[nl.type].map(c=><option key={c} value={c}>{c}</option>)}
+                    <option value="__new__">+ New caption…</option>
+                  </select>
+                ):(
+                  <div style={{display:'flex',gap:6}}>
+                    <input className="field-input" value={nl.customCaptionText} onChange={e=>setNl(p=>({...p,customCaptionText:e.target.value}))} placeholder="New caption name"/>
+                    <button className="btn btn-outline" onClick={()=>setNl(p=>({...p,customCaption:false}))}>Use existing</button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:10}}>Ledgers sharing the same Statement Caption are grouped together on the Financial Statements — click the caption there to see the individual ledgers, then click a ledger to see its transactions.</div>
+            <div style={{display:'flex',gap:8}}>
+              <button className="btn btn-primary" onClick={saveNewLedger}>Create Ledger</button>
+              <button className="btn btn-outline" onClick={()=>{setNl(blankNewLedger());setAdding(false);}}>Cancel</button>
+            </div>
+          </div>
+        )}
+
         {groups.map(([t,label])=>(
           <div key={t} className="dt-wrap" style={{marginBottom:16}}>
             <table className="dt" style={{width:'100%'}}>
-              <thead><tr><th colSpan={2}>{label}</th></tr></thead>
+              <thead><tr><th colSpan={3}>{label}</th></tr></thead>
               <tbody>
-                {COA.filter(a=>a.type===t).map(a=>(
-                  <tr key={a.key}><td>{a.name}</td><td style={{color:'var(--text3)',fontSize:11.5,textAlign:'right'}}>{a.group}</td></tr>
+                {getAllAccounts().filter(a=>a.type===t).map(a=>(
+                  <tr key={a.key}>
+                    <td style={{cursor:'pointer',color:'var(--primary2)',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:'3px'}} onClick={()=>setDrillAccount(a.key)}>{a.name}{a.custom&&<span style={{fontSize:10,color:'var(--gold)',marginLeft:6}}>custom</span>}</td>
+                    <td style={{color:'var(--text3)',fontSize:11.5}}>{a.scheduleGroup}</td>
+                    <td style={{textAlign:'right',width:36}}>{a.custom&&<button className="close-btn" onClick={()=>removeLedger(a.key,a.name)}><Ic n="x" s={13}/></button>}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ))}
+
         <div className="dt-wrap">
           <table className="dt" style={{width:'100%'}}>
             <thead><tr><th>Purchase / Expense Category (as typed on bills)</th><th>Posts to Ledger Account</th></tr></thead>
@@ -8023,98 +8398,208 @@ const ChartOfAccountsPage = ({inline=true})=>{
 };
 
 /* ══ Journal Vouchers — manual double-entry postings for anything with no source document ══ */
-const blankJVLine = ()=>({account:'',debit:'',credit:''});
+const blankJVLine = ()=>({account:'',desc:'',debit:'',credit:''});
+
+/* Ready-made line structures for the entries people most often get stuck on. Picking one just
+   pre-fills the accounts and a starter narration — amounts are always left for the user to enter. */
+const JV_TEMPLATES = [
+  {key:'depreciation', label:'Depreciation', narration:'Depreciation for the period',
+   lines:[{account:'DEPRECIATION',desc:'Depreciation expense'},{account:'ACC_DEPRECIATION',desc:'Accumulated depreciation'}],
+   help:'Debit the Depreciation expense, Credit Accumulated Depreciation — same amount both sides. This spreads an asset\'s cost over its useful life without touching Bank or Cash.'},
+  {key:'provision', label:'Provision (bad debts / warranty / tax)', narration:'Provision for —',
+   lines:[{account:'OTHER_EXP',desc:'Provision expense (change the account if you have a specific one)'},{account:'ST_PROVISION',desc:'Provision for —'}],
+   help:'Debit an Expense (swap in Bad Debts / Tax / Warranty if you\'ve created that ledger), Credit Short-term Provisions. This recognises a probable future cost now, before it\'s actually paid — the opposite direction of Prepaid Expenses below.'},
+  {key:'prepaid_pay', label:'Prepaid Expense — record advance payment', narration:'Advance payment for —',
+   lines:[{account:'PREPAID_EXP',desc:'Prepaid — advance paid'},{account:'BANK',desc:'Paid from Bank'}],
+   help:'Debit Prepaid Expenses (an asset — you\'ve paid for something you haven\'t used yet), Credit Bank. If it went on credit instead of being paid immediately, change the second line to Trade Payables.'},
+  {key:'prepaid_amort', label:'Prepaid Expense — monthly amortisation', narration:'Amortisation of prepaid — for the month',
+   lines:[{account:'OTHER_EXP',desc:'This month\'s share of the prepaid expense (change to the right ledger, e.g. Rent)'},{account:'PREPAID_EXP',desc:'Reducing the prepaid balance'}],
+   help:'Debit the actual Expense (Rent, Insurance, etc.), Credit Prepaid Expenses. Post this once per period until the Prepaid balance reaches zero — that\'s what actually recognises the cost.'},
+];
+
 const JournalVouchersPage = ({inline=true, currentUser})=>{
   const [list,setList]=useState(getManualJournal());
   const [adding,setAdding]=useState(false);
   const [date,setDate]=useState(today());
+  const [referenceNo,setReferenceNo]=useState('');
   const [narration,setNarration]=useState('');
+  const [reportingMethod,setReportingMethod]=useState('both'); // 'both' | 'accrual' | 'cash'
+  const [reverseOn,setReverseOn]=useState(false);
+  const [reverseDate,setReverseDate]=useState('');
+  const [showTemplates,setShowTemplates]=useState(false);
   const [lines,setLines]=useState([blankJVLine(),blankJVLine()]);
+  const fyStart = `${getFY()-5}-04-01`;
+  const [fFrom,setFFrom]=useState(fyStart);
+  const [fTo,setFTo]=useState(today());
+  const [drillAccount,setDrillAccount]=useState(null);
   const isAdmin = currentUser?.role==='admin'||currentUser?.role==='superadmin';
+  const filteredList = useMemo(()=>list.filter(e=>(e.date||'')>=fFrom && (e.date||'')<=fTo).sort((a,b)=>(b.date||'').localeCompare(a.date||'')),[list,fFrom,fTo]);
+  const doExport = (f) => {
+    const headers=['Date','Voucher No.','Reference No.','Narration','Reporting Method','Account','Description','Debit','Credit'];
+    const rows=[];
+    filteredList.forEach(e=>(e.lines||[]).forEach(l=>rows.push([fmtDate(e.date), e.voucherNo||'', e.referenceNo||'', e.narration, e.reportingMethod||'both', coaByKey(l.account).name, l.desc||'', l.debit?fmtN(l.debit):'', l.credit?fmtN(l.credit):''])));
+    exportTableAs(f, `JournalVouchers_${fFrom}_to_${fTo}`, `Journal Vouchers (${fmtDate(fFrom)} to ${fmtDate(fTo)})`, headers, rows);
+  };
 
   const totalDr = lines.reduce((s,l)=>s+(parseFloat(l.debit)||0),0);
   const totalCr = lines.reduce((s,l)=>s+(parseFloat(l.credit)||0),0);
-  const balanced = Math.abs(totalDr-totalCr)<0.01 && totalDr>0;
+  const diff = +(totalDr-totalCr).toFixed(2);
+  const balanced = Math.abs(diff)<0.01 && totalDr>0;
 
   const upLine=(i,k,v)=>setLines(p=>p.map((l,idx)=>idx===i?{...l,[k]:v}:l));
   const addLine=()=>setLines(p=>[...p,blankJVLine()]);
   const delLine=(i)=>setLines(p=>p.length>2?p.filter((_,idx)=>idx!==i):p);
+  const applyTemplate=(t)=>{
+    setNarration(t.narration);
+    setLines(t.lines.map(l=>({account:l.account, desc:l.desc, debit:'', credit:''})));
+    setShowTemplates(false);
+    toast.info(t.help);
+  };
 
-  const reset=()=>{setDate(today());setNarration('');setLines([blankJVLine(),blankJVLine()]);setAdding(false);};
+  const reset=()=>{setDate(today());setReferenceNo('');setNarration('');setReportingMethod('both');setReverseOn(false);setReverseDate('');setLines([blankJVLine(),blankJVLine()]);setAdding(false);setShowTemplates(false);};
 
   const save=()=>{
     if(!narration.trim()){toast.error('Add a narration describing this entry');return;}
+    if(reverseOn && !reverseDate){toast.error('Pick a reverse date, or turn off auto-reverse');return;}
+    if(reverseOn && reverseDate<=date){toast.error('Reverse date must be after the entry date');return;}
     const validLines = lines.filter(l=>l.account && (parseFloat(l.debit)||parseFloat(l.credit)));
     if(validLines.length<2){toast.error('A journal entry needs at least two lines');return;}
     const d=+validLines.reduce((s,l)=>s+(parseFloat(l.debit)||0),0).toFixed(2);
     const c=+validLines.reduce((s,l)=>s+(parseFloat(l.credit)||0),0).toFixed(2);
     if(Math.abs(d-c)>0.01){toast.error(`Debit (${fmt(d)}) and Credit (${fmt(c)}) must be equal`);return;}
-    const entry={date, narration, srcType:'JV', lines:validLines.map(l=>({account:l.account,debit:+(parseFloat(l.debit)||0).toFixed(2),credit:+(parseFloat(l.credit)||0).toFixed(2)})), createdBy:currentUser?.email||'', createdAt:new Date().toISOString()};
+    const entry={
+      date, referenceNo, narration, reportingMethod, reverseDate: reverseOn?reverseDate:'',
+      srcType:'JV',
+      lines:validLines.map(l=>({account:l.account, desc:l.desc||'', debit:+(parseFloat(l.debit)||0).toFixed(2), credit:+(parseFloat(l.credit)||0).toFixed(2)})),
+      createdBy:currentUser?.email||'', createdAt:new Date().toISOString()
+    };
     saveManualJournalEntry(entry);
     setList(getManualJournal());
-    logAudit('JOURNAL_VOUCHER_ADDED',`${narration} — Dr/Cr ${fmt(d)}`,currentUser);
-    toast.success('Journal voucher posted');
+    logAudit('JOURNAL_VOUCHER_ADDED',`${narration} — Dr/Cr ${fmt(d)}${reverseOn?' (auto-reverses '+fmtDate(reverseDate)+')':''}`,currentUser);
+    toast.success('Journal voucher posted'+(reverseOn?' — reversal scheduled for '+fmtDate(reverseDate):''));
     reset();
   };
   const del=(id)=>{
     if(!isAdmin){toast.error('Only Admin can delete journal vouchers');return;}
-    if(!window.confirm('Delete this journal voucher?'))return;
+    if(!window.confirm('Delete this journal voucher? Its scheduled reversal (if any) will be removed too.'))return;
     deleteManualJournalEntry(id);
     setList(getManualJournal());
     toast.info('Journal voucher deleted');
   };
 
+  if(drillAccount){
+    return <div className={inline?"inline-card":"overlay"}>
+      <div className={inline?"inline-card-inner":"modal"}>
+        <div className="modal-body">
+          <Breadcrumb items={[{label:'Journal Vouchers', onClick:()=>setDrillAccount(null)}, {label:coaByKey(drillAccount).name}]}/>
+          <LedgerTable account={drillAccount} fromDate={fFrom} toDate={fTo}/>
+        </div>
+      </div>
+    </div>;
+  }
+
   return <div className={inline?"inline-card":"overlay"}>
     <div className={inline?"inline-card-inner":"modal"}>
       <div className="modal-body">
         <div className="alert" style={{background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.2)',marginBottom:16,borderRadius:10,fontSize:12}}>
-          Use this only for entries with no source document — depreciation, provisions, opening capital, write-offs. Sales, Purchases and Bank transactions post themselves.
+          Use this only for entries with no source document — depreciation, provisions, prepaid expenses, opening capital, write-offs. Sales, Purchases and Bank transactions post themselves. Click any account name below to see its full ledger.
         </div>
         {!adding?(
           <button className="btn btn-primary" onClick={()=>setAdding(true)} style={{marginBottom:16}}>+ New Journal Voucher</button>
         ):(
           <div className="card" style={{marginBottom:16,padding:16}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+              <span style={{fontWeight:700,fontSize:14}}>New Journal Voucher</span>
+              <button className="btn btn-outline" style={{fontSize:12,padding:'5px 10px'}} onClick={()=>setShowTemplates(s=>!s)}>{showTemplates?'Hide templates':'Choose Template'}</button>
+            </div>
+            {showTemplates&&(
+              <div className="dt-wrap" style={{marginBottom:14}}>
+                <table className="dt" style={{width:'100%'}}>
+                  <tbody>
+                    {JV_TEMPLATES.map(t=>(
+                      <tr key={t.key} style={{cursor:'pointer'}} onClick={()=>applyTemplate(t)}>
+                        <td style={{fontWeight:600,color:'var(--primary2)'}}>{t.label}</td>
+                        <td style={{fontSize:11.5,color:'var(--text3)'}}>{t.help}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
             <div style={{display:'flex',gap:10,marginBottom:10,flexWrap:'wrap'}}>
               <div className="field"><label className="field-label">Date</label><input type="date" className="field-input" value={date} onChange={e=>setDate(e.target.value)}/></div>
-              <div className="field" style={{flex:1,minWidth:220}}><label className="field-label">Narration</label><input className="field-input" value={narration} onChange={e=>setNarration(e.target.value)} placeholder="e.g. Depreciation for March 2026"/></div>
+              <div className="field"><label className="field-label">Reference No. (optional)</label><input className="field-input" value={referenceNo} onChange={e=>setReferenceNo(e.target.value)} placeholder="e.g. Fixed asset register #12"/></div>
+              <div className="field" style={{flex:1,minWidth:220}}><label className="field-label">Notes / Narration</label><input className="field-input" value={narration} onChange={e=>setNarration(e.target.value)} placeholder="e.g. Depreciation for March 2026"/></div>
+            </div>
+            <div style={{display:'flex',gap:20,marginBottom:12,flexWrap:'wrap',alignItems:'center'}}>
+              <div>
+                <label className="field-label" style={{display:'block',marginBottom:4}}>Reporting Method</label>
+                <div style={{display:'flex',gap:14,fontSize:12.5}}>
+                  {[['both','Accrual and Cash'],['accrual','Accrual Only'],['cash','Cash Only']].map(([k,l])=>(
+                    <label key={k} style={{display:'flex',alignItems:'center',gap:5,cursor:'pointer'}}>
+                      <input type="radio" name="repmethod" checked={reportingMethod===k} onChange={()=>setReportingMethod(k)}/> {l}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:12.5,fontWeight:600}}>
+                  <input type="checkbox" checked={reverseOn} onChange={e=>setReverseOn(e.target.checked)}/> Auto-reverse this entry
+                </label>
+                {reverseOn&&<input type="date" className="field-input" style={{marginTop:6,maxWidth:180}} value={reverseDate} onChange={e=>setReverseDate(e.target.value)}/>}
+              </div>
             </div>
             <div className="dt-wrap">
               <table className="dt" style={{width:'100%'}}>
-                <thead><tr><th>Account</th><th style={{width:130}}>Debit</th><th style={{width:130}}>Credit</th><th style={{width:36}}/></tr></thead>
+                <thead><tr><th>Account</th><th>Description</th><th style={{width:130}}>Debit</th><th style={{width:130}}>Credit</th><th style={{width:36}}/></tr></thead>
                 <tbody>
                   {lines.map((l,i)=>(
                     <tr key={i}>
                       <td><AccountSelect value={l.account} onChange={v=>upLine(i,'account',v)}/></td>
+                      <td><input className="field-input" value={l.desc||''} onChange={e=>upLine(i,'desc',e.target.value)} placeholder="Optional line description"/></td>
                       <td><input type="number" className="field-input" value={l.debit} onChange={e=>upLine(i,'debit',e.target.value)} placeholder="0.00"/></td>
                       <td><input type="number" className="field-input" value={l.credit} onChange={e=>upLine(i,'credit',e.target.value)} placeholder="0.00"/></td>
                       <td><button className="close-btn" onClick={()=>delLine(i)}><Ic n="x" s={14}/></button></td>
                     </tr>
                   ))}
-                  <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}>
-                    <td>Total</td><td>{fmtN(totalDr)}</td><td>{fmtN(totalCr)}</td><td/>
-                  </tr>
                 </tbody>
               </table>
             </div>
+            <div style={{display:'flex',justifyContent:'flex-end',marginTop:10}}>
+              <div style={{minWidth:220,fontSize:12.5}}>
+                <div style={{display:'flex',justifyContent:'space-between',padding:'3px 0'}}><span>Sub Total</span><span>{fmtN(totalDr)} / {fmtN(totalCr)}</span></div>
+                <div style={{display:'flex',justifyContent:'space-between',padding:'3px 0',fontWeight:700,borderTop:'1px solid var(--border)'}}><span>Total</span><span>{fmtN(totalDr)} / {fmtN(totalCr)}</span></div>
+                <div style={{display:'flex',justifyContent:'space-between',padding:'3px 0',color:Math.abs(diff)<0.01?'var(--green)':'var(--red)',fontWeight:700}}><span>Difference</span><span>{fmtN(diff)}</span></div>
+              </div>
+            </div>
             <div style={{display:'flex',gap:8,marginTop:12}}>
-              <button className="btn btn-outline" onClick={addLine}>+ Add Line</button>
+              <button className="btn btn-outline" onClick={addLine}>+ Add New Row</button>
               <button className="btn btn-primary" onClick={save} disabled={!balanced} style={{opacity:balanced?1:0.5}}>Post Journal Voucher</button>
               <button className="btn btn-outline" onClick={reset}>Cancel</button>
               {!balanced&&<span style={{color:'var(--red)',fontSize:12,alignSelf:'center'}}>Debit must equal Credit to post</span>}
             </div>
           </div>
         )}
+        <div style={{display:'flex',alignItems:'flex-end',flexWrap:'wrap',gap:20,marginBottom:12}}>
+          <ExportBar onExport={doExport} from={fFrom} to={fTo} onFromChange={setFFrom} onToChange={setFTo} showDateFilter={true} label="Export Vouchers"/>
+        </div>
         <div className="dt-wrap">
           <table className="dt" style={{width:'100%'}}>
-            <thead><tr><th>Date</th><th>Narration</th><th>Lines</th><th style={{textAlign:'right'}}>Amount</th><th/></tr></thead>
+            <thead><tr><th>Date</th><th>Voucher No.</th><th>Narration</th><th>Lines</th><th style={{textAlign:'right'}}>Amount</th><th/></tr></thead>
             <tbody>
-              {list.length===0?(
-                <tr><td colSpan={5} style={{color:'var(--text3)',textAlign:'center'}}>No journal vouchers yet</td></tr>
-              ):[...list].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(e=>(
+              {filteredList.length===0?(
+                <tr><td colSpan={6} style={{color:'var(--text3)',textAlign:'center'}}>No journal vouchers in this range</td></tr>
+              ):filteredList.map(e=>(
                 <tr key={e.id}>
-                  <td>{fmtDate(e.date)}</td>
-                  <td>{e.narration}</td>
-                  <td style={{fontSize:11.5,color:'var(--text3)'}}>{(e.lines||[]).map(l=>`${coaByKey(l.account).name} ${l.debit?'Dr '+fmtN(l.debit):'Cr '+fmtN(l.credit)}`).join(' · ')}</td>
+                  <td>{fmtDate(e.date)}{e.reverseDate&&<div style={{fontSize:10,color:'var(--gold)'}}>↺ reverses {fmtDate(e.reverseDate)}</div>}</td>
+                  <td style={{fontFamily:'monospace',fontSize:11.5,color:'var(--text3)'}}>{e.voucherNo||'—'}</td>
+                  <td>{e.narration}{e.reportingMethod&&e.reportingMethod!=='both'&&<span style={{fontSize:10,color:'var(--text3)',marginLeft:6}}>({e.reportingMethod==='accrual'?'Accrual only':'Cash only'})</span>}</td>
+                  <td style={{fontSize:11.5,color:'var(--text3)'}}>{(e.lines||[]).map((l,i)=>(
+                    <React.Fragment key={i}>
+                      {i>0&&' · '}
+                      <span style={{cursor:'pointer',color:'var(--primary2)',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:'3px'}} onClick={()=>setDrillAccount(l.account)}>{coaByKey(l.account).name}</span> {l.debit?'Dr '+fmtN(l.debit):'Cr '+fmtN(l.credit)}
+                    </React.Fragment>
+                  ))}</td>
                   <td style={{textAlign:'right'}}>{fmt((e.lines||[]).reduce((s,l)=>s+(l.debit||0),0))}</td>
                   <td><button className="close-btn" onClick={()=>del(e.id)}><Ic n="x" s={14}/></button></td>
                 </tr>
@@ -8134,18 +8619,6 @@ const GeneralLedgerPage = ({inline=true})=>{
   const [fromDate,setFromDate]=useState(fyStart);
   const [toDate,setToDate]=useState(today());
 
-  const {opening, rows, closing} = useMemo(()=>{
-    const all = getAllLedgerLines().filter(l=>l.account===account).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-    const before = all.filter(l=>(l.date||'')<fromDate);
-    const inRange = all.filter(l=>(l.date||'')>=fromDate && (l.date||'')<=toDate);
-    const acc = coaByKey(account);
-    const natural = (acc.type==='asset'||acc.type==='expense') ? 1 : -1;
-    let bal = before.reduce((s,l)=>s+natural*(l.debit-l.credit),0);
-    const opening = bal;
-    const rows = inRange.map(l=>{ bal += natural*(l.debit-l.credit); return {...l, running:bal}; });
-    return {opening, rows, closing:bal};
-  },[account,fromDate,toDate]);
-
   return <div className={inline?"inline-card":"overlay"}>
     <div className={inline?"inline-card-inner":"modal"}>
       <div className="modal-body">
@@ -8154,29 +8627,7 @@ const GeneralLedgerPage = ({inline=true})=>{
           <div className="field"><label className="field-label">From</label><input type="date" className="field-input" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></div>
           <div className="field"><label className="field-label">To</label><input type="date" className="field-input" value={toDate} onChange={e=>setToDate(e.target.value)}/></div>
         </div>
-        <div className="g3" style={{marginBottom:16}}>
-          <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{fmt(opening)}</div><div className="stat-lbl">Opening Balance</div></div>
-          <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{rows.length}</div><div className="stat-lbl">Postings in Range</div></div>
-          <div className="stat-card" style={{borderLeft:'3px solid var(--primary)'}}><div className="stat-val" style={{fontSize:16}}>{fmt(closing)}</div><div className="stat-lbl">Closing Balance</div></div>
-        </div>
-        <div className="dt-wrap">
-          <table className="dt" style={{width:'100%'}}>
-            <thead><tr><th>Date</th><th>Narration</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th><th style={{textAlign:'right'}}>Balance</th></tr></thead>
-            <tbody>
-              <tr style={{background:'var(--card2)'}}><td colSpan={4} style={{fontStyle:'italic'}}>Opening Balance</td><td style={{textAlign:'right',fontWeight:700}}>{fmt(opening)}</td></tr>
-              {rows.length===0?(
-                <tr><td colSpan={5} style={{color:'var(--text3)',textAlign:'center'}}>No postings in this range</td></tr>
-              ):rows.map((r,i)=>(
-                <tr key={i}>
-                  <td>{fmtDate(r.date)}</td><td>{r.narration}</td>
-                  <td style={{textAlign:'right'}}>{r.debit?fmtN(r.debit):''}</td>
-                  <td style={{textAlign:'right'}}>{r.credit?fmtN(r.credit):''}</td>
-                  <td style={{textAlign:'right',fontWeight:600}}>{fmtN(r.running)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <LedgerTable account={account} fromDate={fromDate} toDate={toDate}/>
       </div>
     </div>
   </div>;
@@ -8185,20 +8636,45 @@ const GeneralLedgerPage = ({inline=true})=>{
 /* ══ Trial Balance ══ */
 const TrialBalancePage = ({inline=true})=>{
   const [asOf,setAsOf]=useState(today());
+  const [drillAccount,setDrillAccount]=useState(null);
   const tb = useMemo(()=>getTrialBalance(asOf),[asOf]);
   const debitTotal = tb.filter(r=>r.balance>=0).reduce((s,r)=>s+r.balance,0);
   const creditTotal = tb.filter(r=>r.balance<0).reduce((s,r)=>s-r.balance,0);
+  const allAccOrder = getAllAccounts();
+  const doExport = (f) => {
+    const headers=['Account','Debit','Credit'];
+    const rows=[...tb].sort((a,b)=>allAccOrder.findIndex(x=>x.key===a.account)-allAccOrder.findIndex(x=>x.key===b.account))
+      .map(r=>[coaByKey(r.account).name, r.balance>=0?fmtN(r.balance):'', r.balance<0?fmtN(-r.balance):'']);
+    rows.push(['Total', fmtN(debitTotal), fmtN(creditTotal)]);
+    exportTableAs(f, `TrialBalance_${asOf}`, `Trial Balance as at ${fmtDate(asOf)}`, headers, rows);
+  };
+
+  if(drillAccount){
+    return <div className={inline?"inline-card":"overlay"}>
+      <div className={inline?"inline-card-inner":"modal"}>
+        <div className="modal-body">
+          <Breadcrumb items={[{label:'Trial Balance', onClick:()=>setDrillAccount(null)}, {label:coaByKey(drillAccount).name}]}/>
+          <LedgerTable account={drillAccount} fromDate={OPENING_DATE} toDate={asOf}/>
+        </div>
+      </div>
+    </div>;
+  }
+
   return <div className={inline?"inline-card":"overlay"}>
     <div className={inline?"inline-card-inner":"modal"}>
       <div className="modal-body">
-        <div className="field" style={{maxWidth:220,marginBottom:16}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+        <div style={{display:'flex',alignItems:'flex-end',flexWrap:'wrap',gap:20,marginBottom:16}}>
+          <div className="field" style={{maxWidth:220}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+          <ExportBar onExport={doExport} label="Export Trial Balance"/>
+        </div>
+        <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:10}}>Click any account to see every transaction posted to it.</div>
         <div className="dt-wrap">
           <table className="dt" style={{width:'100%'}}>
             <thead><tr><th>Account</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th></tr></thead>
             <tbody>
-              {tb.sort((a,b)=>COA.findIndex(x=>x.key===a.account)-COA.findIndex(x=>x.key===b.account)).map(r=>(
+              {[...tb].sort((a,b)=>allAccOrder.findIndex(x=>x.key===a.account)-allAccOrder.findIndex(x=>x.key===b.account)).map(r=>(
                 <tr key={r.account}>
-                  <td>{coaByKey(r.account).name}</td>
+                  <td style={{cursor:'pointer',color:'var(--primary2)',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:'3px'}} onClick={()=>setDrillAccount(r.account)}>{coaByKey(r.account).name}</td>
                   <td style={{textAlign:'right'}}>{r.balance>=0?fmtN(r.balance):''}</td>
                   <td style={{textAlign:'right'}}>{r.balance<0?fmtN(-r.balance):''}</td>
                 </tr>
@@ -8215,7 +8691,9 @@ const TrialBalancePage = ({inline=true})=>{
   </div>;
 };
 
-const SCHEDULE3_EXP_ORDER = ['COGS','EMPLOYEE_EXP','FINANCE_COST','DEPRECIATION','RENT_EXP','OTHER_EXP'];
+const EXP_CAPTION_ORDER_LOCAL = ['Cost of Materials Consumed','Employee Benefit Expense','Finance Costs','Depreciation and Amortisation Expense','Rent Expense','Other Expenses'];
+const BS_ASSET_GROUPS = ['Non-Current Assets','Current Assets'];
+const BS_LIAB_GROUPS = ['Non-Current Liabilities','Current Liabilities'];
 
 const ReportsPage = ({inline=true, onClose, currentUser})=>{
   const [tab,setTab]=useState('pl');
@@ -8226,6 +8704,8 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
   const [toDate,setToDate]=useState(today());
   const [asOf,setAsOf]=useState(today());
   const co = S.get(SK.CO,{});
+  // Drill-down state: null = statement view; {kind:'caption', side, caption, accounts} = list of ledgers under one caption; {kind:'ledger', account} = transactions
+  const [drill,setDrill]=useState(null);
 
   const effBasis = format==='schedule3' ? 'accrual' : basis;
   const pl = useMemo(()=> effBasis==='cash' ? getPLCash(fromDate,toDate) : getPLAccrual(fromDate,toDate), [fromDate,toDate,effBasis]);
@@ -8233,23 +8713,102 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
   const tb = useMemo(()=> getTrialBalance(asOf), [asOf]);
   const tbDebit = tb.filter(r=>r.balance>=0).reduce((s,r)=>s+r.balance,0);
   const tbCredit = tb.filter(r=>r.balance<0).reduce((s,r)=>s-r.balance,0);
+  const allAccOrder = getAllAccounts();
 
   const expByKey = key => (pl.rows||[]).find(r=>r.account===key)?.amount||0;
   const otherIncome = (pl.rows||[]).filter(r=>r.type==='income'&&r.account!=='SALES').reduce((s,r)=>s+r.amount,0);
   const salesRevenue = expByKey('SALES');
+  const expenseCaptions = useMemo(()=>groupByCaption((pl.rows||[]).filter(r=>r.type==='expense'), EXP_CAPTION_ORDER_LOCAL),[pl]);
+  const incomeCaptions  = useMemo(()=>groupByCaption((pl.rows||[]).filter(r=>r.type==='income'), ['Revenue from Operations','Other Income']),[pl]);
 
-  const groupBS = (list) => {
-    const byGroup={};
-    list.forEach(a=>{ (byGroup[a.group]=byGroup[a.group]||[]).push(a); });
-    return byGroup;
+  const closeDrill = ()=>setDrill(null);
+  const openCaptionDrill = (side, caption, accounts) => setDrill({kind:'caption', side, caption, accounts});
+  const openLedgerDrill = (account) => setDrill({kind:'ledger', account});
+
+  const doExportPL = (f) => {
+    const headers=['Head','Amount'];
+    const rows=[];
+    if(effBasis==='cash'){
+      rows.push(['Total Receipts', fmtN(pl.income)], ['Total Payments', fmtN(pl.expense)], ['Net Cash Surplus/(Deficit)', fmtN(pl.net)]);
+    } else if(format==='schedule3'){
+      rows.push(['I. Revenue from Operations', fmtN(salesRevenue)], ['II. Other Income', fmtN(otherIncome)], ['III. Total Income', fmtN(pl.income)], ['IV. Expenses',''],
+        ...expenseCaptions.map(c=>['   '+c.caption, fmtN(c.amount)]), ['Total Expenses', fmtN(pl.expense)],
+        ['V. Profit Before Tax', fmtN(pl.net)], ['VI. Profit for the Period', fmtN(pl.net)]);
+    } else {
+      rows.push(['Sales', fmtN(salesRevenue)]);
+      if(otherIncome>0.005) rows.push(['Other Income', fmtN(otherIncome)]);
+      (pl.rows||[]).filter(r=>r.type==='expense').forEach(r=>rows.push([r.name, fmtN(r.amount)]));
+      rows.push(['Net Profit/(Loss)', fmtN(pl.net)]);
+    }
+    exportTableAs(f, `PL_${fromDate}_to_${toDate}`, `Profit & Loss (${effBasis==='cash'?'Cash':format==='schedule3'?'Companies Act':'Normal'} format) — ${fmtDate(fromDate)} to ${fmtDate(toDate)}`, headers, rows);
   };
+  const doExportBS = (f) => {
+    const headers=['Head','Amount'];
+    const rows=[['EQUITY AND LIABILITIES',''], ...bs.equity.map(e=>['  '+e.name, fmtN(e.amount)]),
+      ...bs.liabilities.map(l=>['  '+l.name, fmtN(l.amount)]), ['TOTAL', fmtN(bs.totalLiab+bs.totalEquity)],
+      ['ASSETS',''], ...bs.assets.map(a=>['  '+a.name, fmtN(a.amount)]), ['TOTAL', fmtN(bs.totalAssets)]];
+    exportTableAs(f, `BalanceSheet_${asOf}`, `Balance Sheet as at ${fmtDate(asOf)} (${format==='schedule3'?'Companies Act':'Normal'} format)`, headers, rows);
+  };
+  const doExportTB = (f) => {
+    const headers=['Account','Debit','Credit'];
+    const rows=[...tb].sort((a,b)=>allAccOrder.findIndex(x=>x.key===a.account)-allAccOrder.findIndex(x=>x.key===b.account))
+      .map(r=>[coaByKey(r.account).name, r.balance>=0?fmtN(r.balance):'', r.balance<0?fmtN(-r.balance):'']);
+    rows.push(['Total', fmtN(tbDebit), fmtN(tbCredit)]);
+    exportTableAs(f, `TrialBalance_${asOf}`, `Trial Balance as at ${fmtDate(asOf)}`, headers, rows);
+  };
+
+  const clickable = {cursor:'pointer', color:'var(--primary2)', textDecoration:'underline', textDecorationStyle:'dotted', textUnderlineOffset:'3px'};
+
+  // ── Drill-down views (shared across P&L / BS) ──
+  if(drill?.kind==='ledger'){
+    return <div className={inline?"inline-card":"overlay"}>
+      <div className={inline?"inline-card-inner":"modal"}>
+        <div className="modal-body">
+          <Breadcrumb items={[
+            {label:'Financial Statements', onClick:closeDrill},
+            {label:coaByKey(drill.account).name},
+          ]}/>
+          <LedgerTable account={drill.account} fromDate={tab==='pl'?fromDate:OPENING_DATE} toDate={tab==='pl'?toDate:asOf}/>
+        </div>
+      </div>
+    </div>;
+  }
+  if(drill?.kind==='caption'){
+    const dExport = (f)=>{
+      const headers=['Ledger','Amount'];
+      const rows = drill.accounts.map(a=>[a.name||coaByKey(a.key||a.account).name, fmtN(a.amount)]);
+      exportTableAs(f, `${drill.caption.replace(/\s+/g,'_')}`, `${drill.caption} — constituent ledgers`, headers, rows);
+    };
+    return <div className={inline?"inline-card":"overlay"}>
+      <div className={inline?"inline-card-inner":"modal"}>
+        <div className="modal-body">
+          <Breadcrumb items={[{label:'Financial Statements', onClick:closeDrill}, {label:drill.caption}]}/>
+          <div style={{marginBottom:12}}><ExportBar onExport={dExport} label="Export"/></div>
+          <div className="dt-wrap">
+            <table className="dt" style={{width:'100%'}}>
+              <thead><tr><th>Ledger Account</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
+              <tbody>
+                {drill.accounts.map((a,i)=>(
+                  <tr key={i}>
+                    <td style={clickable} onClick={()=>openLedgerDrill(a.key||a.account)}>{a.name||coaByKey(a.key||a.account).name}</td>
+                    <td style={{textAlign:'right'}}>{fmt(a.amount)}</td>
+                  </tr>
+                ))}
+                <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total</td><td style={{textAlign:'right'}}>{fmt(drill.accounts.reduce((s,a)=>s+a.amount,0))}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>;
+  }
 
   return <div className={inline?"inline-card":"overlay"}>
     <div className={inline?"inline-card-inner":"modal"}>
       {!inline&&<div className="modal-hdr"><span className="modal-title"><Ic n="chart" s={18}/> Financial Statements</span><button className="close-btn" onClick={onClose}><Ic n="x"/></button></div>}
       <div className="modal-body">
         <div className="alert" style={{background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.2)',marginBottom:16,borderRadius:10,fontSize:12}}>
-          Generated from a full double-entry ledger (see Chart of Accounts, Journal Vouchers, General Ledger & Trial Balance) — posted automatically from your Sales, Purchases and Bank Reconciliation. Not a substitute for statements reviewed and signed off by your CA.
+          Generated from a full double-entry ledger (see Chart of Accounts, Journal Vouchers, General Ledger & Trial Balance) — posted automatically from your Sales, Purchases and Bank Reconciliation. Click any caption or ledger below to drill into its transactions. Not a substitute for statements reviewed and signed off by your CA.
         </div>
 
         <div style={{display:'flex',gap:16,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
@@ -8282,9 +8841,12 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
         {/* ══════════ PROFIT & LOSS ══════════ */}
         {tab==='pl'&&(
           <>
-            <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap',alignItems:'flex-end'}}>
-              <div className="field"><label className="field-label">From</label><input type="date" className="field-input" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></div>
-              <div className="field"><label className="field-label">To</label><input type="date" className="field-input" value={toDate} onChange={e=>setToDate(e.target.value)}/></div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:20,marginBottom:16,alignItems:'flex-end'}}>
+              <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'flex-end'}}>
+                <div className="field"><label className="field-label">From</label><input type="date" className="field-input" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></div>
+                <div className="field"><label className="field-label">To</label><input type="date" className="field-input" value={toDate} onChange={e=>setToDate(e.target.value)}/></div>
+              </div>
+              <ExportBar onExport={doExportPL} label="Export P&L"/>
             </div>
             <div className="g3" style={{marginBottom:16}}>
               <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:'var(--green)'}}>{fmt(pl.income)}</div><div className="stat-lbl">Total Income ({effBasis==='cash'?'Cash':'Accrual'})</div></div>
@@ -8302,21 +8864,27 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
                     <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Net Cash Surplus / (Deficit)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
                   </tbody>
                 </table>
-                <div style={{fontSize:11.5,color:'var(--text3)',marginTop:8}}>Receipts & Payments basis — counts only actual money that moved through the Bank in this period, ignoring unpaid invoices/bills. Companies Act statements must use the Accrual basis.</div>
+                <div style={{fontSize:11.5,color:'var(--text3)',marginTop:8}}>Receipts & Payments basis — counts only actual money that moved through the Bank in this period, ignoring unpaid invoices/bills. Companies Act statements must use the Accrual basis. (No ledger drill-down here — the underlying view is Bank Reconciliation.)</div>
               </div>
             ):format==='schedule3'?(
               <div className="dt-wrap">
                 <table className="dt" style={{width:'100%'}}>
                   <thead><tr><th colSpan={2}>Statement of Profit & Loss — for the period {fmtDate(fromDate)} to {fmtDate(toDate)}</th></tr></thead>
                   <tbody>
-                    <tr><td>I. Revenue from Operations</td><td style={{textAlign:'right'}}>{fmt(salesRevenue)}</td></tr>
-                    <tr><td>II. Other Income</td><td style={{textAlign:'right'}}>{fmt(otherIncome)}</td></tr>
+                    {incomeCaptions.filter(c=>c.caption==='Revenue from Operations').map(c=>(
+                      <tr key={c.caption}><td>I. {c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('income',c.caption,c.accounts)}>{fmt(c.amount)}</td></tr>
+                    ))}
+                    {incomeCaptions.filter(c=>c.caption==='Other Income').map(c=>(
+                      <tr key={c.caption}><td>II. {c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('income',c.caption,c.accounts)}>{fmt(c.amount)}</td></tr>
+                    ))}
                     <tr style={{fontWeight:700}}><td>III. Total Income (I + II)</td><td style={{textAlign:'right'}}>{fmt(pl.income)}</td></tr>
                     <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>IV. Expenses</td></tr>
-                    {SCHEDULE3_EXP_ORDER.map(key=>{
-                      const amt=expByKey(key); if(Math.abs(amt)<0.005) return null;
-                      return <tr key={key}><td style={{paddingLeft:20}}>{coaByKey(key).name}</td><td style={{textAlign:'right'}}>{fmt(amt)}</td></tr>;
-                    })}
+                    {expenseCaptions.map(c=>(
+                      <tr key={c.caption}>
+                        <td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('expense',c.caption,c.accounts)}>{c.caption}</td>
+                        <td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('expense',c.caption,c.accounts)}>{fmt(c.amount)}</td>
+                      </tr>
+                    ))}
                     <tr style={{fontWeight:700,borderTop:'1px solid var(--border)'}}><td>Total Expenses</td><td style={{textAlign:'right'}}>{fmt(pl.expense)}</td></tr>
                     <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>V. Profit Before Tax (III − IV)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
                     <tr><td style={{paddingLeft:20,color:'var(--text3)'}}>Tax Expense (to be computed by your CA)</td><td style={{textAlign:'right',color:'var(--text3)'}}>—</td></tr>
@@ -8331,13 +8899,15 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
                   <thead><tr><th>Head</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
                   <tbody>
                     <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>Income</td></tr>
-                    <tr><td>Sales</td><td style={{textAlign:'right',fontWeight:600}}>{fmt(salesRevenue)}</td></tr>
-                    {otherIncome>0.005&&<tr><td>Other Income</td><td style={{textAlign:'right'}}>{fmt(otherIncome)}</td></tr>}
+                    <tr><td style={clickable} onClick={()=>openLedgerDrill('SALES')}>Sales</td><td style={{textAlign:'right',fontWeight:600,...clickable}} onClick={()=>openLedgerDrill('SALES')}>{fmt(salesRevenue)}</td></tr>
+                    {(pl.rows||[]).filter(r=>r.type==='income'&&r.account!=='SALES').map(r=>(
+                      <tr key={r.account}><td style={clickable} onClick={()=>openLedgerDrill(r.account)}>{r.name}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(r.account)}>{fmt(r.amount)}</td></tr>
+                    ))}
                     <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>Expenses</td></tr>
                     {(pl.rows||[]).filter(r=>r.type==='expense').length===0?(
                       <tr><td colSpan={2} style={{color:'var(--text3)',textAlign:'center'}}>No expenses in this period</td></tr>
                     ):(pl.rows||[]).filter(r=>r.type==='expense').sort((a,b)=>b.amount-a.amount).map(r=>(
-                      <tr key={r.account}><td>{r.name}</td><td style={{textAlign:'right'}}>{fmt(r.amount)}</td></tr>
+                      <tr key={r.account}><td style={clickable} onClick={()=>openLedgerDrill(r.account)}>{r.name}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(r.account)}>{fmt(r.amount)}</td></tr>
                     ))}
                     <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Net Profit / (Loss)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
                   </tbody>
@@ -8350,7 +8920,10 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
         {/* ══════════ BALANCE SHEET ══════════ */}
         {tab==='bs'&&(
           <>
-            <div className="field" style={{maxWidth:220,marginBottom:16}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:20,marginBottom:16,alignItems:'flex-end'}}>
+              <div className="field" style={{maxWidth:220}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+              <ExportBar onExport={doExportBS} label="Export Balance Sheet"/>
+            </div>
             {format==='schedule3'?(
               <>
                 <div className="dt-wrap" style={{marginBottom:16}}>
@@ -8359,12 +8932,16 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
                     <tbody>
                       <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>I. EQUITY AND LIABILITIES</td></tr>
                       <tr style={{fontWeight:600}}><td>1. Shareholders' Funds</td><td/></tr>
-                      {bs.equity.map(e=><tr key={e.key}><td style={{paddingLeft:20}}>{e.name}</td><td style={{textAlign:'right'}}>{fmt(e.amount)}</td></tr>)}
-                      {['Non-Current Liabilities','Current Liabilities'].map(g=>{
+                      {groupByCaption(bs.equity,['Equity']).map(c=>(
+                        <tr key={c.caption}><td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('equity',c.caption,c.accounts)}>{c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('equity',c.caption,c.accounts)}>{fmt(c.amount)}</td></tr>
+                      ))}
+                      {BS_LIAB_GROUPS.map(g=>{
                         const rows=bs.liabilities.filter(l=>l.group===g); if(!rows.length) return null;
                         return <React.Fragment key={g}>
                           <tr style={{fontWeight:600}}><td>{g==='Non-Current Liabilities'?'2. Non-Current Liabilities':'3. Current Liabilities'}</td><td/></tr>
-                          {rows.map(r=><tr key={r.key}><td style={{paddingLeft:20}}>{r.name}</td><td style={{textAlign:'right'}}>{fmt(r.amount)}</td></tr>)}
+                          {groupByCaption(rows).map(c=>(
+                            <tr key={c.caption}><td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('liability',c.caption,c.accounts)}>{c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('liability',c.caption,c.accounts)}>{fmt(c.amount)}</td></tr>
+                          ))}
                         </React.Fragment>;
                       })}
                       <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>TOTAL</td><td style={{textAlign:'right'}}>{fmt(bs.totalLiab+bs.totalEquity)}</td></tr>
@@ -8375,11 +8952,13 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
                   <table className="dt" style={{width:'100%'}}>
                     <thead><tr><th colSpan={2}>II. ASSETS</th></tr></thead>
                     <tbody>
-                      {['Non-Current Assets','Current Assets'].map(g=>{
+                      {BS_ASSET_GROUPS.map(g=>{
                         const rows=bs.assets.filter(a=>a.group===g); if(!rows.length) return null;
                         return <React.Fragment key={g}>
                           <tr style={{fontWeight:600}}><td>{g==='Non-Current Assets'?'1. Non-Current Assets':'2. Current Assets'}</td><td/></tr>
-                          {rows.map(r=><tr key={r.key}><td style={{paddingLeft:20}}>{r.name}</td><td style={{textAlign:'right'}}>{fmt(r.amount)}</td></tr>)}
+                          {groupByCaption(rows).map(c=>(
+                            <tr key={c.caption}><td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('asset',c.caption,c.accounts)}>{c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('asset',c.caption,c.accounts)}>{fmt(c.amount)}</td></tr>
+                          ))}
                         </React.Fragment>;
                       })}
                       <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>TOTAL</td><td style={{textAlign:'right'}}>{fmt(bs.totalAssets)}</td></tr>
@@ -8395,7 +8974,7 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
                   <table className="dt" style={{width:'100%'}}>
                     <thead><tr><th colSpan={2}>Assets</th></tr></thead>
                     <tbody>
-                      {bs.assets.map(a=><tr key={a.key}><td>{a.name}</td><td style={{textAlign:'right'}}>{fmt(a.amount)}</td></tr>)}
+                      {bs.assets.map(a=><tr key={a.key}><td style={clickable} onClick={()=>openLedgerDrill(a.key)}>{a.name}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(a.key)}>{fmt(a.amount)}</td></tr>)}
                       <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total Assets</td><td style={{textAlign:'right'}}>{fmt(bs.totalAssets)}</td></tr>
                     </tbody>
                   </table>
@@ -8404,7 +8983,7 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
                   <table className="dt" style={{width:'100%'}}>
                     <thead><tr><th colSpan={2}>Liabilities & Equity</th></tr></thead>
                     <tbody>
-                      {[...bs.liabilities,...bs.equity].map(a=><tr key={a.key}><td>{a.name}</td><td style={{textAlign:'right'}}>{fmt(a.amount)}</td></tr>)}
+                      {[...bs.liabilities,...bs.equity].map(a=><tr key={a.key}><td style={clickable} onClick={()=>openLedgerDrill(a.key)}>{a.name}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(a.key)}>{fmt(a.amount)}</td></tr>)}
                       <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total Liabilities & Equity</td><td style={{textAlign:'right'}}>{fmt(bs.totalLiab+bs.totalEquity)}</td></tr>
                     </tbody>
                   </table>
@@ -8417,14 +8996,17 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
         {/* ══════════ TRIAL BALANCE ══════════ */}
         {tab==='tb'&&(
           <>
-            <div className="field" style={{maxWidth:220,marginBottom:16}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:20,marginBottom:16,alignItems:'flex-end'}}>
+              <div className="field" style={{maxWidth:220}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+              <ExportBar onExport={doExportTB} label="Export Trial Balance"/>
+            </div>
             <div className="dt-wrap">
               <table className="dt" style={{width:'100%'}}>
                 <thead><tr><th>Account</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th></tr></thead>
                 <tbody>
-                  {[...tb].sort((a,b)=>COA.findIndex(x=>x.key===a.account)-COA.findIndex(x=>x.key===b.account)).map(r=>(
+                  {[...tb].sort((a,b)=>allAccOrder.findIndex(x=>x.key===a.account)-allAccOrder.findIndex(x=>x.key===b.account)).map(r=>(
                     <tr key={r.account}>
-                      <td>{coaByKey(r.account).name}</td>
+                      <td style={clickable} onClick={()=>openLedgerDrill(r.account)}>{coaByKey(r.account).name}</td>
                       <td style={{textAlign:'right'}}>{r.balance>=0?fmtN(r.balance):''}</td>
                       <td style={{textAlign:'right'}}>{r.balance<0?fmtN(-r.balance):''}</td>
                     </tr>
@@ -8463,7 +9045,51 @@ const nextDocNo = (label)=>{
   return { no:`${label}/${getFYShort()}/${String(c).padStart(3,'0')}`, commit:()=>S.set(key,c+1) };
 };
 const blankSimpleItem = ()=>({desc:'',qty:1,rate:'',unit:'Nos'});
-const blankSimpleCustomer = ()=>({name:'',address:'',phone:'',email:'',gstin:''});
+const blankSimpleCustomer = ()=>({name:'',address:'',phone:'',email:'',gstin:'',city:'',state:'',pin:''});
+
+/* Shared customer autocomplete for the simpler forms (Quotations, Delivery Challans, Recurring
+   Invoices) — type to fuzzy-match the Customer master, click a result to auto-fill every field. */
+const SimpleCustomerPicker = ({customer, onChange})=>{
+  const [q,setQ]=useState(customer?.name||'');
+  const [open,setOpen]=useState(false);
+  const wrapRef=useRef();
+  useEffect(()=>{ setQ(customer?.name||''); },[customer?.name]);
+  useEffect(()=>{
+    const h=e=>{ if(wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown',h);
+    return ()=>document.removeEventListener('mousedown',h);
+  },[]);
+  const customers=S.get(SK.CUST,[]);
+  const matched = q.length>1 ? customers.filter(c=>c.name?.toLowerCase().includes(q.toLowerCase())||c.gstin?.toLowerCase().includes(q.toLowerCase())).slice(0,6) : [];
+  const pick = c => {
+    onChange({name:c.name||'', address:c.address||'', phone:c.phone||'', email:c.email||'', gstin:c.gstin||'', city:c.city||'', state:c.state||'', pin:c.pin||''});
+    setQ(c.name||''); setOpen(false);
+  };
+  return <div ref={wrapRef} style={{position:'relative'}}>
+    <input className="field-input" value={q}
+      onChange={e=>{ setQ(e.target.value); onChange({...customer, name:e.target.value}); setOpen(true); }}
+      onFocus={()=>setOpen(true)}
+      placeholder="Type to search saved customers..."/>
+    {open&&matched.length>0&&(
+      <div style={{position:'absolute',top:'100%',left:0,right:0,marginTop:4,background:'var(--card)',
+        border:'1.5px solid var(--border2)',borderRadius:10,boxShadow:'0 8px 30px rgba(0,0,0,0.3)',
+        zIndex:1000,maxHeight:220,overflowY:'auto'}}>
+        <div style={{padding:'5px 12px',fontSize:10,color:'var(--text3)',borderBottom:'1px solid var(--border)',fontWeight:700,background:'var(--card2)',borderRadius:'10px 10px 0 0'}}>
+          <Ic n="users" s={14}/> {matched.length} customer{matched.length!==1?'s':''} found
+        </div>
+        {matched.map((c,i)=>(
+          <div key={i} className="hsn-opt" onMouseDown={e=>{e.preventDefault();pick(c);}}>
+            <div style={{display:'flex',justifyContent:'space-between'}}>
+              <span style={{fontWeight:700,color:'var(--text)'}}>{c.name}</span>
+              {c.gstin&&<span style={{fontSize:10,fontFamily:'monospace',color:'var(--gold)'}}>{c.gstin}</span>}
+            </div>
+            <div style={{fontSize:11,color:'var(--text3)'}}>{[c.city,c.state].filter(Boolean).join(', ')}</div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>;
+};
 
 // Turns a list of simple {desc,qty,rate} items + a customer into a real NON GST INVOICE
 // and saves it, so it behaves exactly like any other invoice everywhere else in the app.
@@ -8555,7 +9181,7 @@ const QuotationsPage = ({inline=true,onClose,currentUser})=>{
             <div className="g4" style={{marginBottom:12}}>
               <div className="field"><label className="field-label">Date</label><input type="date" className="field-input" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></div>
               <div className="field"><label className="field-label">Valid Till</label><input type="date" className="field-input" value={form.validTill} onChange={e=>setForm(p=>({...p,validTill:e.target.value}))}/></div>
-              <div className="field"><label className="field-label">Customer Name</label><input className="field-input" value={form.customer.name} onChange={e=>setForm(p=>({...p,customer:{...p.customer,name:e.target.value}}))}/></div>
+              <div className="field"><label className="field-label">Customer Name</label><SimpleCustomerPicker customer={form.customer} onChange={c=>setForm(p=>({...p,customer:c}))}/></div>
               <div className="field"><label className="field-label">Phone</label><input className="field-input" value={form.customer.phone} onChange={e=>setForm(p=>({...p,customer:{...p.customer,phone:e.target.value}}))}/></div>
             </div>
             <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>Items</div>
@@ -8642,7 +9268,7 @@ const DeliveryChallanPage = ({inline=true,onClose,currentUser})=>{
               <div className="field"><label className="field-label">Vehicle No.</label><input className="field-input" value={form.vehicleNo} onChange={e=>setForm(p=>({...p,vehicleNo:e.target.value}))}/></div>
               <div className="field"><label className="field-label">Transporter</label><input className="field-input" value={form.transporter} onChange={e=>setForm(p=>({...p,transporter:e.target.value}))}/></div>
             </div>
-            <div className="field" style={{marginBottom:12,maxWidth:400}}><label className="field-label">Customer Name</label><input className="field-input" value={form.customer.name} onChange={e=>setForm(p=>({...p,customer:{...p.customer,name:e.target.value}}))}/></div>
+            <div className="field" style={{marginBottom:12,maxWidth:400}}><label className="field-label">Customer Name</label><SimpleCustomerPicker customer={form.customer} onChange={c=>setForm(p=>({...p,customer:c}))}/></div>
             <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>Items</div>
             {form.items.map((it,i)=>(
               <div key={i} style={{display:'flex',gap:8,marginBottom:6}}>
@@ -8725,7 +9351,7 @@ const RecurringInvoicesPage = ({inline=true,onClose,currentUser})=>{
             <button className="btn btn-sm btn-outline" style={{marginBottom:14}} onClick={()=>setForm(null)}>← Back to list</button>
             <div className="g4" style={{marginBottom:12}}>
               <div className="field"><label className="field-label">Template Name</label><input className="field-input" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="e.g. Monthly Retainer — ABC Corp"/></div>
-              <div className="field"><label className="field-label">Customer Name</label><input className="field-input" value={form.customer.name} onChange={e=>setForm(p=>({...p,customer:{...p.customer,name:e.target.value}}))}/></div>
+              <div className="field"><label className="field-label">Customer Name</label><SimpleCustomerPicker customer={form.customer} onChange={c=>setForm(p=>({...p,customer:c}))}/></div>
               <div className="field"><label className="field-label">Frequency</label>
                 <select className="field-input" value={form.frequency} onChange={e=>setForm(p=>({...p,frequency:e.target.value}))}>
                   <option>Weekly</option><option>Monthly</option><option>Quarterly</option><option>Yearly</option>
@@ -8845,24 +9471,41 @@ const App = ()=>{
   const [poKey,setPoKey]=useState(0);
   const [appReady,setAppReady]=useState(false);
   const [loadMsg,setLoadMsg]=useState('Connecting to cloud...');
+  const [cloudError,setCloudError]=useState(false);
+  const [cacheVersion,setCacheVersion]=useState(0); // bumped after a successful reconnect, to force pages to re-read fresh data
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobSidebarOpen, setMobSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Load Firebase cache before anything else
-  useEffect(()=>{
-    (async()=>{
-      setLoadMsg('Loading your data from cloud...');
-      await loadCache();
+  // Load Firebase cache before anything else. migrateInventory()/seedUsers() both read the cache
+  // and can write back to it — they only run once we've had a CONFIRMED successful cloud read,
+  // never against a fallback/partial snapshot (that mismatch is what used to wipe real data).
+  const bootLoad = async () => {
+    setLoadMsg('Loading your data from cloud...');
+    const ok = await loadCache();
+    if(ok){
       try{ migrateInventory(); }catch(err){ console.warn('Inventory migration skipped:', err.message); }
       setLoadMsg('Almost ready...');
       seedUsers();
       const savedTheme = S.get(SK.THEME,'dark');
       setTheme(savedTheme);
       document.documentElement.setAttribute('data-theme', savedTheme);
-      setAppReady(true);
-    })();
-  },[]);
+      setCloudError(false);
+      setCacheVersion(v=>v+1);
+    } else {
+      setCloudError(true);
+    }
+    setAppReady(true);
+  };
+  useEffect(()=>{ bootLoad(); },[]);
+  // While disconnected, keep retrying quietly in the background so the app recovers on its own
+  // as soon as the connection comes back — no data can be lost while this banner is showing,
+  // since S.set() itself refuses every write until a load actually succeeds.
+  useEffect(()=>{
+    if(!cloudError) return;
+    const t = setInterval(()=>{ bootLoad(); }, 12000);
+    return ()=>clearInterval(t);
+  },[cloudError]);
 
   useEffect(()=>{
     if(appReady){
@@ -8870,6 +9513,31 @@ const App = ()=>{
       S.set(SK.THEME,theme);
     }
   },[theme]);
+
+  /* ── Browser / hardware Back button support ──
+     Without this, every page/modal change is invisible to the browser, so the very first
+     Back press exits the app instead of stepping back to the previous screen. We push a
+     history entry whenever the visible page or modal changes, and on popstate (Back/Forward)
+     we restore that state instead of navigating away. A guard ref stops the restore itself
+     from pushing a duplicate entry. */
+  const navGuard = useRef(false);
+  useEffect(()=>{
+    history.replaceState({page, modal:null}, '');
+    const onPop = (e)=>{
+      navGuard.current = true;
+      const st = e.state || {page:'invoice', modal:null};
+      setModal(st.modal||null);
+      setPage(st.page||'invoice');
+      setMobSidebarOpen(false);
+    };
+    window.addEventListener('popstate', onPop);
+    return ()=>window.removeEventListener('popstate', onPop);
+  },[]);
+  useEffect(()=>{
+    if(!appReady || !user) return;
+    if(navGuard.current){ navGuard.current=false; return; }
+    history.pushState({page, modal}, '');
+  },[page, modal, appReady, user]);
 
   const login=u=>{
     setUser(u);
@@ -8905,7 +9573,14 @@ const App = ()=>{
     </div>
   );
 
-  if(!user) return <><Login onLogin={login}/><Toast/></>;
+  const CloudErrorBanner = ()=> !cloudError ? null : (
+    <div style={{background:'#DC2626',color:'#fff',padding:'8px 16px',fontSize:12.5,display:'flex',alignItems:'center',justifyContent:'center',gap:12,flexWrap:'wrap',position:'sticky',top:0,zIndex:9999}}>
+      <span>⚠ Not connected to the cloud database right now — you're viewing a local cached copy. <b>Nothing will be saved</b> until this reconnects, so please don't make changes yet.</span>
+      <button onClick={bootLoad} style={{background:'#fff',color:'#DC2626',border:'none',borderRadius:6,padding:'3px 10px',fontWeight:700,cursor:'pointer',fontSize:12}}>Retry Now</button>
+    </div>
+  );
+
+  if(!user) return <><CloudErrorBanner/><Login onLogin={login}/><Toast/></>;
 
   const invCount=(S.get(SK.INV,[])).length;
   const overdueCount=(S.get(SK.INV,[])).filter(i=>i.status==='Overdue').length;
@@ -8920,7 +9595,9 @@ const App = ()=>{
   );
   const poCount=(S.get(SK.PO,[])).length;
 
-  return <div style={{display:'flex',minHeight:'100vh'}}>
+  return <>
+  <CloudErrorBanner/>
+  <div style={{display:'flex',minHeight:'100vh'}}>
     <Toast/>
 
     {/* ── SIDEBAR OVERLAY (mobile) ── */}
@@ -9152,7 +9829,7 @@ const App = ()=>{
         {page==='bankrecon'&&canSee(user.role,'bankrecon')&&<BankReconPage currentUser={user}/>}
         {page==='salesview'&&canSee(user.role,'salesview')&&<SalesPage currentUser={user}/>}
         {page==='reports'&&canSee(user.role,'reports')&&<ReportsPage currentUser={user}/>}
-        {page==='coa'&&canSee(user.role,'reports')&&<ChartOfAccountsPage/>}
+        {page==='coa'&&canSee(user.role,'reports')&&<ChartOfAccountsPage isAdmin={isAdmin}/>}
         {page==='journal'&&canSee(user.role,'reports')&&<JournalVouchersPage currentUser={user}/>}
         {page==='ledger'&&canSee(user.role,'reports')&&<GeneralLedgerPage/>}
         {page==='trialbalance'&&canSee(user.role,'reports')&&<TrialBalancePage/>}
@@ -9179,7 +9856,8 @@ const App = ()=>{
     {/* All sections render inline in app-body above */}
     {/* Products master modal — stays as overlay */}
     {modal==='products'&&<ProductMasterModal onClose={()=>{setModal(null);setFormKey(k=>k+1);}}/>}
-  </div>;
+  </div>
+  </>;
 };
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
