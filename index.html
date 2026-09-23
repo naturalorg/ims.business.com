@@ -1662,7 +1662,8 @@ const makePurchaseExcel = (expenses) => {
     'HSN / SAC','Unit','Qty','Rate (Rs.)','Taxable Amount (Rs.)',
     'GST Type','Tax Rate %','CGST %','CGST Amount (Rs.)','SGST %','SGST Amount (Rs.)',
     'IGST %','IGST Amount (Rs.)','Total Tax (Rs.)','Line Total (Rs.)','Added to Stock',
-    'Bill Total (Rs.)','Amount Paid (Rs.)','Balance Payable (Rs.)',
+    'Bill Total (Rs.)','TDS Section','TDS Rate %','TDS Amount (Rs.)','Net Payable (Rs.)',
+    'Amount Paid (Rs.)','Balance Payable (Rs.)',
     'Payment Mode','Payment Status','Paid Date','Notes','Recorded By'
   ];
   const rows = [...companyHeaderRows(), headers];
@@ -1686,6 +1687,10 @@ const makePurchaseExcel = (expenses) => {
         Number(gst).toFixed(2), Number(parseFloat(it.total) || 0).toFixed(2),
         it.toStock === false ? 'No' : 'Yes',
         k === 0 ? Number(parseFloat(e.total) || 0).toFixed(2) : '',
+        k === 0 ? (e.tdsSection || '') : '',
+        k === 0 ? (e.tdsSection ? (parseFloat(e.tdsRate)||0) : '') : '',
+        k === 0 ? Number(parseFloat(e.tdsAmount)||0).toFixed(2) : '',
+        k === 0 ? Number(expNetPayable(e)).toFixed(2) : '',
         k === 0 ? expPaid(e).toFixed(2) : '',
         k === 0 ? expDue(e).toFixed(2) : '',
         k === 0 ? (e.payMode || '') : '', k === 0 ? (e.payStatus || '') : '',
@@ -1697,7 +1702,7 @@ const makePurchaseExcel = (expenses) => {
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [{wch:5},{wch:12},{wch:14},{wch:24},{wch:20},{wch:14},{wch:16},{wch:12},{wch:12},{wch:16},{wch:24},{wch:24},
     {wch:10},{wch:8},{wch:8},{wch:12},{wch:18},{wch:10},{wch:8},{wch:8},{wch:14},{wch:8},{wch:14},
-    {wch:8},{wch:14},{wch:14},{wch:16},{wch:12},{wch:16},{wch:16},{wch:18},{wch:16},{wch:14},{wch:12},{wch:24},{wch:20}];
+    {wch:8},{wch:14},{wch:14},{wch:16},{wch:12},{wch:16},{wch:12},{wch:10},{wch:14},{wch:16},{wch:16},{wch:16},{wch:18},{wch:16},{wch:14},{wch:12},{wch:24},{wch:20}];
   XLSX.utils.book_append_sheet(wb, ws, 'Purchase Register');
 
   // ── Product-wise purchase summary ──
@@ -2435,8 +2440,43 @@ const TermsModal = ({onClose, inline=false})=>{
 
 /* ── CUSTOMER DATABASE MODAL ── */
 /* ── EXPENSE TRACKER ── */
+// Legacy fixed list — kept only as seed data (see ensureDefaultExpenseHeads) so every one of
+// these becomes a real, editable Chart-of-Accounts expense ledger the first time the app loads.
+// The Purchase form's "Expense Head" dropdown no longer reads this directly — it reads live
+// Chart of Accounts expense ledgers instead, so new heads created there show up immediately.
 const EXP_CATEGORIES = ['Raw Materials','Packaging','Freight / Transport','Office Supplies','Rent','Electricity / Utilities','Labour / Wages','Professional Fees','Repairs & Maintenance','Software / IT','Travel & Conveyance','Advertising / Marketing','Bank Charges','Insurance','Statutory / Tax Payments','Other'];
 const PAY_MODES = ['Cash','Bank Transfer / NEFT','UPI / GPay / PhonePe','Cheque','Credit Card','Debit Card','Other'];
+
+// Common Income-tax TDS sections for purchases/expenses. "rate" is the standard non-lower-deduction
+// rate — always editable on the bill since actual rate depends on PAN status, lower-deduction
+// certificates, etc. This is a convenience default, not tax advice.
+const TDS_SECTIONS = [
+  {code:'',        label:'No TDS',                                   rate:0},
+  {code:'194C',    label:'194C — Payment to Contractors',            rate:1},
+  {code:'194C-HUF',label:'194C — Contractors (Individual/HUF)',      rate:1},
+  {code:'194J',    label:'194J — Professional / Technical Fees',     rate:10},
+  {code:'194Q',    label:'194Q — Purchase of Goods',                 rate:0.1},
+  {code:'194I',    label:'194I — Rent',                              rate:10},
+  {code:'194H',    label:'194H — Commission / Brokerage',            rate:5},
+  {code:'194A',    label:'194A — Interest (other than securities)',  rate:10},
+  {code:'OTHER',   label:'Other Section',                            rate:0},
+];
+const tdsSectionRate = (code) => (TDS_SECTIONS.find(s=>s.code===code)?.rate) ?? 0;
+
+/* One-time: turn the old hardcoded category list into real, editable Chart-of-Accounts
+   expense ledgers, so the Purchase form's Expense Head dropdown has sensible defaults on
+   first run. Idempotent — skips any name that already exists (case-insensitive). */
+const ensureDefaultExpenseHeads = () => {
+  const existingNames = getAllAccounts().filter(a=>a.type==='expense').map(a=>a.name.toLowerCase());
+  const toSeed = EXP_CATEGORIES.filter(c=>c!=='Other' && !existingNames.includes(c.toLowerCase()));
+  if(!toSeed.length) return;
+  const seeded = toSeed.map(name=>({
+    key: 'CUST_'+name.toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,24)+'_SEED',
+    name, type:'expense', group:'Expenses', scheduleGroup:'Other Expenses', custom:true,
+    createdAt:new Date().toISOString()
+  }));
+  S.set(SK.COA_CUSTOM, [...getCustomAccounts(), ...seeded]);
+};
 
 /* ══════════════════════════════════════════════════════════════
    PURCHASE HELPERS
@@ -2467,13 +2507,18 @@ const expItems = (e) => {
 };
 
 const expTotal   = (e) => parseFloat(e?.total)||0;
+const expTdsAmt  = (e) => parseFloat(e?.tdsAmount)||0;
+// What actually needs to go out of the bank to the vendor — bill total minus TDS withheld
+// (the TDS portion is deposited to the government instead, via TDS Payable).
+const expNetPayable = (e) => e?.netPayable!=null ? parseFloat(e.netPayable) : Math.max(0, expTotal(e)-expTdsAmt(e));
 const expPaid    = (e) => {
   if(!e) return 0;
-  if(e.payStatus==='Paid') return expTotal(e);
-  if(e.payStatus==='Partial') return Math.min(expTotal(e), parseFloat(e.paidAmount)||0);
+  const base = expNetPayable(e);
+  if(e.payStatus==='Paid') return base;
+  if(e.payStatus==='Partial') return Math.min(base, parseFloat(e.paidAmount)||0);
   return 0;
 };
-const expDue     = (e) => Math.max(0, expTotal(e) - expPaid(e));
+const expDue     = (e) => Math.max(0, expNetPayable(e) - expPaid(e));
 const expDueDate = (e) => e?.dueDate || addDaysStr(e?.billDate||e?.date, e?.creditDays??30);
 const expStockQty= (e) => expItems(e).filter(it=>it.toStock!==false).reduce((t,it)=>t+(parseFloat(it.qty)||0),0);
 
@@ -2491,14 +2536,18 @@ const blankPItem = () => ({
 const blankExp = (user) => ({
   id: Date.now().toString(), date: today(), vendor: '', vendorGSTIN: '', vendorState: '',
   billNo: '', billDate: today(), creditDays: 30, dueDate: '',
-  category: '', gstType: 'INTRA', notes: '',
+  category: '', expenseAccountKey: '', gstType: 'INTRA', notes: '',
+  tdsSection: '', tdsRate: '', tdsAmount: 0, netPayable: 0,
   payMode: 'Bank Transfer / NEFT', payStatus: 'Pending', paidAmount: '', paidDate: '',
   items: [blankPItem()],
   taxable: 0, gstAmt: 0, total: 0,
   createdBy: (user && user.email) || ''
 });
 
-/* Recalculate every line and roll the totals up to the bill */
+/* Recalculate every line, roll the totals up to the bill, then work out TDS & Net Payable.
+   TDS is deducted at bill level (it's a withholding on the whole payment to the vendor, not
+   per-line), calculated on the taxable value — the standard basis under the Income-tax Act,
+   which excludes GST from the TDS base. */
 const calcPurchase = (f) => {
   const items = (f.items && f.items.length ? f.items : [blankPItem()]).map(it => {
     const qty = parseFloat(it.qty) || 0, rate = parseFloat(it.rate) || 0;
@@ -2508,8 +2557,12 @@ const calcPurchase = (f) => {
   });
   const taxable = items.reduce((t, x) => t + (x.taxable || 0), 0);
   const gstAmt  = items.reduce((t, x) => t + (x.gstAmt || 0), 0);
+  const total   = +(taxable + gstAmt).toFixed(2);
   const dueDate = f.dueDate || addDaysStr(f.billDate || f.date, f.creditDays);
-  return { ...f, items, dueDate, taxable: +taxable.toFixed(2), gstAmt: +gstAmt.toFixed(2), total: +(taxable + gstAmt).toFixed(2) };
+  const tdsRate = f.tdsSection ? (parseFloat(f.tdsRate) || 0) : 0;
+  const tdsAmount = +(taxable * tdsRate / 100).toFixed(2);
+  const netPayable = +(total - tdsAmount).toFixed(2);
+  return { ...f, items, dueDate, taxable: +taxable.toFixed(2), gstAmt: +gstAmt.toFixed(2), total, tdsRate: f.tdsSection?f.tdsRate:'', tdsAmount, netPayable };
 };
 
 const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
@@ -2524,6 +2577,24 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
   const [filterStatus, setFilterStatus] = useState('');
   const isAdmin = currentUser?.role==='admin'||currentUser?.role==='superadmin';
   const productList = S.get(SK.PRODUCTS,[]);
+  const [expenseAccounts, setExpenseAccounts] = useState(()=>getAllAccounts().filter(a=>a.type==='expense'));
+  const [addingHead, setAddingHead] = useState(false);
+  const [newHeadName, setNewHeadName] = useState('');
+  // Categories actually used on past bills, for the list filter — grows automatically as new
+  // expense heads get used, instead of being locked to a fixed list.
+  const usedCats = useMemo(()=>{
+    const s = new Set(); expenses.forEach(e=>{ if(e.category) s.add(e.category); });
+    return [...s].sort();
+  },[expenses]);
+
+  const createHead = () => {
+    if(!newHeadName.trim()){ toast.error('Give the expense head a name'); return; }
+    const key = createLedgerAccount({name:newHeadName, type:'expense', group:'Expenses', scheduleGroup:'Other Expenses'});
+    setExpenseAccounts(getAllAccounts().filter(a=>a.type==='expense'));
+    setForm(p=>calcPurchase({...p, category:newHeadName.trim(), expenseAccountKey:key}));
+    toast.success(`"${newHeadName.trim()}" added to Chart of Accounts — it'll post there from now on.`);
+    setAddingHead(false); setNewHeadName('');
+  };
 
   const upF = k => e => setForm(p=>calcPurchase({...p,[k]:e.target.value}));
   const upItem = (idx,k,val) => setForm(p=>calcPurchase({...p, items:p.items.map((it,i)=>i===idx?{...it,[k]:val}:it)}));
@@ -2564,9 +2635,12 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
       logAudit('EXPENSE_ADDED',`${calc.vendor} — ${calc.billNo} — ₹${calc.total}`,currentUser);
     }
     setExpenses(updated); S.set(SK.EXP, updated);
-    applyStockForPurchase(rec, currentUser);   // ⬅ quantities land in Inventory
+    const newProducts = applyStockForPurchase(rec, currentUser);   // ⬅ quantities land in Inventory
     const inQty = expItems(rec).filter(it=>it.toStock!==false).reduce((t,it)=>t+(parseFloat(it.qty)||0),0);
     toast.success(editId?`Purchase updated — ${inQty} unit(s) synced to inventory`:`Purchase saved — ${inQty} unit(s) added to inventory`);
+    if(newProducts.length){
+      toast.info(`Added to Product master & tracked as stock: ${newProducts.join(', ')}`);
+    }
     setForm(blankExp(currentUser)); setEditId(null); setTab('list');
   };
 
@@ -2652,7 +2726,7 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
             </div>
             <select className="field-input" value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{width:180}}>
               <option value="">All Categories</option>
-              {EXP_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+              {usedCats.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
             <select className="field-input" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} style={{width:130}}>
               <option value="">All Status</option><option value="Paid">Paid</option>
@@ -2772,11 +2846,27 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
           </div>
 
           <div className="g3" style={{marginBottom:12}}>
-            <div className="field"><label className="field-label">Category</label>
-              <select className="field-input" value={form.category||''} onChange={upF('category')}>
-                <option value="">— Select Category —</option>
-                {EXP_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
-              </select>
+            <div className="field">
+              <label className="field-label">Expense Head (Chart of Accounts)</label>
+              {!addingHead?(
+                <select className="field-input" value={form.category||''} onChange={e=>{
+                    if(e.target.value==='__new__'){ setAddingHead(true); return; }
+                    const acc = expenseAccounts.find(a=>a.name===e.target.value);
+                    setForm(p=>calcPurchase({...p, category:e.target.value, expenseAccountKey:acc?acc.key:''}));
+                  }}>
+                  <option value="">— Select Expense Head —</option>
+                  {expenseAccounts.map(a=><option key={a.key} value={a.name}>{a.name}{a.custom?' (custom)':''}</option>)}
+                  <option value="__new__">+ Add New Expense Head…</option>
+                </select>
+              ):(
+                <div style={{display:'flex',gap:6}}>
+                  <input className="field-input" autoFocus value={newHeadName} onChange={e=>setNewHeadName(e.target.value)}
+                    placeholder="e.g. Printing & Stationery" onKeyDown={e=>{if(e.key==='Enter')createHead();}}/>
+                  <button className="btn btn-sm btn-primary" onClick={createHead}>Add</button>
+                  <button className="btn btn-sm btn-outline" onClick={()=>{setAddingHead(false);setNewHeadName('');}}>Cancel</button>
+                </div>
+              )}
+              <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>Posts straight to that ledger — manage all heads under Reports → Chart of Accounts.</div>
             </div>
             <div className="field"><label className="field-label">GST Type</label>
               <select className="field-input" value={form.gstType||'INTRA'} onChange={upF('gstType')}>
@@ -2785,6 +2875,26 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
               </select>
             </div>
             <div className="field"><label className="field-label">Notes / Remarks</label><input className="field-input" value={form.notes||''} onChange={upF('notes')} placeholder="Transport, LR number, remarks..."/></div>
+          </div>
+
+          <div className="g3" style={{marginBottom:12}}>
+            <div className="field"><label className="field-label">TDS Section</label>
+              <select className="field-input" value={form.tdsSection||''} onChange={e=>{
+                  const code=e.target.value;
+                  setForm(p=>calcPurchase({...p, tdsSection:code, tdsRate: code?String(tdsSectionRate(code)):''}));
+                }}>
+                {TDS_SECTIONS.map(s=><option key={s.code} value={s.code}>{s.label}</option>)}
+              </select>
+            </div>
+            <div className="field"><label className="field-label">TDS Rate (%)</label>
+              <input type="number" step="0.01" min="0" className="field-input" value={form.tdsRate||''}
+                disabled={!form.tdsSection} onChange={upF('tdsRate')} placeholder="0.00"/>
+            </div>
+            <div className="field"><label className="field-label">TDS Deducted (Rs.)</label>
+              <div className="field-input" style={{display:'flex',alignItems:'center',color:'var(--red)',fontWeight:700,background:'var(--card2)'}}>
+                {fmt(form.tdsAmount||0)}
+              </div>
+            </div>
           </div>
 
           {/* ── Line items ── */}
@@ -2849,6 +2959,12 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
             <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Input GST</div><div style={{fontWeight:700,color:'var(--blue)'}}>{fmt(form.gstAmt)}</div></div>
             <div style={{color:'var(--border2)'}}>|</div>
             <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Bill Total</div><div style={{fontWeight:800,color:'var(--primary2)',fontSize:17}}>{fmt(form.total)}</div></div>
+            {form.tdsAmount>0&&<>
+              <div style={{color:'var(--border2)'}}>|</div>
+              <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>TDS Deducted</div><div style={{fontWeight:700,color:'var(--red)'}}>− {fmt(form.tdsAmount)}</div></div>
+              <div style={{color:'var(--border2)'}}>|</div>
+              <div style={{textAlign:'center'}}><div style={{fontSize:11,color:'var(--text3)'}}>Net Payable to Vendor</div><div style={{fontWeight:800,color:'var(--green)',fontSize:15}}>{fmt(form.netPayable)}</div></div>
+            </>}
           </div>
 
           <div className="g4" style={{marginBottom:4}}>
@@ -2862,8 +2978,8 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
                 <option value="Pending">Pending</option><option value="Partial">Partial</option><option value="Paid">Paid</option>
               </select>
             </div>
-            <div className="field"><label className="field-label">Amount Paid (Rs.)</label>
-              <input type="number" className="field-input" value={form.payStatus==='Paid'?form.total:(form.paidAmount||'')}
+            <div className="field"><label className="field-label">Amount Paid (Rs.){form.tdsAmount>0?' — after TDS':''}</label>
+              <input type="number" className="field-input" value={form.payStatus==='Paid'?form.netPayable:(form.paidAmount||'')}
                 disabled={form.payStatus==='Paid'} onChange={upF('paidAmount')} placeholder="0.00" min="0"/>
               <div style={{fontSize:10,color:form.payStatus==='Paid'?'var(--green)':'var(--red)',marginTop:3}}>
                 Balance payable: {fmt(expDue(calcPurchase(form)))}
@@ -5969,12 +6085,22 @@ const applyStockForInvoice = (inv, user) => {
   if(lines.length) rebuildStock([...stockLog(), ...lines]);
 };
 
-/* ── PURCHASES: post every stock-flagged line of a bill into the ledger ── */
+/* ── PURCHASES: post every stock-flagged line of a bill into the ledger ──
+   IMPORTANT: previously this silently dropped any ticked line whose product name
+   didn't already exist as a tracked Product master record — the bill would save
+   fine, the toast would say "N units added to inventory", but nothing actually
+   landed anywhere, because the lookup below found no match and just returned.
+   Now: if the ticked line's product name isn't a tracked Product yet, we create
+   one automatically (or flip trackStock on if it exists untracked) so the stock
+   always lands, and returns the list of any newly-created/upgraded product names
+   so the UI can tell the user what just got added to their Product master. */
 const applyStockForPurchase = (exp, user) => {
-  if(!exp) return;
+  if(!exp) return [];
   const srcId = 'PUR-'+exp.id;
   removeStockForSource(srcId);                  // idempotent — editing a bill replaces its lines
-  const products = S.get(SK.PRODUCTS,[]);
+  let products = S.get(SK.PRODUCTS,[]);
+  let productsChanged = false;
+  const newOrUpgraded = [];
   const when = exp.billDate||exp.date||today();
   const lines=[];
   expItems(exp).forEach(it=>{
@@ -5982,8 +6108,22 @@ const applyStockForPurchase = (exp, user) => {
     const name = it.product || it.desc;
     const qty  = parseFloat(it.qty)||0;
     if(!name || qty<=0) return;
-    const prod = products.find(p=>(p.name||'').toLowerCase()===String(name).toLowerCase());
-    if(!prod || !prod.trackStock) return;       // untracked items are cost-only, never stock
+    let prod = products.find(p=>(p.name||'').toLowerCase()===String(name).toLowerCase());
+    if(!prod){
+      prod = {
+        name: String(name).trim(), desc: it.desc||'', hsnCode: it.hsnCode||'', unit: it.unit||'Nos',
+        rate: parseFloat(it.rate)||0, taxRate: it.taxRate||'18', category: exp.category||'',
+        trackStock: true, openingStock: 0, openingRate: parseFloat(it.rate)||0, reorderLevel: '', currentStock: 0
+      };
+      products = [...products, prod];
+      productsChanged = true;
+      newOrUpgraded.push(prod.name);
+    } else if(!prod.trackStock){
+      products = products.map(p=>p===prod?{...p, trackStock:true}:p);
+      prod = products.find(p=>(p.name||'').toLowerCase()===String(name).toLowerCase());
+      productsChanged = true;
+      newOrUpgraded.push(prod.name);
+    }
     lines.push({
       id:uid(), date:when, time:nowTime(), product:prod.name,
       qty, rate:parseFloat(it.rate)||0, type:'IN', refType:'PURCHASE',
@@ -5991,7 +6131,9 @@ const applyStockForPurchase = (exp, user) => {
       srcId, user:user?.name||'', balanceAfter:0
     });
   });
+  if(productsChanged) S.set(SK.PRODUCTS, products);
   if(lines.length) rebuildStock([...stockLog(), ...lines]);
+  return newOrUpgraded;
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -7789,6 +7931,7 @@ const COA = [
   {key:'ST_BORROWING',       name:'Short-term Borrowings',                        type:'liability', group:'Current Liabilities', scheduleGroup:'Short-term Borrowings'},
   {key:'TRADE_PAYABLE',      name:'Trade Payables',                               type:'liability', group:'Current Liabilities', scheduleGroup:'Trade Payables'},
   {key:'OUTPUT_GST',         name:'Balances with Govt. Authorities (Output GST)', type:'liability', group:'Current Liabilities', scheduleGroup:'Balances with Govt. Authorities'},
+  {key:'TDS_PAYABLE',        name:'TDS Payable (Duties & Taxes)',                 type:'liability', group:'Current Liabilities', scheduleGroup:'Duties and Taxes'},
   {key:'ST_PROVISION',       name:'Short-term Provisions',                        type:'liability', group:'Current Liabilities', scheduleGroup:'Short-term Provisions'},
   {key:'SUSPENSE_IN',        name:'Unidentified Bank Receipts (Suspense)',        type:'liability', group:'Current Liabilities', scheduleGroup:'Other Current Liabilities'},
   {key:'OTHER_CURRENT_LIAB', name:'Other Current Liabilities',                    type:'liability', group:'Current Liabilities', scheduleGroup:'Other Current Liabilities'},
@@ -7932,11 +8075,18 @@ const buildAutoJournal = () => {
     const expTaxable   = items.filter(it=>!isStockLine(it)).reduce((s,it)=>s+(parseFloat(it.taxable)||0),0);
     const gst = items.reduce((s,it)=>s+(parseFloat(it.gstAmt)||0),0);
     const total = parseFloat(exp.total) || +(stockTaxable+expTaxable+gst).toFixed(2);
+    const tds = parseFloat(exp.tdsAmount)||0;
+    const payable = +(total-tds).toFixed(2);
     const lines=[];
     if(stockTaxable>0.004) lines.push({account:'INVENTORY',debit:+stockTaxable.toFixed(2),credit:0});
-    if(expTaxable>0.004) lines.push({account:guessExpenseAccount(exp.category),debit:+expTaxable.toFixed(2),credit:0});
+    // A bill's chosen Expense Head (Chart of Accounts) always wins over the old keyword-guess —
+    // guessExpenseAccount only kicks in for older bills saved before that field existed.
+    if(expTaxable>0.004) lines.push({account:(exp.expenseAccountKey||guessExpenseAccount(exp.category)),debit:+expTaxable.toFixed(2),credit:0});
     if(gst>0.004) lines.push({account:'INPUT_GST',debit:+gst.toFixed(2),credit:0});
-    lines.push({account:'TRADE_PAYABLE',debit:0,credit:+total.toFixed(2)});
+    // TDS withheld from the vendor is money that never leaves via Trade Payable — it becomes a
+    // liability to the government (TDS Payable) instead, due on deposit by the statutory date.
+    if(tds>0.004) lines.push({account:'TDS_PAYABLE',debit:0,credit:+tds.toFixed(2)});
+    lines.push({account:'TRADE_PAYABLE',debit:0,credit:+payable.toFixed(2)});
     add(when, `Purchase ${exp.billNo||exp.id}${exp.vendor?' — '+exp.vendor:''}`, 'EXP', exp.id, lines, exp.voucherNo);
   });
 
@@ -9485,6 +9635,7 @@ const App = ()=>{
     const ok = await loadCache();
     if(ok){
       try{ migrateInventory(); }catch(err){ console.warn('Inventory migration skipped:', err.message); }
+      try{ ensureDefaultExpenseHeads(); }catch(err){ console.warn('Expense head seeding skipped:', err.message); }
       setLoadMsg('Almost ready...');
       seedUsers();
       const savedTheme = S.get(SK.THEME,'dark');
