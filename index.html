@@ -690,6 +690,68 @@ const { useState, useEffect, useRef, useCallback, useMemo } = React;
 /* ── CONSTANTS ── */
 const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series', STOCK:'ip_stock', BANK:'ip_bank', QSALE:'ip_quicksales', BANK_OB:'ip_bank_ob', BANK_ACCTS:'ip_bank_accounts', QUOTE:'ip_quotations', DC:'ip_delivery_challans', RECUR:'ip_recurring', JOURNAL:'ip_journal', ACCMAP:'ip_acc_map', POLICIES:'ip_policies', COA_CUSTOM:'ip_coa_custom', REFSEQ:'ip_ref_seq', TXNREFSEQ:'ip_txn_ref_seq', SHOW_TERMS:'ip_show_terms' };
 
+// Audit log display metadata — maps every action code to its Module column + Action column + badge color.
+// Colors are grouped by verb so Added/Created=green, Edited/Updated=blue, Deleted=red, everything else=amber/teal.
+const AUDIT_ACTION_META = {
+  INVOICE_CREATED:            {module:'Invoices',            action:'Created',      color:'#166534'},
+  INVOICE_EDITED:             {module:'Invoices',            action:'Edited',       color:'#1D4ED8'},
+  INVOICE_DELETED:            {module:'Invoices',            action:'Deleted',      color:'#DC2626'},
+  INVOICE_MARKED_PAID:        {module:'Invoices',            action:'Marked Paid',  color:'#B45309'},
+  EXPENSE_ADDED:              {module:'Expenses/Purchases',  action:'Added',        color:'#065F46'},
+  EXPENSE_EDITED:             {module:'Expenses/Purchases',  action:'Edited',       color:'#0369A1'},
+  EXPENSE_DELETED:            {module:'Expenses/Purchases',  action:'Deleted',      color:'#DC2626'},
+  EXPENSE_MARKED_PAID:        {module:'Expenses/Purchases',  action:'Marked Paid',  color:'#B45309'},
+  PO_CREATED:                 {module:'Purchase Orders',     action:'Created',      color:'#166534'},
+  PO_EDITED:                  {module:'Purchase Orders',     action:'Edited',       color:'#1D4ED8'},
+  PO_DELETED:                 {module:'Purchase Orders',     action:'Deleted',      color:'#DC2626'},
+  QUOTATION_CREATED:          {module:'Quotations',          action:'Created',      color:'#166534'},
+  QUOTATION_EDITED:           {module:'Quotations',          action:'Edited',       color:'#1D4ED8'},
+  QUOTATION_DELETED:          {module:'Quotations',          action:'Deleted',      color:'#DC2626'},
+  QUOTATION_CONVERTED:        {module:'Quotations',          action:'Converted to Invoice', color:'#0E7490'},
+  DC_CREATED:                 {module:'Delivery Challans',   action:'Created',      color:'#166534'},
+  DC_EDITED:                  {module:'Delivery Challans',   action:'Edited',       color:'#1D4ED8'},
+  DC_DELETED:                 {module:'Delivery Challans',   action:'Deleted',      color:'#DC2626'},
+  RECURRING_TEMPLATE_CREATED: {module:'Recurring Invoices',  action:'Created',      color:'#166534'},
+  RECURRING_TEMPLATE_EDITED:  {module:'Recurring Invoices',  action:'Edited',       color:'#1D4ED8'},
+  RECURRING_TEMPLATE_DELETED: {module:'Recurring Invoices',  action:'Deleted',      color:'#DC2626'},
+  RECURRING_INVOICE_GENERATED:{module:'Recurring Invoices',  action:'Auto-Generated', color:'#0E7490'},
+  QUICK_SALE_CREATED:         {module:'Quick Sales',         action:'Created',      color:'#166534'},
+  PAYMENT_REMINDER_SENT:      {module:'Payment Reminders',   action:'Sent',         color:'#0E7490'},
+  CUSTOMER_ADDED:             {module:'Customers',           action:'Added',        color:'#166534'},
+  CUSTOMER_EDITED:            {module:'Customers',           action:'Edited',       color:'#1D4ED8'},
+  CUSTOMER_DELETED:           {module:'Customers',           action:'Deleted',      color:'#DC2626'},
+  PRODUCT_ADDED:              {module:'Products',            action:'Added',        color:'#166534'},
+  PRODUCT_EDITED:             {module:'Products',            action:'Edited',       color:'#1D4ED8'},
+  PRODUCT_DELETED:            {module:'Products',            action:'Deleted',      color:'#DC2626'},
+  HSN_ADDED:                  {module:'HSN/SAC Codes',       action:'Added',        color:'#166534'},
+  HSN_EDITED:                 {module:'HSN/SAC Codes',       action:'Edited',       color:'#1D4ED8'},
+  HSN_DELETED:                {module:'HSN/SAC Codes',       action:'Deleted',      color:'#DC2626'},
+  BANK_ACCOUNT_ADDED:         {module:'Bank Accounts',       action:'Added',        color:'#166534'},
+  BANK_ACCOUNT_DELETED:       {module:'Bank Accounts',       action:'Deleted',      color:'#DC2626'},
+  LEDGER_CREATED:             {module:'Chart of Accounts',   action:'Ledger Created', color:'#166534'},
+  LEDGER_DELETED:             {module:'Chart of Accounts',   action:'Ledger Deleted', color:'#DC2626'},
+  EXPENSE_ACCOUNT_MAPPING_UPDATED: {module:'Chart of Accounts', action:'Mapping Updated', color:'#1D4ED8'},
+  JOURNAL_VOUCHER_ADDED:      {module:'Journal Vouchers',    action:'Added',        color:'#166534'},
+  JOURNAL_VOUCHER_DELETED:    {module:'Journal Vouchers',    action:'Deleted',      color:'#DC2626'},
+  ACCOUNTING_POLICIES_UPDATED:{module:'Accounting Policies', action:'Updated',      color:'#1D4ED8'},
+  COMPANY_SETTINGS_UPDATED:   {module:'Company Settings',    action:'Updated',      color:'#1D4ED8'},
+  TERMS_UPDATED:              {module:'Terms & Conditions',  action:'Updated',      color:'#1D4ED8'},
+  NUMBERING_SERIES_UPDATED:   {module:'Numbering Series',    action:'Updated',      color:'#1D4ED8'},
+  NUMBERING_SERIES_RESET:     {module:'Numbering Series',    action:'Reset',        color:'#B45309'},
+  BACKUP_EXPORTED:            {module:'Backup',              action:'Exported',     color:'#0E7490'},
+  DATA_RESTORED:              {module:'Backup',              action:'Restored',     color:'#B45309'},
+  PERIOD_FROZEN:              {module:'Period Lock',         action:'Frozen',       color:'#1E40AF'},
+  PERIOD_UNFROZEN:            {module:'Period Lock',         action:'Unfrozen',     color:'#065F46'},
+  USER_CREATED:               {module:'Users',               action:'Created',      color:'#6D28D9'},
+  USER_EDITED:                {module:'Users',               action:'Edited',       color:'#0369A1'},
+  USER_DELETED:               {module:'Users',               action:'Deleted',      color:'#DC2626'},
+  USER_TOGGLED:                {module:'Users',              action:'Status Changed', color:'#B45309'},
+  USER_LOGIN:                 {module:'Users',               action:'Login',        color:'#0E7490'},
+  USER_LOGOUT:                {module:'Users',               action:'Logout',       color:'#6B7280'},
+};
+const getAuditMeta=(action)=>AUDIT_ACTION_META[action]||{module:(action||'').split('_')[0],action:(action||'').replace(/^[A-Z]+_/,'').replace(/_/g,' '),color:'var(--text3)'};
+
+
 /* ── ROLE-BASED PAGE ACCESS — 'user','admin','superadmin' keep full access (unchanged).
    'sales' and 'accountant' are new, narrower roles — adjust freely later. ── */
 const ROLE_PAGES = {
@@ -939,6 +1001,36 @@ const fmtDate= d=>{
   const[y,m,dd]=parts;
   return`${dd}/${m}/${y}`;
 }
+// Long-form date for statement headings, e.g. "31 March 2026"
+const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const fmtDateLong = d=>{
+  if(!d || typeof d!=='string') return '';
+  const parts=d.split('-'); if(parts.length!==3) return fmtDate(d);
+  const[y,m,dd]=parts;
+  const mi=parseInt(m,10)-1;
+  return `${parseInt(dd,10)} ${MONTH_NAMES[mi]||m} ${y}`;
+};
+// Shifts a YYYY-MM-DD date by `delta` whole years (delta can be negative) — used to build the
+// "corresponding period last year" comparative column on the P&L.
+const shiftYear = (dateStr, delta)=>{
+  if(!dateStr) return dateStr;
+  const d=new Date(dateStr);
+  if(isNaN(d.getTime())) return dateStr;
+  d.setFullYear(d.getFullYear()+delta);
+  return d.toISOString().split('T')[0];
+};
+// Given any date, returns the closing date of the PREVIOUS financial year (i.e. 31 March just
+// before the FY that `asOf` falls in) — the standard comparative date for a Balance Sheet / Trial Balance.
+const prevFYEnd = (asOf)=>{
+  if(!asOf) return asOf;
+  const d=new Date(asOf);
+  if(isNaN(d.getTime())) return asOf;
+  const y=d.getFullYear(), m=d.getMonth()+1;
+  const fyStartYear = m>=4 ? y : y-1;
+  const prevEnd = new Date(fyStartYear, 3, 1); // 1 April of the current FY
+  prevEnd.setDate(prevEnd.getDate()-1);        // → 31 March of the previous FY
+  return prevEnd.toISOString().split('T')[0];
+};
 // Helper: get correct grand total for any invoice type (fixes NonGST invoices saved with grand=0)
 const getGrand = inv => {
   if(inv.docType==='NON GST INVOICE'){
@@ -1865,25 +1957,36 @@ const makePurchaseExcel = (expenses) => {
 const makeAuditExcel = (logs) => {
   try {
     const { utils, writeFile } = window.XLSX;
-    const rows = logs.map(l => ({
-      'Timestamp': new Date(l.ts).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}),
-      'Action': (l.action||'').replace(/_/g,' '),
-      'Detail': l.detail||'',
-      'User Name': l.userName||'',
-      'User Email': l.user||'',
-      'Date': new Date(l.ts).toLocaleDateString('en-IN'),
-      'Time': new Date(l.ts).toLocaleTimeString('en-IN'),
-    }));
+    const rows = logs.map(l => {
+      const meta=getAuditMeta(l.action);
+      return {
+        'Timestamp': new Date(l.ts).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+        'Module': meta.module,
+        'Action': meta.action,
+        'Detail': l.detail||'',
+        'User Name': l.userName||'',
+        'User Email': l.user||'',
+        'Date': new Date(l.ts).toLocaleDateString('en-IN'),
+        'Time': new Date(l.ts).toLocaleTimeString('en-IN'),
+      };
+    });
     const ws = utils.json_to_sheet(rows);
-    ws['!cols'] = [{wch:22},{wch:20},{wch:55},{wch:20},{wch:30},{wch:14},{wch:12}];
+    ws['!cols'] = [{wch:22},{wch:20},{wch:16},{wch:55},{wch:20},{wch:30},{wch:14},{wch:12}];
     const wb = utils.book_new();
     utils.book_append_sheet(wb, ws, 'Audit Log');
-    // Summary sheet
+    // Summary sheet — grouped by Module + Action
     const actionCounts = {};
-    logs.forEach(l=>{const a=l.action||'UNKNOWN';actionCounts[a]=(actionCounts[a]||0)+1;});
-    const sumRows = Object.entries(actionCounts).sort((a,b)=>b[1]-a[1]).map(([action,count])=>({'Action':action.replace(/_/g,' '),'Count':count}));
+    logs.forEach(l=>{
+      const meta=getAuditMeta(l.action);
+      const k=meta.module+' — '+meta.action;
+      actionCounts[k]=(actionCounts[k]||0)+1;
+    });
+    const sumRows = Object.entries(actionCounts).sort((a,b)=>b[1]-a[1]).map(([k,count])=>{
+      const [module,action]=k.split(' — ');
+      return {'Module':module,'Action':action,'Count':count};
+    });
     const ws2 = utils.json_to_sheet(sumRows);
-    ws2['!cols'] = [{wch:30},{wch:10}];
+    ws2['!cols'] = [{wch:22},{wch:20},{wch:10}];
     utils.book_append_sheet(wb, ws2, 'Summary');
     const dt = new Date().toISOString().slice(0,10);
     writeFile(wb, `AuditLog_${dt}.xlsx`);
@@ -2291,6 +2394,7 @@ const CompanyModal = ({onClose, currentUser, inline=false})=>{
     if(!d.name){toast.error('Company name required');return;}
     S.set(SK.CO,d);
     if(isSuper) S.set(SK.WA,waNum.replace(/\D/g,''));
+    logAudit('COMPANY_SETTINGS_UPDATED',`${d.name}`,currentUser);
     toast.success('Company saved!');onClose();
   };
   const handleLogo=e=>{const f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){toast.error('Max 2MB');return;}const r=new FileReader();r.onload=ev=>{const b=ev.target.result;setD(p=>({...p,logo:b}));setPrev(b);};r.readAsDataURL(f);};
@@ -2410,7 +2514,7 @@ const CompanyModal = ({onClose, currentUser, inline=false})=>{
   </div>;
 };
 
-const HSNModal = ({onClose, inline=false, searchQuery=''})=>{
+const HSNModal = ({onClose, inline=false, searchQuery='', currentUser})=>{
   const [activeTab,setActiveTab]=useState('hsn');
   // ── HSN/SAC tab state ──
   const [list,setList]=useState(S.get(SK.HSN,[]));
@@ -2423,12 +2527,15 @@ const HSNModal = ({onClose, inline=false, searchQuery=''})=>{
   const save=()=>{
     if(!form.code||!form.desc){toast.error('Code & description required');return;}
     let u;
+    const wasEditing=editing!==null;
     if(editing!==null){u=list.map((h,i)=>i===editing?{...form}:h);}
     else{if(list.find(h=>h.code===form.code)){toast.error('Code exists');return;}u=[...list,{...form}];}
-    setList(u);S.set(SK.HSN,u);setForm({code:'',desc:'',taxRate:'18',unit:'Nos',type:'HSN',category:''});setEditing(null);
+    setList(u);S.set(SK.HSN,u);
+    logAudit(wasEditing?'HSN_EDITED':'HSN_ADDED',`${form.code} — ${form.desc}`,currentUser);
+    setForm({code:'',desc:'',taxRate:'18',unit:'Nos',type:'HSN',category:''});setEditing(null);
     toast.success(editing!==null?'Updated!':'Added!');
   };
-  const del=i=>{const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.HSN,u);toast.info('Deleted');};
+  const del=i=>{const h=list[i];const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.HSN,u);logAudit('HSN_DELETED',`${h?.code||''} — ${h?.desc||''}`,currentUser);toast.info('Deleted');};
   const editE=i=>{setForm({...list[i]});setEditing(i);};
 
 
@@ -2475,15 +2582,17 @@ const HSNModal = ({onClose, inline=false, searchQuery=''})=>{
   </div>;
 };
 
-const TermsModal = ({onClose, inline=false})=>{
+const TermsModal = ({onClose, inline=false, currentUser})=>{
   const [tab,setTab]=useState('invoice');
   const [t,setT]=useState(S.get(SK.TERMS,DEFAULT_TERMS));
   const [pt,setPt]=useState(S.get(SK.PO_TERMS,DEFAULT_PO_TERMS));
   const [showT,setShowT]=useState(S.get(SK.SHOW_TERMS,true));
   const save=()=>{
+    const prevShowT=S.get(SK.SHOW_TERMS,true);
     S.set(SK.TERMS,t);
     S.set(SK.PO_TERMS,pt);
     S.set(SK.SHOW_TERMS,showT);
+    logAudit('TERMS_UPDATED',`Invoice/PO terms saved${prevShowT!==showT?` — Show on invoice PDF: ${showT?'ON':'OFF'}`:''}`,currentUser);
     toast.success('Terms saved!');
     onClose();
   };
@@ -2769,7 +2878,7 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
                     : s==='Partial'?{bg:'rgba(241,73,92,0.12)',color:'var(--gold)'}
                     : {bg:'rgba(248,81,73,0.12)',color:'var(--red)'};
 
-  const GRID = '96px 1fr 130px 92px 118px 112px 96px 118px';
+  const GRID = '86px 1fr 112px 102px 102px 122px 72px 108px 108px 86px 108px';
 
   return <div className={inline?"inline-card":"overlay"} onClick={inline?undefined:(e=>e.target===e.currentTarget&&onClose())}>
     <div className={inline?"inline-card-inner":"modal"} style={{...(inline?{}:{maxWidth:'min(1340px, 96vw)',width:'100%'})}}>
@@ -2825,8 +2934,8 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
             <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'auto',maxHeight:'54vh'}}>
               <div style={{display:'grid',gridTemplateColumns:GRID,padding:'9px 16px',background:'var(--card2)',
                 borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',
-                textTransform:'uppercase',letterSpacing:'0.6px',position:'sticky',top:0,zIndex:2,minWidth:960}}>
-                <span>Date</span><span>Vendor / Bill No</span><span>Category</span>
+                textTransform:'uppercase',letterSpacing:'0.6px',position:'sticky',top:0,zIndex:2,minWidth:1300}}>
+                <span>Date</span><span>Vendor</span><span>Bill No.</span><span>Voucher No.</span><span>Txn Ref No.</span><span>Category</span>
                 <span style={{textAlign:'center'}}>Qty In</span>
                 <span style={{textAlign:'right'}}>Bill Value</span>
                 <span style={{textAlign:'right'}}>Outstanding</span>
@@ -2839,14 +2948,14 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
                 const qty=items.reduce((t,x)=>t+(parseFloat(x.qty)||0),0);
                 const due=expDue(e);
                 const open = expanded===e.id;
-                return(<div key={e.id||i} style={{borderBottom:'1px solid var(--border)',minWidth:960}}>
+                return(<div key={e.id||i} style={{borderBottom:'1px solid var(--border)',minWidth:1300}}>
                   <div style={{display:'grid',gridTemplateColumns:GRID,padding:'9px 16px',alignItems:'center',cursor:'pointer'}}
                     onClick={()=>setExpanded(open?null:e.id)}>
                     <div style={{fontSize:12,color:'var(--text3)',fontWeight:500}}>{fmtDate(e.date)}</div>
-                    <div style={{minWidth:0}}>
-                      <div style={{fontWeight:700,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.vendor}</div>
-                      <div style={{fontSize:11,color:'var(--text3)',fontFamily:'monospace'}}>{e.billNo||'—'} · {items.length} item(s){e.voucherNo?` · V# ${e.voucherNo}`:''}{e.txnRefNo?` · Ref# ${e.txnRefNo}`:''}</div>
-                    </div>
+                    <div style={{fontWeight:700,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{e.vendor}</div>
+                    <div style={{fontSize:11.5,fontFamily:'monospace',color:'var(--text2)'}}>{e.billNo||'—'}</div>
+                    <div style={{fontSize:11.5,fontFamily:'monospace',color:'var(--text3)'}}>{e.voucherNo||'—'}</div>
+                    <div style={{fontSize:11.5,fontFamily:'monospace',color:'var(--text3)'}}>{e.txnRefNo||'—'}</div>
                     <div><span style={{display:'inline-block',fontSize:11,color:'var(--primary2)',background:'var(--primary-bg)',
                       padding:'3px 10px',borderRadius:20,border:'1px solid rgba(79,111,232,0.2)',fontWeight:600,
                       maxWidth:'100%',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.category||'—'}</span></div>
@@ -3100,7 +3209,7 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
 };
 const ExpenseModal = PurchaseModal; // legacy alias
 
-const CustomerModal = ({onClose, onSelect, inline=false, searchQuery=''})=>{
+const CustomerModal = ({onClose, onSelect, inline=false, searchQuery='', currentUser})=>{
   const blank={name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',notes:''};
   const [list,setList]=useState(S.get(SK.CUST,[]));
   const [form,setForm]=useState(blank);
@@ -3112,16 +3221,18 @@ const CustomerModal = ({onClose, onSelect, inline=false, searchQuery=''})=>{
   const save=()=>{
     if(!form.name){toast.error('Customer name required');return;}
     let u;
+    const wasEditing=editing!==null;
     if(editing!==null){u=list.map((c,i)=>i===editing?{...form}:c);}
     else{
       if(list.find(c=>c.name.toLowerCase()===form.name.toLowerCase()&&c.gstin===form.gstin)){toast.error('Customer already exists');return;}
       u=[...list,{...form,createdAt:new Date().toISOString()}];
     }
     setList(u);S.set(SK.CUST,u);
+    logAudit(wasEditing?'CUSTOMER_EDITED':'CUSTOMER_ADDED',`${form.name}${form.gstin?' — GSTIN '+form.gstin:''}`,currentUser);
     setForm(blank);setEditing(null);setTab('list');
     toast.success(editing!==null?'Customer updated!':'Customer saved!');
   };
-  const del=i=>{if(!window.confirm('Delete customer?'))return;const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.CUST,u);};
+  const del=i=>{if(!window.confirm('Delete customer?'))return;const c=list[i];const u=list.filter((_,j)=>j!==i);setList(u);S.set(SK.CUST,u);logAudit('CUSTOMER_DELETED',`${c?.name||''}`,currentUser);};
   const edit=i=>{setForm({...list[i]});setEditing(i);setTab('add');};
   const filtered=list.filter(c=>!q||c.name.toLowerCase().includes(q.toLowerCase())||c.gstin?.includes(q)||c.city?.toLowerCase().includes(q.toLowerCase()));
 
@@ -3809,7 +3920,7 @@ const FreezeTab = ({invs, isSuper, currentUser})=>{
 
 
 /* ── SERIES TAB ── */
-const SeriesTab = ({isSuper})=>{
+const SeriesTab = ({isSuper, currentUser})=>{
   const fy=getFY();
   const fyS=getFYShort();
   const mm=getMonthCode();
@@ -3837,6 +3948,7 @@ const SeriesTab = ({isSuper})=>{
     const newCfg={...cfg,[editing]:{letters:lets}};
     setCfg(newCfg);S.set(SK.SERIES,newCfg);
     S.set(ctrKey(editing),num);
+    logAudit('NUMBERING_SERIES_UPDATED',`${SERIES_TYPES.find(s=>s.id===editing)?.label||editing} — prefix "${lets}", next no. ${buildNo(editing,num,lets)}`,currentUser);
     setJustSaved(editing);setEditing(null);
     toast.success(`Saved! Next: ${buildNo(editing,num,lets)}`);
   };
@@ -3845,6 +3957,7 @@ const SeriesTab = ({isSuper})=>{
     const newCfg={...cfg};delete newCfg[id];
     setCfg(newCfg);S.set(SK.SERIES,newCfg);
     S.set(ctrKey(id),1);
+    logAudit('NUMBERING_SERIES_RESET',`${SERIES_TYPES.find(s=>s.id===id)?.label||id} reset to default`,currentUser);
     toast.info(`Reset: ${getFullPrefix(id,SERIES_TYPES.find(s=>s.id===id)?.defLetters)}0001`);
   };
 
@@ -4184,7 +4297,7 @@ const ExportTab = ({invs, isSuper, currentUser})=>{
           <div style={{fontWeight:700,color:'var(--text)',fontSize:13,marginBottom:2}}>Full Data Backup</div>
           <div style={{fontSize:11,color:'var(--text3)',marginBottom:8}}>13-sheet Excel: Company, Sales, Purchases, POs, Customers, HSN, P&L, Audit + JSON backup</div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
-            <button className="btn btn-primary btn-sm" onClick={()=>makeFullExcel()}>
+            <button className="btn btn-primary btn-sm" onClick={()=>{makeFullExcel();logAudit('BACKUP_EXPORTED','Full data backup — Excel (13-sheet)',currentUser);}}>
               <Ic n="xlsx" s={12}/>Excel Backup
             </button>
             <button className="btn btn-outline btn-sm" onClick={()=>{
@@ -4194,6 +4307,7 @@ const ExportTab = ({invs, isSuper, currentUser})=>{
               const url=URL.createObjectURL(blob);const a=document.createElement('a');
               a.href=url;a.download=`ArcticBooks_Backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
               URL.revokeObjectURL(url);
+              logAudit('BACKUP_EXPORTED',`Full data backup — JSON (${(data.invoices||[]).length} invoices, ${(data.expenses||[]).length} expenses)`,currentUser);
               toast.success(`JSON backup: ${(data.invoices||[]).length} invoices, ${(data.expenses||[]).length} expenses`);
             }}>
               <Ic n="save" s={12}/>JSON
@@ -4359,6 +4473,8 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
 
   const auditLogs=auditData.filter(l=>!auditQ||
     (l.action||'').toLowerCase().includes(auditQ.toLowerCase())||
+    (getAuditMeta(l.action).module||'').toLowerCase().includes(auditQ.toLowerCase())||
+    (getAuditMeta(l.action).action||'').toLowerCase().includes(auditQ.toLowerCase())||
     (l.detail||'').toLowerCase().includes(auditQ.toLowerCase())||
     (l.userName||'').toLowerCase().includes(auditQ.toLowerCase())
   );
@@ -4508,18 +4624,19 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
             </div>
             <div style={{position:'relative',marginBottom:12}}>
               <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
-              <input className="field-input" value={auditQ} onChange={e=>setAuditQ(e.target.value)} placeholder="Search by action, user or detail..." style={{paddingLeft:38,width:'100%'}}/>
+              <input className="field-input" value={auditQ} onChange={e=>setAuditQ(e.target.value)} placeholder="Search by module, action, user or detail..." style={{paddingLeft:38,width:'100%'}}/>
             </div>
             {auditLogs.length>0?(
               <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden',maxHeight:'52vh',overflowY:'auto'}}>
-                <div style={{display:'grid',gridTemplateColumns:'160px 1fr 150px 170px',gap:0,padding:'9px 16px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',position:'sticky',top:0}}>
-                  <span>Action</span><span>Detail</span><span>By</span><span>When</span>
+                <div style={{display:'grid',gridTemplateColumns:'150px 130px 1fr 130px 160px',gap:0,padding:'9px 16px',background:'var(--card2)',borderBottom:'2px solid var(--border2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',position:'sticky',top:0}}>
+                  <span>Module</span><span>Action</span><span>Detail</span><span>By</span><span>When</span>
                 </div>
                 {auditLogs.map((l,i)=>{
-                  const aColor={INVOICE_CREATED:'#166534',INVOICE_EDITED:'#1D4ED8',INVOICE_DELETED:'#DC2626',USER_CREATED:'#6D28D9',USER_EDITED:'#0369A1',USER_DELETED:'#DC2626',USER_TOGGLED:'#B45309',USER_LOGIN:'#0E7490',EXPENSE_ADDED:'#065F46',EXPENSE_EDITED:'#0369A1',EXPENSE_DELETED:'#DC2626',PO_CREATED:'#92400E',PO_EDITED:'#B45309',PO_DELETED:'#DC2626',PERIOD_FROZEN:'#1E40AF',PERIOD_UNFROZEN:'#065F46'}[l.action]||'var(--text3)';
+                  const meta=getAuditMeta(l.action);
                   return(
-                  <div key={i} style={{display:'grid',gridTemplateColumns:'160px 1fr 150px 170px',gap:0,padding:'9px 16px',borderBottom:'1px solid var(--border)',alignItems:'start'}}>
-                    <span style={{fontSize:10,fontWeight:700,color:aColor,background:aColor+'22',padding:'2px 7px',borderRadius:8,display:'inline-block'}}>{l.action.replace(/_/g,' ')}</span>
+                  <div key={i} style={{display:'grid',gridTemplateColumns:'150px 130px 1fr 130px 160px',gap:0,padding:'9px 16px',borderBottom:'1px solid var(--border)',alignItems:'start'}}>
+                    <span style={{fontSize:11,fontWeight:700,color:'var(--text)'}}>{meta.module}</span>
+                    <span style={{fontSize:10,fontWeight:700,color:meta.color,background:meta.color+'22',padding:'2px 7px',borderRadius:8,display:'inline-block'}}>{meta.action}</span>
                     <span style={{fontSize:12,color:'var(--text)',paddingRight:8,lineHeight:1.5}}>{l.detail}</span>
                     <span style={{fontSize:11,color:'var(--text2)',fontWeight:600}}>{l.userName}</span>
                     <span style={{fontSize:10,color:'var(--text3)',fontFamily:'monospace'}}>{new Date(l.ts).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
@@ -4564,7 +4681,7 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
         {tab==='export'&&(<ExportTab invs={invs} isSuper={isSuper} currentUser={currentUser}/>)}
 
         {tab==='freeze'&&<FreezeTab invs={invs} isSuper={isSuper} currentUser={currentUser}/>}
-        {tab==='series'&&<SeriesTab isSuper={isSuper}/>}
+        {tab==='series'&&<SeriesTab isSuper={isSuper} currentUser={currentUser}/>}
 
       </div>
     </div>
@@ -5145,8 +5262,8 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
         </div>}
       </div>
     </div>
-    {showCustModal&&<CustomerModal onClose={()=>setShowCustModal(false)} onSelect={fillCustomer}/>}
-    {showProductModal&&<ProductMasterModal onClose={()=>setShowProductModal(false)} onSelect={p=>{
+    {showCustModal&&<CustomerModal onClose={()=>setShowCustModal(false)} onSelect={fillCustomer} currentUser={currentUser}/>}
+    {showProductModal&&<ProductMasterModal onClose={()=>setShowProductModal(false)} currentUser={currentUser} onSelect={p=>{
       const item={desc:p.name+(p.desc?' — '+p.desc:''),hsnCode:p.hsnCode||'',unit:p.unit||'Nos',qty:1,rate:p.rate||'',discount:0,taxRate:p.taxRate||'18',taxable:0,gstAmt:0,total:0};
       const calc=it=>{const qty=parseFloat(it.qty)||0,rate=parseFloat(it.rate)||0,disc=parseFloat(it.discount)||0,tax=parseFloat(it.taxRate)||0,gross=qty*rate,discAmt=gross*(disc/100),taxable=gross-discAmt;it.taxable=taxable.toFixed(2);it.gstAmt=(taxable*tax/100).toFixed(2);it.total=(taxable*(1+tax/100)).toFixed(2);return it;};
       setInv(prev=>({...prev,items:[...prev.items,calc(item)]}));
@@ -5911,7 +6028,7 @@ const checkOverdue = () => {
    ══════════════════════════════════════════════════════════════ */
 const DEFAULT_PRODUCTS = [];
 
-const ProductMasterModal = ({onClose, onSelect})=>{
+const ProductMasterModal = ({onClose, onSelect, currentUser})=>{
   const blank={name:'',desc:'',hsnCode:'',unit:'Nos',rate:'',taxRate:'18',category:'',trackStock:false,openingStock:'',openingRate:'',reorderLevel:''};
   const [list,setList]=useState(S.get(SK.PRODUCTS,DEFAULT_PRODUCTS));
   const [form,setForm]=useState(blank);
@@ -5923,6 +6040,7 @@ const ProductMasterModal = ({onClose, onSelect})=>{
   const save=()=>{
     if(!form.name||!form.rate){toast.error('Product name and rate required');return;}
     let u;
+    const wasEditing=editing!==null;
     if(editing!==null){
       // Never overwrite currentStock from the edit form — it's maintained by sales/adjustments, not manual edits
       u=list.map((p,i)=>i===editing?{...p,...form}:p);
@@ -5933,12 +6051,13 @@ const ProductMasterModal = ({onClose, onSelect})=>{
       u=[...list,{...form,currentStock:opening,createdAt:new Date().toISOString()}];
     }
     S.set(SK.PRODUCTS,u);
+    logAudit(wasEditing?'PRODUCT_EDITED':'PRODUCT_ADDED',`${form.name}${form.rate?' — ₹'+form.rate:''}`,currentUser);
     rebuildStock();                      // opening stock changed → re-derive balances
     setList(S.get(SK.PRODUCTS,[]));
     setForm(blank);setEditing(null);setTab('list');
     toast.success(editing!==null?'Product updated!':'Product saved!');
   };
-  const del=i=>{if(!window.confirm('Delete product?'))return;const u=list.filter((_,j)=>j!==i);S.set(SK.PRODUCTS,u);rebuildStock();setList(S.get(SK.PRODUCTS,[]));};
+  const del=i=>{if(!window.confirm('Delete product?'))return;const p=list[i];const u=list.filter((_,j)=>j!==i);S.set(SK.PRODUCTS,u);logAudit('PRODUCT_DELETED',`${p?.name||''}`,currentUser);rebuildStock();setList(S.get(SK.PRODUCTS,[]));};
   const edit=i=>{setForm({...list[i]});setEditing(i);setTab('add');};
   const filtered=list.filter(p=>!q||p.name.toLowerCase().includes(q.toLowerCase())||p.hsnCode?.includes(q)||(p.category||'').toLowerCase().includes(q.toLowerCase()));
 
@@ -7452,6 +7571,7 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
     if(!newAcct.name.trim()){toast.error('Account name is required');return;}
     const acct={id:'ACC'+Date.now().toString(36),name:newAcct.name.trim(),bankName:newAcct.bankName.trim(),accountNo:newAcct.accountNo.trim(),openingBalance:parseFloat(newAcct.openingBalance)||0};
     saveAccounts([...accounts,acct]);
+    logAudit('BANK_ACCOUNT_ADDED',`${acct.name}${acct.bankName?' — '+acct.bankName:''}`,currentUser);
     setActiveAcctId(acct.id);
     setNewAcct({name:'',bankName:'',accountNo:'',openingBalance:''});
     setShowAddAcct(false);
@@ -7463,6 +7583,7 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
     if(!window.confirm(`Delete "${activeAcct.name}"? This cannot be undone.`))return;
     const remaining=accounts.filter(a=>a.id!==activeAcctId);
     saveAccounts(remaining);
+    logAudit('BANK_ACCOUNT_DELETED',`${activeAcct.name}`,currentUser);
     setActiveAcctId(remaining[0].id);
   };
 
@@ -8129,12 +8250,17 @@ const OPENING_DATE = '1900-01-01'; // pseudo-date: opening balances always count
 
 /* Builds the ENTIRE auto-posted journal fresh every time from source data, so it can never
    drift out of sync. Each entry is a balanced {date, narration, srcType, srcId, lines:[{account,debit,credit}]}. */
+// Human-readable document type shown in the "Receipt / Payment / Journal / Invoice / Bill" column
+// of every ledger — one label per srcType, with BANKTXN overridden per-transaction (Receipt vs Payment).
+const GL_DOC_TYPE_LABEL = {INV:'Invoice', QSALE:'Invoice', EXP:'Bill', STOCKOB:'Journal', BANKOB:'Journal', COGS:'Journal', JV:'Journal', BANKTXN:'Receipt'};
 const buildAutoJournal = () => {
   const entries=[];
-  const add=(date,narration,srcType,srcId,lines,voucherNo)=>{
+  const add=(date,narration,srcType,srcId,lines,voucherNo,meta={})=>{
     const d=+lines.reduce((s,l)=>s+(l.debit||0),0).toFixed(2);
     const c=+lines.reduce((s,l)=>s+(l.credit||0),0).toFixed(2);
-    if(Math.abs(d-c)<=0.02) entries.push({date:date||today(), narration, srcType, srcId, voucherNo:voucherNo||'', lines});
+    if(Math.abs(d-c)<=0.02) entries.push({date:date||today(), narration, srcType, srcId, voucherNo:voucherNo||'',
+      txnRefNo:meta.txnRefNo||'', docNo:meta.docNo||'', category:meta.category||'',
+      docType:meta.docType||GL_DOC_TYPE_LABEL[srcType]||'Journal', lines});
   };
   const invByNo = {}; S.get(SK.INV,[]).forEach(i=>{ invByNo[i.invNo]=i; });
   const expById = {}; S.get(SK.EXP,[]).forEach(e=>{ expById[e.id]=e; });
@@ -8153,7 +8279,8 @@ const buildAutoJournal = () => {
     lines.push(grand>=0?{account:'TRADE_RECEIVABLE',debit:grand,credit:0}:{account:'TRADE_RECEIVABLE',debit:0,credit:-grand});
     lines.push(taxable>=0?{account:'SALES',debit:0,credit:taxable}:{account:'SALES',debit:-taxable,credit:0});
     if(Math.abs(gst)>0.004) lines.push(gst>=0?{account:'OUTPUT_GST',debit:0,credit:gst}:{account:'OUTPUT_GST',debit:-gst,credit:0});
-    add(inv.date, `${inv.docType} ${inv.invNo}${inv.billTo?.name?' — '+inv.billTo.name:''}`, 'INV', inv.invNo, lines, inv.voucherNo);
+    add(inv.date, `${inv.docType} ${inv.invNo}${inv.billTo?.name?' — '+inv.billTo.name:''}`, 'INV', inv.invNo, lines, inv.voucherNo,
+      {txnRefNo:inv.txnRefNo, docNo:inv.invNo, category:inv.docType, docType: inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE' ? 'Journal' : 'Invoice'});
   });
 
   // Quick sales (bank credits with no formal invoice)
@@ -8161,7 +8288,7 @@ const buildAutoJournal = () => {
     const amt=parseFloat(qs.amount)||0; if(!amt) return;
     add(qs.date, `Quick Sale ${qs.id}${qs.customer?' — '+qs.customer:''}`, 'QSALE', qs.id, [
       {account:'TRADE_RECEIVABLE',debit:amt,credit:0}, {account:'SALES',debit:0,credit:amt},
-    ], qs.voucherNo);
+    ], qs.voucherNo, {txnRefNo:qs.txnRefNo, docNo:qs.id, category:'Quick Sale'});
   });
 
   // Purchases / expense bills — a line only becomes Inventory if it's ALSO a genuine tracked-stock
@@ -8193,7 +8320,8 @@ const buildAutoJournal = () => {
     // liability to the government (TDS Payable) instead, due on deposit by the statutory date.
     if(tds>0.004) lines.push({account:'TDS_PAYABLE',debit:0,credit:+tds.toFixed(2)});
     lines.push({account:'TRADE_PAYABLE',debit:0,credit:+payable.toFixed(2)});
-    add(when, `Purchase ${exp.billNo||exp.id}${exp.vendor?' — '+exp.vendor:''}`, 'EXP', exp.id, lines, exp.voucherNo);
+    add(when, `Purchase ${exp.billNo||exp.id}${exp.vendor?' — '+exp.vendor:''}`, 'EXP', exp.id, lines, exp.voucherNo,
+      {txnRefNo:exp.txnRefNo, docNo:exp.billNo||exp.id, category:exp.category||''});
   });
 
   // Opening stock — every tracked product's opening quantity is inventory value that exists before
@@ -8204,7 +8332,7 @@ const buildAutoJournal = () => {
     const val = (parseFloat(p.openingStock)||0) * (parseFloat(p.openingRate||p.rate)||0);
     if(val>0.004) add(OPENING_DATE, `Opening stock — ${p.name}`, 'STOCKOB', p.name, [
       {account:'INVENTORY',debit:+val.toFixed(2),credit:0}, {account:'CAPITAL',debit:0,credit:+val.toFixed(2)},
-    ], 'OPEN-'+p.name.replace(/\s+/g,'').slice(0,8).toUpperCase());
+    ], 'OPEN-'+p.name.replace(/\s+/g,'').slice(0,8).toUpperCase(), {docNo:p.name, category:'Opening Stock'});
   });
 
   // Bank accounts' opening balances
@@ -8212,8 +8340,8 @@ const buildAutoJournal = () => {
     const ob=parseFloat(acc.openingBalance)||0;
     if(Math.abs(ob)<=0.004) return;
     const obVoucher = 'OPEN-'+String(acc.id).replace(/\s+/g,'').slice(0,8).toUpperCase();
-    if(ob>=0) add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'BANK',debit:ob,credit:0},{account:'CAPITAL',debit:0,credit:ob}], obVoucher);
-    else add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'CAPITAL',debit:-ob,credit:0},{account:'BANK',debit:0,credit:-ob}], obVoucher);
+    if(ob>=0) add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'BANK',debit:ob,credit:0},{account:'CAPITAL',debit:0,credit:ob}], obVoucher, {docNo:acc.name, category:'Opening Balance'});
+    else add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'CAPITAL',debit:-ob,credit:0},{account:'BANK',debit:0,credit:-ob}], obVoucher, {docNo:acc.name, category:'Opening Balance'});
   });
 
   // Every bank transaction — the cash side of a collection or a payment. It inherits the SAME
@@ -8221,20 +8349,21 @@ const buildAutoJournal = () => {
   // (raised → paid) is traceable under a single number, not a fresh one per leg.
   S.get(SK.BANK,[]).forEach(t=>{
     const amt=parseFloat(t.amount)||0; if(!amt) return;
-    let settleVoucher = '';
-    if(t.matchedType==='invoice') settleVoucher = invByNo[t.matchedRef]?.voucherNo||'';
-    else if(t.matchedType==='quicksale') settleVoucher = qsById[t.matchedRef]?.voucherNo||'';
-    else if(t.matchedType==='expense') settleVoucher = expById[t.matchedRef]?.voucherNo||'';
+    let settleVoucher = '', settleTxnRef = '';
+    if(t.matchedType==='invoice'){ settleVoucher = invByNo[t.matchedRef]?.voucherNo||''; settleTxnRef = invByNo[t.matchedRef]?.txnRefNo||''; }
+    else if(t.matchedType==='quicksale'){ settleVoucher = qsById[t.matchedRef]?.voucherNo||''; settleTxnRef = qsById[t.matchedRef]?.txnRefNo||''; }
+    else if(t.matchedType==='expense'){ settleVoucher = expById[t.matchedRef]?.voucherNo||''; settleTxnRef = expById[t.matchedRef]?.txnRefNo||''; }
+    const matchCategory = t.matchedType==='invoice'?'Invoice Receipt':t.matchedType==='quicksale'?'Quick Sale Receipt':t.matchedType==='expense'?'Bill Payment':(t.type==='credit'?'Unmatched Receipt':'Unmatched Payment');
     if(t.type==='credit'){
       const contra = (t.matchedType==='invoice'||t.matchedType==='quicksale') ? 'TRADE_RECEIVABLE' : 'SUSPENSE_IN';
       add(t.date, `Receipt — ${t.desc||'Bank credit'}${t.matchedRef?' ('+t.matchedRef+')':''}`, 'BANKTXN', t.id, [
         {account:'BANK',debit:amt,credit:0}, {account:contra,debit:0,credit:amt},
-      ], settleVoucher);
+      ], settleVoucher, {txnRefNo:settleTxnRef, docNo:t.matchedRef||'', category:matchCategory, docType:'Receipt'});
     } else {
       const contra = t.matchedType==='expense' ? 'TRADE_PAYABLE' : 'SUSPENSE_OUT';
       add(t.date, `Payment — ${t.desc||'Bank debit'}${t.matchedRef?' ('+t.matchedRef+')':''}`, 'BANKTXN', t.id, [
         {account:contra,debit:amt,credit:0}, {account:'BANK',debit:0,credit:amt},
-      ], settleVoucher);
+      ], settleVoucher, {txnRefNo:settleTxnRef, docNo:t.matchedRef||'', category:matchCategory, docType:'Payment'});
     }
   });
 
@@ -8245,7 +8374,7 @@ const buildAutoJournal = () => {
     add(r.date, `COGS — ${r.product} (${r.ref})`, 'COGS', r.id, [
       {account:'COGS',debit:+cogsByLine[r.id].toFixed(2),credit:0},
       {account:'INVENTORY',debit:0,credit:+cogsByLine[r.id].toFixed(2)},
-    ], invByNo[r.ref]?.voucherNo||'');
+    ], invByNo[r.ref]?.voucherNo||'', {txnRefNo:invByNo[r.ref]?.txnRefNo||'', docNo:r.ref, category:'Cost of Goods Sold'});
   });
 
   return entries;
@@ -8268,12 +8397,22 @@ const getAllLedgerLines = () => {
   const out=[];
   [...buildAutoJournal(), ...getManualJournal()].forEach(entry=>{
     const rm = entry.reportingMethod || 'both';
-    (entry.lines||[]).forEach(l=>out.push({date:entry.date, account:l.account, debit:+(l.debit||0), credit:+(l.credit||0), narration:entry.narration, srcType:entry.srcType||'JV', srcId:entry.srcId||entry.id, voucherNo:entry.voucherNo||'', reportingMethod:rm}));
+    // Auto-posted entries (from buildAutoJournal) already carry txnRefNo/docNo/category/docType via
+    // add(); manual Journal Vouchers don't run through add(), so fall back to their own fields —
+    // docNo defaults to the voucher's (optional) Reference No., category is left blank, and the
+    // document type is always "Journal" for a manual posting.
+    const meta = {
+      txnRefNo: entry.txnRefNo || '',
+      docNo:    entry.docNo!=null ? entry.docNo : (entry.referenceNo||''),
+      category: entry.category || '',
+      docType:  entry.docType  || 'Journal',
+    };
+    (entry.lines||[]).forEach(l=>out.push({date:entry.date, account:l.account, debit:+(l.debit||0), credit:+(l.credit||0), narration:entry.narration, srcType:entry.srcType||'JV', srcId:entry.srcId||entry.id, voucherNo:entry.voucherNo||'', reportingMethod:rm, ...meta}));
     // Auto-reversal: on the reverse date, post the same lines with Debit/Credit swapped — so an
     // accrual recognised in one period (a provision, a prepaid amortisation) automatically backs
     // itself out once the real transaction arrives, without a second manual entry to remember.
     if(entry.reverseDate){
-      (entry.lines||[]).forEach(l=>out.push({date:entry.reverseDate, account:l.account, debit:+(l.credit||0), credit:+(l.debit||0), narration:(entry.narration||'')+' (Reversal)', srcType:entry.srcType||'JV', srcId:(entry.srcId||entry.id)+'-REV', voucherNo:entry.voucherNo||'', reportingMethod:rm}));
+      (entry.lines||[]).forEach(l=>out.push({date:entry.reverseDate, account:l.account, debit:+(l.credit||0), credit:+(l.debit||0), narration:(entry.narration||'')+' (Reversal)', srcType:entry.srcType||'JV', srcId:(entry.srcId||entry.id)+'-REV', voucherNo:entry.voucherNo||'', reportingMethod:rm, ...meta}));
     }
   });
   return out;
@@ -8361,6 +8500,20 @@ const groupByCaption = (rows, order=[]) => {
 };
 const EXP_CAPTION_ORDER = ['Cost of Materials Consumed','Employee Benefit Expense','Finance Costs','Depreciation and Amortisation Expense','Rent Expense','Other Expenses'];
 const INC_CAPTION_ORDER = ['Revenue from Operations','Other Income'];
+/* Merges two groupByCaption() outputs (current period + previous period/year) into one list of
+   {caption, amount, prevAmount, accounts} rows, keeping the current period's caption order and
+   appending any caption that only appears in the previous period — this powers every "current
+   vs previous year" comparative column in the Financial Statements. */
+const mergeCaptionAmounts = (curList=[], prevList=[]) => {
+  const names = [];
+  curList.forEach(c=>{ if(!names.includes(c.caption)) names.push(c.caption); });
+  prevList.forEach(c=>{ if(!names.includes(c.caption)) names.push(c.caption); });
+  return names.map(name=>{
+    const cur = curList.find(c=>c.caption===name);
+    const prev = prevList.find(c=>c.caption===name);
+    return { caption:name, amount: cur?.amount||0, prevAmount: prev?.amount||0, accounts: (cur||prev)?.accounts||[] };
+  });
+};
 
 /* ── Export: Excel / CSV / PDF, used by every accounting screen ── */
 const downloadBlob = (blob, filename) => {
@@ -8421,8 +8574,12 @@ const ExportBar = ({onExport, from, to, onFromChange, onToChange, showDateFilter
 
 /* Ledger data + a reusable ledger table (used by the standalone General Ledger page AND every
    "click a caption → click a ledger → see its transactions" drill-down). */
-const useLedgerData = (account, fromDate, toDate) => useMemo(()=>{
-  const all = getAllLedgerLines().filter(l=>l.account===account).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+// Plain (non-hook) computation so it can also be run in a loop across every account at once,
+// for the Full General Ledger Dump — the memoised hook below just wraps this for the normal
+// single-account ledger views.
+const computeLedgerData = (account, fromDate, toDate, allLines) => {
+  const source = allLines || getAllLedgerLines();
+  const all = source.filter(l=>l.account===account).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const before = all.filter(l=>(l.date||'')<fromDate);
   const inRange = all.filter(l=>(l.date||'')>=fromDate && (l.date||'')<=toDate);
   const acc = coaByKey(account);
@@ -8431,14 +8588,46 @@ const useLedgerData = (account, fromDate, toDate) => useMemo(()=>{
   const opening = bal;
   const rows = inRange.map(l=>{ bal += natural*(l.debit-l.credit); return {...l, running:bal}; });
   return {opening, rows, closing:bal};
-},[account,fromDate,toDate]);
+};
+const useLedgerData = (account, fromDate, toDate) => useMemo(()=>computeLedgerData(account, fromDate, toDate),[account,fromDate,toDate]);
+
+// Shared header row + column count for the full ledger column set — used by every ledger view
+// (single-account LedgerTable below AND the Full GL Dump) so the layout can never drift apart.
+const LEDGER_COLS = ['Date','Chart of Accounts','Voucher No.','Txn Ref No.','Type','Invoice / Bill No.','Category','Narration','Debit','Credit','Balance'];
+const LedgerHeadRow = ()=>(
+  <tr>
+    <th>Date</th><th>Chart of Accounts</th><th>Voucher No.</th><th>Txn Ref No.</th><th>Type</th>
+    <th>Invoice / Bill No.</th><th>Category</th><th>Narration</th>
+    <th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th><th style={{textAlign:'right'}}>Balance</th>
+  </tr>
+);
+// One data row, fully split into its own separate columns — every screen that opens a ledger
+// (General Ledger, Chart of Accounts drill-down, Trial Balance drill-down, Financial Statements
+// drill-down, Journal Voucher drill-down, and the Full GL Dump) renders through this same row
+// so the column layout is identical everywhere.
+const LedgerBodyRow = ({r})=>(
+  <tr>
+    <td>{fmtDate(r.date)}</td>
+    <td>{coaByKey(r.account).name}</td>
+    <td style={{fontFamily:'monospace',fontSize:11.5,color:'var(--text3)'}}>{r.voucherNo||'—'}</td>
+    <td style={{fontFamily:'monospace',fontSize:11.5,color:'var(--text3)'}}>{r.txnRefNo||'—'}</td>
+    <td>{r.docType||'Journal'}</td>
+    <td style={{fontFamily:'monospace',fontSize:11.5}}>{r.docNo||'—'}</td>
+    <td>{r.category||'—'}</td>
+    <td>{r.narration}</td>
+    <td style={{textAlign:'right'}}>{r.debit?fmtN(r.debit):''}</td>
+    <td style={{textAlign:'right'}}>{r.credit?fmtN(r.credit):''}</td>
+    <td style={{textAlign:'right',fontWeight:600}}>{fmtN(r.running)}</td>
+  </tr>
+);
+const ledgerExportRow = r => [fmtDate(r.date), coaByKey(r.account).name, r.voucherNo||'', r.txnRefNo||'', r.docType||'Journal', r.docNo||'', r.category||'', r.narration, r.debit?fmtN(r.debit):'', r.credit?fmtN(r.credit):'', fmtN(r.running)];
 
 const LedgerTable = ({account, fromDate, toDate})=>{
   const {opening, rows, closing} = useLedgerData(account, fromDate, toDate);
   const accName = coaByKey(account).name;
   const doExport = (fmt)=>{
-    const headers=['Date','Voucher No.','Narration','Debit','Credit','Balance'];
-    const body=[['', '', 'Opening Balance', '', '', fmtN(opening)], ...rows.map(r=>[fmtDate(r.date), r.voucherNo||'', r.narration, r.debit?fmtN(r.debit):'', r.credit?fmtN(r.credit):'', fmtN(r.running)])];
+    const headers=LEDGER_COLS;
+    const body=[['', accName, '', '', '', '', '', 'Opening Balance', '', '', fmtN(opening)], ...rows.map(ledgerExportRow)];
     exportTableAs(fmt, `Ledger_${accName.replace(/\s+/g,'_')}_${fromDate}_to_${toDate}`, `${accName} — Ledger (${fmtDate(fromDate)} to ${fmtDate(toDate)})`, headers, body);
   };
   return <>
@@ -8452,21 +8641,12 @@ const LedgerTable = ({account, fromDate, toDate})=>{
     <div style={{marginBottom:12}}><ExportBar onExport={doExport} label="Export Ledger"/></div>
     <div className="dt-wrap">
       <table className="dt" style={{width:'100%'}}>
-        <thead><tr><th>Date</th><th>Voucher No.</th><th>Narration</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th><th style={{textAlign:'right'}}>Balance</th></tr></thead>
+        <thead><LedgerHeadRow/></thead>
         <tbody>
-          <tr style={{background:'var(--card2)'}}><td colSpan={5} style={{fontStyle:'italic'}}>Opening Balance</td><td style={{textAlign:'right',fontWeight:700}}>{fmt(opening)}</td></tr>
+          <tr style={{background:'var(--card2)'}}><td colSpan={8} style={{fontStyle:'italic'}}>Opening Balance</td><td/><td/><td style={{textAlign:'right',fontWeight:700}}>{fmt(opening)}</td></tr>
           {rows.length===0?(
-            <tr><td colSpan={6} style={{color:'var(--text3)',textAlign:'center'}}>No postings in this range</td></tr>
-          ):rows.map((r,i)=>(
-            <tr key={i}>
-              <td>{fmtDate(r.date)}</td>
-              <td style={{fontFamily:'monospace',fontSize:11.5,color:'var(--text3)'}}>{r.voucherNo||'—'}</td>
-              <td>{r.narration}</td>
-              <td style={{textAlign:'right'}}>{r.debit?fmtN(r.debit):''}</td>
-              <td style={{textAlign:'right'}}>{r.credit?fmtN(r.credit):''}</td>
-              <td style={{textAlign:'right',fontWeight:600}}>{fmtN(r.running)}</td>
-            </tr>
-          ))}
+            <tr><td colSpan={11} style={{color:'var(--text3)',textAlign:'center'}}>No postings in this range</td></tr>
+          ):rows.map((r,i)=><LedgerBodyRow key={i} r={r}/>)}
         </tbody>
       </table>
     </div>
@@ -8504,7 +8684,7 @@ const AccountSelect = ({value,onChange,style})=>{
 
 /* ══ Chart of Accounts — structure view + custom ledger creation + Purchase-category mapping ══ */
 const blankNewLedger = ()=>({name:'',type:'expense',group:GROUP_OPTIONS.expense[0],scheduleGroup:SCHEDULE_CAPTIONS.expense[0],customCaption:false,customCaptionText:''});
-const ChartOfAccountsPage = ({inline=true, isAdmin})=>{
+const ChartOfAccountsPage = ({inline=true, isAdmin, currentUser})=>{
   const [map,setMap]=useState(S.get(SK.ACCMAP,{}));
   const [customAccs,setCustomAccs]=useState(getCustomAccounts());
   const [adding,setAdding]=useState(false);
@@ -8520,6 +8700,7 @@ const ChartOfAccountsPage = ({inline=true, isAdmin})=>{
   const updateMap=(cat,accKey)=>{
     setExpenseAccountMap(cat,accKey);
     setMap(S.get(SK.ACCMAP,{}));
+    logAudit('EXPENSE_ACCOUNT_MAPPING_UPDATED',`"${cat}" → ${coaByKey(accKey).name}`,currentUser);
     toast.success(`"${cat}" now posts to ${coaByKey(accKey).name}`);
   };
 
@@ -8533,7 +8714,7 @@ const ChartOfAccountsPage = ({inline=true, isAdmin})=>{
     const scheduleGroup = nl.customCaption ? (nl.customCaptionText.trim()||nl.name.trim()) : nl.scheduleGroup;
     const key = createLedgerAccount({name:nl.name, type:nl.type, group:nl.group, scheduleGroup});
     setCustomAccs(getCustomAccounts());
-    logAudit('LEDGER_CREATED',`${nl.name} (${nl.type}) under "${scheduleGroup}"`,null);
+    logAudit('LEDGER_CREATED',`${nl.name} (${nl.type}) under "${scheduleGroup}"`,currentUser);
     toast.success(`Ledger "${nl.name}" created — it's now available in every account picker`);
     setNl(blankNewLedger()); setAdding(false);
   };
@@ -8543,6 +8724,7 @@ const ChartOfAccountsPage = ({inline=true, isAdmin})=>{
     const r = deleteLedgerAccount(key);
     if(!r.ok){toast.error(r.reason);return;}
     setCustomAccs(getCustomAccounts());
+    logAudit('LEDGER_DELETED',`${name}`,currentUser);
     toast.info('Ledger deleted');
   };
 
@@ -8646,7 +8828,7 @@ const ChartOfAccountsPage = ({inline=true, isAdmin})=>{
         <div style={{marginTop:16}}>
           <label className="field-label">Accounting Policies (shown on the Companies Act format statements)</label>
           <textarea className="field-input" rows={7} defaultValue={getPolicies()}
-            onBlur={e=>{S.set(SK.POLICIES,e.target.value);toast.success('Accounting policies updated');}} style={{width:'100%',fontFamily:'inherit',fontSize:12.5}}/>
+            onBlur={e=>{S.set(SK.POLICIES,e.target.value);logAudit('ACCOUNTING_POLICIES_UPDATED','Accounting policies text updated',currentUser);toast.success('Accounting policies updated');}} style={{width:'100%',fontFamily:'inherit',fontSize:12.5}}/>
         </div>
       </div>
     </div>
@@ -8691,9 +8873,9 @@ const JournalVouchersPage = ({inline=true, currentUser})=>{
   const isAdmin = currentUser?.role==='admin'||currentUser?.role==='superadmin';
   const filteredList = useMemo(()=>list.filter(e=>(e.date||'')>=fFrom && (e.date||'')<=fTo).sort((a,b)=>(b.date||'').localeCompare(a.date||'')),[list,fFrom,fTo]);
   const doExport = (f) => {
-    const headers=['Date','Voucher No.','Reference No.','Narration','Reporting Method','Account','Description','Debit','Credit'];
+    const headers=['Date','Reversal Date','Voucher No.','Txn Ref No.','Chart of Accounts','Invoice Ref','Narration','Line Description','Reporting Method','Debit','Credit'];
     const rows=[];
-    filteredList.forEach(e=>(e.lines||[]).forEach(l=>rows.push([fmtDate(e.date), e.voucherNo||'', e.referenceNo||'', e.narration, e.reportingMethod||'both', coaByKey(l.account).name, l.desc||'', l.debit?fmtN(l.debit):'', l.credit?fmtN(l.credit):''])));
+    filteredList.forEach(e=>(e.lines||[]).forEach(l=>rows.push([fmtDate(e.date), fmtDate(e.reverseDate)||'', e.voucherNo||'', e.txnRefNo||'', coaByKey(l.account).name, e.referenceNo||'', e.narration, l.desc||'', e.reportingMethod||'both', l.debit?fmtN(l.debit):'', l.credit?fmtN(l.credit):''])));
     exportTableAs(f, `JournalVouchers_${fFrom}_to_${fTo}`, `Journal Vouchers (${fmtDate(fFrom)} to ${fmtDate(fTo)})`, headers, rows);
   };
 
@@ -8738,8 +8920,10 @@ const JournalVouchersPage = ({inline=true, currentUser})=>{
   const del=(id)=>{
     if(!isAdmin){toast.error('Only Admin can delete journal vouchers');return;}
     if(!window.confirm('Delete this journal voucher? Its scheduled reversal (if any) will be removed too.'))return;
+    const jv=list.find(e=>e.id===id);
     deleteManualJournalEntry(id);
     setList(getManualJournal());
+    logAudit('JOURNAL_VOUCHER_DELETED',`${jv?.narration||id}`,currentUser);
     toast.info('Journal voucher deleted');
   };
 
@@ -8844,25 +9028,31 @@ const JournalVouchersPage = ({inline=true, currentUser})=>{
         </div>
         <div className="dt-wrap">
           <table className="dt" style={{width:'100%'}}>
-            <thead><tr><th>Date</th><th>Voucher No.</th><th>Narration</th><th>Lines</th><th style={{textAlign:'right'}}>Amount</th><th/></tr></thead>
+            <thead><tr>
+              <th>Date</th><th>Reversal Date</th><th>Voucher No.</th><th>Txn Ref No.</th>
+              <th>Chart of Accounts</th><th>Invoice Ref</th><th>Narration</th>
+              <th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th><th/>
+            </tr></thead>
             <tbody>
               {filteredList.length===0?(
-                <tr><td colSpan={6} style={{color:'var(--text3)',textAlign:'center'}}>No journal vouchers in this range</td></tr>
-              ):filteredList.map(e=>(
-                <tr key={e.id}>
-                  <td>{fmtDate(e.date)}{e.reverseDate&&<div style={{fontSize:10,color:'var(--gold)'}}>↺ reverses {fmtDate(e.reverseDate)}</div>}</td>
-                  <td style={{fontFamily:'monospace',fontSize:11.5,color:'var(--text3)'}}>{e.voucherNo||'—'}</td>
-                  <td>{e.narration}{e.reportingMethod&&e.reportingMethod!=='both'&&<span style={{fontSize:10,color:'var(--text3)',marginLeft:6}}>({e.reportingMethod==='accrual'?'Accrual only':'Cash only'})</span>}</td>
-                  <td style={{fontSize:11.5,color:'var(--text3)'}}>{(e.lines||[]).map((l,i)=>(
-                    <React.Fragment key={i}>
-                      {i>0&&' · '}
-                      <span style={{cursor:'pointer',color:'var(--primary2)',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:'3px'}} onClick={()=>setDrillAccount(l.account)}>{coaByKey(l.account).name}</span> {l.debit?'Dr '+fmtN(l.debit):'Cr '+fmtN(l.credit)}
-                    </React.Fragment>
-                  ))}</td>
-                  <td style={{textAlign:'right'}}>{fmt((e.lines||[]).reduce((s,l)=>s+(l.debit||0),0))}</td>
-                  <td><button className="close-btn" onClick={()=>del(e.id)}><Ic n="x" s={14}/></button></td>
-                </tr>
-              ))}
+                <tr><td colSpan={10} style={{color:'var(--text3)',textAlign:'center'}}>No journal vouchers in this range</td></tr>
+              ):filteredList.map(e=>{
+                const ls = e.lines&&e.lines.length ? e.lines : [{account:'',desc:'',debit:0,credit:0}];
+                return ls.map((l,i)=>(
+                  <tr key={e.id+'-'+i}>
+                    {i===0&&<td rowSpan={ls.length}>{fmtDate(e.date)}</td>}
+                    {i===0&&<td rowSpan={ls.length} style={{color:'var(--gold)'}}>{e.reverseDate?fmtDate(e.reverseDate):'—'}</td>}
+                    {i===0&&<td rowSpan={ls.length} style={{fontFamily:'monospace',fontSize:11.5,color:'var(--text3)'}}>{e.voucherNo||'—'}</td>}
+                    {i===0&&<td rowSpan={ls.length} style={{fontFamily:'monospace',fontSize:11.5,color:'var(--text3)'}}>{e.txnRefNo||'—'}</td>}
+                    <td style={{cursor:'pointer',color:'var(--primary2)',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:'3px'}} onClick={()=>setDrillAccount(l.account)}>{coaByKey(l.account).name}</td>
+                    {i===0&&<td rowSpan={ls.length}>{e.referenceNo||'—'}</td>}
+                    {i===0&&<td rowSpan={ls.length}>{e.narration}{e.reportingMethod&&e.reportingMethod!=='both'&&<span style={{fontSize:10,color:'var(--text3)',marginLeft:6}}>({e.reportingMethod==='accrual'?'Accrual only':'Cash only'})</span>}</td>}
+                    <td style={{textAlign:'right'}}>{l.debit?fmtN(l.debit):''}</td>
+                    <td style={{textAlign:'right'}}>{l.credit?fmtN(l.credit):''}</td>
+                    {i===0&&<td rowSpan={ls.length}><button className="close-btn" onClick={()=>del(e.id)}><Ic n="x" s={14}/></button></td>}
+                  </tr>
+                ));
+              })}
             </tbody>
           </table>
         </div>
@@ -8872,8 +9062,63 @@ const JournalVouchersPage = ({inline=true, currentUser})=>{
 };
 
 /* ══ General Ledger — every posting for one account, running balance ══ */
+/* Full GL Dump — every account's ledger, one after another, in the same 11-column layout as a
+   single-account ledger, plus one combined export. This is what lets someone pull the ENTIRE
+   General Ledger in one go instead of exporting account-by-account. */
+const FullGLTable = ({fromDate, toDate})=>{
+  const sections = useMemo(()=>{
+    const allLines = getAllLedgerLines();
+    return getAllAccounts()
+      .map(a=>({acc:a, data:computeLedgerData(a.key, fromDate, toDate, allLines)}))
+      .filter(({data})=>data.rows.length>0 || Math.abs(data.opening)>0.004 || Math.abs(data.closing)>0.004);
+  },[fromDate,toDate]);
+
+  const totalDebit  = sections.reduce((s,{data})=>s+data.rows.reduce((x,r)=>x+(r.debit||0),0),0);
+  const totalCredit = sections.reduce((s,{data})=>s+data.rows.reduce((x,r)=>x+(r.credit||0),0),0);
+  const totalPostings = sections.reduce((s,{data})=>s+data.rows.length,0);
+
+  const doExport = (fmt)=>{
+    const headers = LEDGER_COLS;
+    const rows=[];
+    sections.forEach(({acc,data})=>{
+      rows.push(['', acc.name, '', '', '', '', '', 'Opening Balance', '', '', fmtN(data.opening)]);
+      data.rows.forEach(r=>rows.push(ledgerExportRow(r)));
+      rows.push(['', acc.name, '', '', '', '', '', 'Closing Balance', '', '', fmtN(data.closing)]);
+      rows.push(['','','','','','','','','','','']);
+    });
+    exportTableAs(fmt, `FullGeneralLedger_${fromDate}_to_${toDate}`, `Full General Ledger Dump (${fmtDate(fromDate)} to ${fmtDate(toDate)})`, headers, rows);
+  };
+
+  return <>
+    <div className="g3" style={{marginBottom:16}}>
+      <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{sections.length}</div><div className="stat-lbl">Accounts with Activity</div></div>
+      <div className="stat-card"><div className="stat-val" style={{fontSize:16}}>{totalPostings}</div><div className="stat-lbl">Total Postings in Range</div></div>
+      <div className="stat-card" style={{borderLeft:'3px solid var(--primary)'}}><div className="stat-val" style={{fontSize:14}}>{fmt(totalDebit)} / {fmt(totalCredit)}</div><div className="stat-lbl">Total Debit / Credit</div></div>
+    </div>
+    <div style={{marginBottom:12}}><ExportBar onExport={doExport} label="Export Full GL Dump"/></div>
+    {sections.length===0?(
+      <div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>No postings anywhere in this date range.</div>
+    ):sections.map(({acc,data})=>(
+      <div key={acc.key} className="dt-wrap" style={{marginBottom:16}}>
+        <table className="dt" style={{width:'100%'}}>
+          <thead>
+            <tr><th colSpan={11}>{acc.name} — Opening {fmt(data.opening)} · Closing {fmt(data.closing)}</th></tr>
+            <LedgerHeadRow/>
+          </thead>
+          <tbody>
+            {data.rows.length===0?(
+              <tr><td colSpan={11} style={{color:'var(--text3)',textAlign:'center'}}>No postings in this range</td></tr>
+            ):data.rows.map((r,i)=><LedgerBodyRow key={i} r={r}/>)}
+          </tbody>
+        </table>
+      </div>
+    ))}
+  </>;
+};
+
 const GeneralLedgerPage = ({inline=true})=>{
   const [account,setAccount]=useState('BANK');
+  const [fullDump,setFullDump]=useState(false);
   const fyStart = `${getFY()}-04-01`;
   const [fromDate,setFromDate]=useState(fyStart);
   const [toDate,setToDate]=useState(today());
@@ -8882,11 +9127,14 @@ const GeneralLedgerPage = ({inline=true})=>{
     <div className={inline?"inline-card-inner":"modal"}>
       <div className="modal-body">
         <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap',alignItems:'flex-end'}}>
-          <div className="field" style={{minWidth:260}}><label className="field-label">Account</label><AccountSelect value={account} onChange={setAccount}/></div>
+          {!fullDump&&<div className="field" style={{minWidth:260}}><label className="field-label">Account</label><AccountSelect value={account} onChange={setAccount}/></div>}
           <div className="field"><label className="field-label">From</label><input type="date" className="field-input" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></div>
           <div className="field"><label className="field-label">To</label><input type="date" className="field-input" value={toDate} onChange={e=>setToDate(e.target.value)}/></div>
+          <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:12.5,fontWeight:600,marginBottom:8}}>
+            <input type="checkbox" checked={fullDump} onChange={e=>setFullDump(e.target.checked)}/> Full GL Dump (all accounts)
+          </label>
         </div>
-        <LedgerTable account={account} fromDate={fromDate} toDate={toDate}/>
+        {fullDump?<FullGLTable fromDate={fromDate} toDate={toDate}/>:<LedgerTable account={account} fromDate={fromDate} toDate={toDate}/>}
       </div>
     </div>
   </div>;
@@ -8896,16 +9144,30 @@ const GeneralLedgerPage = ({inline=true})=>{
 const TrialBalancePage = ({inline=true})=>{
   const [asOf,setAsOf]=useState(today());
   const [drillAccount,setDrillAccount]=useState(null);
+  const co = S.get(SK.CO,{});
+  const prevAsOf = prevFYEnd(asOf);
   const tb = useMemo(()=>getTrialBalance(asOf),[asOf]);
+  const tbPrev = useMemo(()=>getTrialBalance(prevAsOf),[prevAsOf]);
   const debitTotal = tb.filter(r=>r.balance>=0).reduce((s,r)=>s+r.balance,0);
   const creditTotal = tb.filter(r=>r.balance<0).reduce((s,r)=>s-r.balance,0);
+  const debitTotalPrev = tbPrev.filter(r=>r.balance>=0).reduce((s,r)=>s+r.balance,0);
+  const creditTotalPrev = tbPrev.filter(r=>r.balance<0).reduce((s,r)=>s-r.balance,0);
   const allAccOrder = getAllAccounts();
+  // Union of every account that has a balance in EITHER period, so an account that only had
+  // activity last year still shows up (with 0 this year) instead of silently disappearing.
+  const unionAccounts = useMemo(()=>{
+    const keys=[]; tb.forEach(r=>{ if(!keys.includes(r.account)) keys.push(r.account); }); tbPrev.forEach(r=>{ if(!keys.includes(r.account)) keys.push(r.account); });
+    return keys.sort((a,b)=>allAccOrder.findIndex(x=>x.key===a)-allAccOrder.findIndex(x=>x.key===b));
+  },[tb,tbPrev]);
+  const balOf = (list,key) => list.find(x=>x.account===key)?.balance || 0;
   const doExport = (f) => {
-    const headers=['Account','Debit','Credit'];
-    const rows=[...tb].sort((a,b)=>allAccOrder.findIndex(x=>x.key===a.account)-allAccOrder.findIndex(x=>x.key===b.account))
-      .map(r=>[coaByKey(r.account).name, r.balance>=0?fmtN(r.balance):'', r.balance<0?fmtN(-r.balance):'']);
-    rows.push(['Total', fmtN(debitTotal), fmtN(creditTotal)]);
-    exportTableAs(f, `TrialBalance_${asOf}`, `Trial Balance as at ${fmtDate(asOf)}`, headers, rows);
+    const headers=['Account',`Debit (as at ${fmtDate(asOf)})`,`Credit (as at ${fmtDate(asOf)})`,`Debit (as at ${fmtDate(prevAsOf)})`,`Credit (as at ${fmtDate(prevAsOf)})`];
+    const rows=unionAccounts.map(key=>{
+      const bal=balOf(tb,key), balP=balOf(tbPrev,key);
+      return [coaByKey(key).name, bal>=0?fmtN(bal):'', bal<0?fmtN(-bal):'', balP>=0?fmtN(balP):'', balP<0?fmtN(-balP):''];
+    });
+    rows.push(['Total', fmtN(debitTotal), fmtN(creditTotal), fmtN(debitTotalPrev), fmtN(creditTotalPrev)]);
+    exportTableAs(f, `TrialBalance_${asOf}`, `Trial Balance as at ${fmtDateLong(asOf)}${co.name?' — '+co.name:''}`, headers, rows);
   };
 
   if(drillAccount){
@@ -8926,20 +9188,37 @@ const TrialBalancePage = ({inline=true})=>{
           <div className="field" style={{maxWidth:220}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
           <ExportBar onExport={doExport} label="Export Trial Balance"/>
         </div>
-        <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:10}}>Click any account to see every transaction posted to it.</div>
+        <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:10}}>Click any account to see every transaction posted to it. Figures as at {fmtDate(prevAsOf)} (the previous financial year-end) are shown alongside for comparison.</div>
         <div className="dt-wrap">
           <table className="dt" style={{width:'100%'}}>
-            <thead><tr><th>Account</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th></tr></thead>
+            <thead>
+              <tr><th colSpan={5}>Trial Balance as at {fmtDateLong(asOf)}{co.name?' — '+co.name:''}</th></tr>
+              <tr>
+                <th rowSpan={2} style={{verticalAlign:'bottom'}}>Account</th>
+                <th colSpan={2} style={{textAlign:'center'}}>As at {fmtDate(asOf)}</th>
+                <th colSpan={2} style={{textAlign:'center',color:'var(--text3)'}}>As at {fmtDate(prevAsOf)} (Previous Year)</th>
+              </tr>
+              <tr>
+                <th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th>
+                <th style={{textAlign:'right',color:'var(--text3)'}}>Debit</th><th style={{textAlign:'right',color:'var(--text3)'}}>Credit</th>
+              </tr>
+            </thead>
             <tbody>
-              {[...tb].sort((a,b)=>allAccOrder.findIndex(x=>x.key===a.account)-allAccOrder.findIndex(x=>x.key===b.account)).map(r=>(
-                <tr key={r.account}>
-                  <td style={{cursor:'pointer',color:'var(--primary2)',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:'3px'}} onClick={()=>setDrillAccount(r.account)}>{coaByKey(r.account).name}</td>
-                  <td style={{textAlign:'right'}}>{r.balance>=0?fmtN(r.balance):''}</td>
-                  <td style={{textAlign:'right'}}>{r.balance<0?fmtN(-r.balance):''}</td>
-                </tr>
-              ))}
+              {unionAccounts.map(key=>{
+                const bal=balOf(tb,key), balP=balOf(tbPrev,key);
+                return (
+                  <tr key={key}>
+                    <td style={{cursor:'pointer',color:'var(--primary2)',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:'3px'}} onClick={()=>setDrillAccount(key)}>{coaByKey(key).name}</td>
+                    <td style={{textAlign:'right'}}>{bal>=0?fmtN(bal):''}</td>
+                    <td style={{textAlign:'right'}}>{bal<0?fmtN(-bal):''}</td>
+                    <td style={{textAlign:'right',color:'var(--text3)'}}>{balP>=0?fmtN(balP):''}</td>
+                    <td style={{textAlign:'right',color:'var(--text3)'}}>{balP<0?fmtN(-balP):''}</td>
+                  </tr>
+                );
+              })}
               <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}>
                 <td>Total</td><td style={{textAlign:'right'}}>{fmtN(debitTotal)}</td><td style={{textAlign:'right'}}>{fmtN(creditTotal)}</td>
+                <td style={{textAlign:'right',color:'var(--text3)'}}>{fmtN(debitTotalPrev)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmtN(creditTotalPrev)}</td>
               </tr>
             </tbody>
           </table>
@@ -8974,46 +9253,89 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
   const tbCredit = tb.filter(r=>r.balance<0).reduce((s,r)=>s-r.balance,0);
   const allAccOrder = getAllAccounts();
 
+  // ── PREVIOUS PERIOD / PREVIOUS YEAR comparatives — shown as a second column alongside the
+  //    current figures on every statement (P&L, Balance Sheet, Trial Balance), per standard
+  //    Companies Act practice of always presenting the prior period for comparison. ──
+  const prevFrom = shiftYear(fromDate,-1), prevTo = shiftYear(toDate,-1);
+  const prevAsOf = prevFYEnd(asOf);
+  const plPrev = useMemo(()=> effBasis==='cash' ? getPLCash(prevFrom,prevTo) : getPLAccrual(prevFrom,prevTo), [prevFrom,prevTo,effBasis]);
+  const bsPrev = useMemo(()=> getBalanceSheet(prevAsOf), [prevAsOf]);
+  const tbPrev = useMemo(()=> getTrialBalance(prevAsOf), [prevAsOf]);
+  const tbDebitPrev = tbPrev.filter(r=>r.balance>=0).reduce((s,r)=>s+r.balance,0);
+  const tbCreditPrev = tbPrev.filter(r=>r.balance<0).reduce((s,r)=>s-r.balance,0);
+  const tbUnionAccounts = useMemo(()=>{
+    const keys=[]; tb.forEach(r=>{ if(!keys.includes(r.account)) keys.push(r.account); }); tbPrev.forEach(r=>{ if(!keys.includes(r.account)) keys.push(r.account); });
+    return keys.sort((a,b)=>allAccOrder.findIndex(x=>x.key===a)-allAccOrder.findIndex(x=>x.key===b));
+  },[tb,tbPrev]);
+  const tbBalOf = (list,key) => list.find(x=>x.account===key)?.balance || 0;
+  const bsPrevAll = [...bsPrev.assets, ...bsPrev.liabilities, ...bsPrev.equity];
+  const prevAmtByKey = key => bsPrevAll.find(a=>a.key===key)?.amount || 0;
+
   const expByKey = key => (pl.rows||[]).find(r=>r.account===key)?.amount||0;
   const otherIncome = (pl.rows||[]).filter(r=>r.type==='income'&&r.account!=='SALES').reduce((s,r)=>s+r.amount,0);
   const salesRevenue = expByKey('SALES');
+  const otherIncomePrev = (plPrev.rows||[]).filter(r=>r.type==='income'&&r.account!=='SALES').reduce((s,r)=>s+r.amount,0);
+  const salesRevenuePrev = (plPrev.rows||[]).find(r=>r.account==='SALES')?.amount||0;
   const expenseCaptions = useMemo(()=>groupByCaption((pl.rows||[]).filter(r=>r.type==='expense'), EXP_CAPTION_ORDER_LOCAL),[pl]);
   const incomeCaptions  = useMemo(()=>groupByCaption((pl.rows||[]).filter(r=>r.type==='income'), ['Revenue from Operations','Other Income']),[pl]);
+  const expenseCaptionsPrev = useMemo(()=>groupByCaption((plPrev.rows||[]).filter(r=>r.type==='expense'), EXP_CAPTION_ORDER_LOCAL),[plPrev]);
+  const incomeCaptionsPrev  = useMemo(()=>groupByCaption((plPrev.rows||[]).filter(r=>r.type==='income'), ['Revenue from Operations','Other Income']),[plPrev]);
+  const expenseCaptionsCmp = useMemo(()=>mergeCaptionAmounts(expenseCaptions, expenseCaptionsPrev),[expenseCaptions,expenseCaptionsPrev]);
+  const incomeCaptionsCmp  = useMemo(()=>mergeCaptionAmounts(incomeCaptions, incomeCaptionsPrev),[incomeCaptions,incomeCaptionsPrev]);
+  // Normal-format P&L comparative rows: union of accounts seen in either period, each carrying both amounts.
+  const plNormalIncomeCmp = useMemo(()=>{
+    const cur=(pl.rows||[]).filter(r=>r.type==='income'&&r.account!=='SALES'), prev=(plPrev.rows||[]).filter(r=>r.type==='income'&&r.account!=='SALES');
+    const accs=[...new Set([...cur.map(r=>r.account), ...prev.map(r=>r.account)])];
+    return accs.map(acc=>({account:acc, name:cur.find(r=>r.account===acc)?.name||prev.find(r=>r.account===acc)?.name, amount:cur.find(r=>r.account===acc)?.amount||0, prevAmount:prev.find(r=>r.account===acc)?.amount||0}));
+  },[pl,plPrev]);
+  const plNormalExpenseCmp = useMemo(()=>{
+    const cur=(pl.rows||[]).filter(r=>r.type==='expense'), prev=(plPrev.rows||[]).filter(r=>r.type==='expense');
+    const accs=[...new Set([...cur.map(r=>r.account), ...prev.map(r=>r.account)])];
+    return accs.map(acc=>({account:acc, name:cur.find(r=>r.account===acc)?.name||prev.find(r=>r.account===acc)?.name, amount:cur.find(r=>r.account===acc)?.amount||0, prevAmount:prev.find(r=>r.account===acc)?.amount||0})).sort((a,b)=>b.amount-a.amount);
+  },[pl,plPrev]);
 
   const closeDrill = ()=>setDrill(null);
   const openCaptionDrill = (side, caption, accounts) => setDrill({kind:'caption', side, caption, accounts});
   const openLedgerDrill = (account) => setDrill({kind:'ledger', account});
 
   const doExportPL = (f) => {
-    const headers=['Head','Amount'];
+    const headers=['Head',`Current (${fmtDate(fromDate)} to ${fmtDate(toDate)})`,`Previous Year (${fmtDate(prevFrom)} to ${fmtDate(prevTo)})`];
     const rows=[];
     if(effBasis==='cash'){
-      rows.push(['Total Receipts', fmtN(pl.income)], ['Total Payments', fmtN(pl.expense)], ['Net Cash Surplus/(Deficit)', fmtN(pl.net)]);
+      rows.push(['Total Receipts', fmtN(pl.income), fmtN(plPrev.income)], ['Total Payments', fmtN(pl.expense), fmtN(plPrev.expense)], ['Net Cash Surplus/(Deficit)', fmtN(pl.net), fmtN(plPrev.net)]);
     } else if(format==='schedule3'){
-      rows.push(['I. Revenue from Operations', fmtN(salesRevenue)], ['II. Other Income', fmtN(otherIncome)], ['III. Total Income', fmtN(pl.income)], ['IV. Expenses',''],
-        ...expenseCaptions.map(c=>['   '+c.caption, fmtN(c.amount)]), ['Total Expenses', fmtN(pl.expense)],
-        ['V. Profit Before Tax', fmtN(pl.net)], ['VI. Profit for the Period', fmtN(pl.net)]);
+      rows.push(['I. Revenue from Operations', fmtN(salesRevenue), fmtN(salesRevenuePrev)], ['II. Other Income', fmtN(otherIncome), fmtN(otherIncomePrev)],
+        ['III. Total Income', fmtN(pl.income), fmtN(plPrev.income)], ['IV. Expenses','',''],
+        ...expenseCaptionsCmp.map(c=>['   '+c.caption, fmtN(c.amount), fmtN(c.prevAmount)]), ['Total Expenses', fmtN(pl.expense), fmtN(plPrev.expense)],
+        ['V. Profit Before Tax', fmtN(pl.net), fmtN(plPrev.net)], ['VI. Profit for the Period', fmtN(pl.net), fmtN(plPrev.net)]);
     } else {
-      rows.push(['Sales', fmtN(salesRevenue)]);
-      if(otherIncome>0.005) rows.push(['Other Income', fmtN(otherIncome)]);
-      (pl.rows||[]).filter(r=>r.type==='expense').forEach(r=>rows.push([r.name, fmtN(r.amount)]));
-      rows.push(['Net Profit/(Loss)', fmtN(pl.net)]);
+      rows.push(['Sales', fmtN(salesRevenue), fmtN(salesRevenuePrev)]);
+      if(otherIncome>0.005||otherIncomePrev>0.005) rows.push(['Other Income', fmtN(otherIncome), fmtN(otherIncomePrev)]);
+      const expNames = [...new Set([...(pl.rows||[]).filter(r=>r.type==='expense').map(r=>r.name), ...(plPrev.rows||[]).filter(r=>r.type==='expense').map(r=>r.name)])];
+      expNames.forEach(name=>rows.push([name, fmtN((pl.rows||[]).find(r=>r.name===name)?.amount||0), fmtN((plPrev.rows||[]).find(r=>r.name===name)?.amount||0)]));
+      rows.push(['Net Profit/(Loss)', fmtN(pl.net), fmtN(plPrev.net)]);
     }
-    exportTableAs(f, `PL_${fromDate}_to_${toDate}`, `Profit & Loss (${effBasis==='cash'?'Cash':format==='schedule3'?'Companies Act':'Normal'} format) — ${fmtDate(fromDate)} to ${fmtDate(toDate)}`, headers, rows);
+    exportTableAs(f, `PL_${fromDate}_to_${toDate}`, `Statement of Profit & Loss (${effBasis==='cash'?'Cash':format==='schedule3'?'Companies Act':'Normal'} format) — for the period ${fmtDateLong(fromDate)} to ${fmtDateLong(toDate)}${co.name?' — '+co.name:''}`, headers, rows);
   };
   const doExportBS = (f) => {
-    const headers=['Head','Amount'];
-    const rows=[['EQUITY AND LIABILITIES',''], ...bs.equity.map(e=>['  '+e.name, fmtN(e.amount)]),
-      ...bs.liabilities.map(l=>['  '+l.name, fmtN(l.amount)]), ['TOTAL', fmtN(bs.totalLiab+bs.totalEquity)],
-      ['ASSETS',''], ...bs.assets.map(a=>['  '+a.name, fmtN(a.amount)]), ['TOTAL', fmtN(bs.totalAssets)]];
-    exportTableAs(f, `BalanceSheet_${asOf}`, `Balance Sheet as at ${fmtDate(asOf)} (${format==='schedule3'?'Companies Act':'Normal'} format)`, headers, rows);
+    const headers=['Head',`As at ${fmtDate(asOf)}`,`As at ${fmtDate(prevAsOf)} (Previous Year)`];
+    const rows=[['EQUITY AND LIABILITIES','',''],
+      ...bs.equity.map(e=>['  '+e.name, fmtN(e.amount), fmtN(prevAmtByKey(e.key))]),
+      ...bs.liabilities.map(l=>['  '+l.name, fmtN(l.amount), fmtN(prevAmtByKey(l.key))]),
+      ['TOTAL', fmtN(bs.totalLiab+bs.totalEquity), fmtN(bsPrev.totalLiab+bsPrev.totalEquity)],
+      ['ASSETS','',''],
+      ...bs.assets.map(a=>['  '+a.name, fmtN(a.amount), fmtN(prevAmtByKey(a.key))]),
+      ['TOTAL', fmtN(bs.totalAssets), fmtN(bsPrev.totalAssets)]];
+    exportTableAs(f, `BalanceSheet_${asOf}`, `Balance Sheet as at ${fmtDateLong(asOf)} (${format==='schedule3'?'Companies Act':'Normal'} format)${co.name?' — '+co.name:''}`, headers, rows);
   };
   const doExportTB = (f) => {
-    const headers=['Account','Debit','Credit'];
-    const rows=[...tb].sort((a,b)=>allAccOrder.findIndex(x=>x.key===a.account)-allAccOrder.findIndex(x=>x.key===b.account))
-      .map(r=>[coaByKey(r.account).name, r.balance>=0?fmtN(r.balance):'', r.balance<0?fmtN(-r.balance):'']);
-    rows.push(['Total', fmtN(tbDebit), fmtN(tbCredit)]);
-    exportTableAs(f, `TrialBalance_${asOf}`, `Trial Balance as at ${fmtDate(asOf)}`, headers, rows);
+    const headers=['Account',`Debit (as at ${fmtDate(asOf)})`,`Credit (as at ${fmtDate(asOf)})`,`Debit (as at ${fmtDate(prevAsOf)})`,`Credit (as at ${fmtDate(prevAsOf)})`];
+    const rows=tbUnionAccounts.map(key=>{
+      const bal=tbBalOf(tb,key), balP=tbBalOf(tbPrev,key);
+      return [coaByKey(key).name, bal>=0?fmtN(bal):'', bal<0?fmtN(-bal):'', balP>=0?fmtN(balP):'', balP<0?fmtN(-balP):''];
+    });
+    rows.push(['Total', fmtN(tbDebit), fmtN(tbCredit), fmtN(tbDebitPrev), fmtN(tbCreditPrev)]);
+    exportTableAs(f, `TrialBalance_${asOf}`, `Trial Balance as at ${fmtDateLong(asOf)}${co.name?' — '+co.name:''}`, headers, rows);
   };
 
   const clickable = {cursor:'pointer', color:'var(--primary2)', textDecoration:'underline', textDecorationStyle:'dotted', textUnderlineOffset:'3px'};
@@ -9116,38 +9438,45 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
             {effBasis==='cash'?(
               <div className="dt-wrap">
                 <table className="dt" style={{width:'100%'}}>
-                  <thead><tr><th>Head</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
+                  <thead>
+                    <tr><th colSpan={3}>Receipts & Payments Statement — for the period {fmtDateLong(fromDate)} to {fmtDateLong(toDate)}{co.name?' — '+co.name:''}</th></tr>
+                    <tr><th>Head</th><th style={{textAlign:'right'}}>Current ({fmtDate(fromDate)}–{fmtDate(toDate)})</th><th style={{textAlign:'right',color:'var(--text3)'}}>Previous Year ({fmtDate(prevFrom)}–{fmtDate(prevTo)})</th></tr>
+                  </thead>
                   <tbody>
-                    <tr><td>Total Receipts (Bank credits in period)</td><td style={{textAlign:'right',fontWeight:600}}>{fmt(pl.income)}</td></tr>
-                    <tr><td>Total Payments (Bank debits in period)</td><td style={{textAlign:'right'}}>{fmt(pl.expense)}</td></tr>
-                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Net Cash Surplus / (Deficit)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
+                    <tr><td>Total Receipts (Bank credits in period)</td><td style={{textAlign:'right',fontWeight:600}}>{fmt(pl.income)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(plPrev.income)}</td></tr>
+                    <tr><td>Total Payments (Bank debits in period)</td><td style={{textAlign:'right'}}>{fmt(pl.expense)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(plPrev.expense)}</td></tr>
+                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Net Cash Surplus / (Deficit)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(plPrev.net)}</td></tr>
                   </tbody>
                 </table>
-                <div style={{fontSize:11.5,color:'var(--text3)',marginTop:8}}>Receipts & Payments basis — counts only actual money that moved through the Bank in this period, ignoring unpaid invoices/bills. Companies Act statements must use the Accrual basis. (No ledger drill-down here — the underlying view is Bank Reconciliation.)</div>
+                <div style={{fontSize:11.5,color:'var(--text3)',marginTop:8}}>Receipts & Payments basis — counts only actual money that moved through the Bank in this period, ignoring unpaid invoices/bills. Companies Act statements must use the Accrual basis. (No ledger drill-down here — the underlying view is Bank Reconciliation.) The Previous Year column covers the corresponding period one year earlier ({fmtDate(prevFrom)} to {fmtDate(prevTo)}).</div>
               </div>
             ):format==='schedule3'?(
               <div className="dt-wrap">
                 <table className="dt" style={{width:'100%'}}>
-                  <thead><tr><th colSpan={2}>Statement of Profit & Loss — for the period {fmtDate(fromDate)} to {fmtDate(toDate)}</th></tr></thead>
+                  <thead>
+                    <tr><th colSpan={3}>Statement of Profit & Loss — for the period ended {fmtDateLong(toDate)}{co.name?' — '+co.name:''}</th></tr>
+                    <tr><th>Particulars</th><th style={{textAlign:'right'}}>Current Year ({fmtDate(fromDate)} to {fmtDate(toDate)})</th><th style={{textAlign:'right',color:'var(--text3)'}}>Previous Year ({fmtDate(prevFrom)} to {fmtDate(prevTo)})</th></tr>
+                  </thead>
                   <tbody>
-                    {incomeCaptions.filter(c=>c.caption==='Revenue from Operations').map(c=>(
-                      <tr key={c.caption}><td>I. {c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('income',c.caption,c.accounts)}>{fmt(c.amount)}</td></tr>
+                    {incomeCaptionsCmp.filter(c=>c.caption==='Revenue from Operations').map(c=>(
+                      <tr key={c.caption}><td>I. {c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('income',c.caption,c.accounts)}>{fmt(c.amount)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(c.prevAmount)}</td></tr>
                     ))}
-                    {incomeCaptions.filter(c=>c.caption==='Other Income').map(c=>(
-                      <tr key={c.caption}><td>II. {c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('income',c.caption,c.accounts)}>{fmt(c.amount)}</td></tr>
+                    {incomeCaptionsCmp.filter(c=>c.caption==='Other Income').map(c=>(
+                      <tr key={c.caption}><td>II. {c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('income',c.caption,c.accounts)}>{fmt(c.amount)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(c.prevAmount)}</td></tr>
                     ))}
-                    <tr style={{fontWeight:700}}><td>III. Total Income (I + II)</td><td style={{textAlign:'right'}}>{fmt(pl.income)}</td></tr>
-                    <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>IV. Expenses</td></tr>
-                    {expenseCaptions.map(c=>(
+                    <tr style={{fontWeight:700}}><td>III. Total Income (I + II)</td><td style={{textAlign:'right'}}>{fmt(pl.income)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(plPrev.income)}</td></tr>
+                    <tr style={{background:'var(--card2)'}}><td colSpan={3} style={{fontWeight:700}}>IV. Expenses</td></tr>
+                    {expenseCaptionsCmp.map(c=>(
                       <tr key={c.caption}>
                         <td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('expense',c.caption,c.accounts)}>{c.caption}</td>
                         <td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('expense',c.caption,c.accounts)}>{fmt(c.amount)}</td>
+                        <td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(c.prevAmount)}</td>
                       </tr>
                     ))}
-                    <tr style={{fontWeight:700,borderTop:'1px solid var(--border)'}}><td>Total Expenses</td><td style={{textAlign:'right'}}>{fmt(pl.expense)}</td></tr>
-                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>V. Profit Before Tax (III − IV)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
-                    <tr><td style={{paddingLeft:20,color:'var(--text3)'}}>Tax Expense (to be computed by your CA)</td><td style={{textAlign:'right',color:'var(--text3)'}}>—</td></tr>
-                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>VI. Profit for the Period</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
+                    <tr style={{fontWeight:700,borderTop:'1px solid var(--border)'}}><td>Total Expenses</td><td style={{textAlign:'right'}}>{fmt(pl.expense)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(plPrev.expense)}</td></tr>
+                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>V. Profit Before Tax (III − IV)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(plPrev.net)}</td></tr>
+                    <tr><td style={{paddingLeft:20,color:'var(--text3)'}}>Tax Expense (to be computed by your CA)</td><td style={{textAlign:'right',color:'var(--text3)'}}>—</td><td style={{textAlign:'right',color:'var(--text3)'}}>—</td></tr>
+                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>VI. Profit for the Period</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(plPrev.net)}</td></tr>
                   </tbody>
                 </table>
                 <div style={{fontSize:11.5,color:'var(--text3)',marginTop:10,whiteSpace:'pre-line'}}><b>Notes — Significant Accounting Policies:</b>{'\n'}{getPolicies()}</div>
@@ -9155,20 +9484,23 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
             ):(
               <div className="dt-wrap">
                 <table className="dt" style={{width:'100%'}}>
-                  <thead><tr><th>Head</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
+                  <thead>
+                    <tr><th colSpan={3}>Profit & Loss Statement — for the period {fmtDateLong(fromDate)} to {fmtDateLong(toDate)}{co.name?' — '+co.name:''}</th></tr>
+                    <tr><th>Head</th><th style={{textAlign:'right'}}>Current ({fmtDate(fromDate)}–{fmtDate(toDate)})</th><th style={{textAlign:'right',color:'var(--text3)'}}>Previous Year ({fmtDate(prevFrom)}–{fmtDate(prevTo)})</th></tr>
+                  </thead>
                   <tbody>
-                    <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>Income</td></tr>
-                    <tr><td style={clickable} onClick={()=>openLedgerDrill('SALES')}>Sales</td><td style={{textAlign:'right',fontWeight:600,...clickable}} onClick={()=>openLedgerDrill('SALES')}>{fmt(salesRevenue)}</td></tr>
-                    {(pl.rows||[]).filter(r=>r.type==='income'&&r.account!=='SALES').map(r=>(
-                      <tr key={r.account}><td style={clickable} onClick={()=>openLedgerDrill(r.account)}>{r.name}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(r.account)}>{fmt(r.amount)}</td></tr>
+                    <tr style={{background:'var(--card2)'}}><td colSpan={3} style={{fontWeight:700}}>Income</td></tr>
+                    <tr><td style={clickable} onClick={()=>openLedgerDrill('SALES')}>Sales</td><td style={{textAlign:'right',fontWeight:600,...clickable}} onClick={()=>openLedgerDrill('SALES')}>{fmt(salesRevenue)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(salesRevenuePrev)}</td></tr>
+                    {plNormalIncomeCmp.map(r=>(
+                      <tr key={r.account}><td style={clickable} onClick={()=>openLedgerDrill(r.account)}>{r.name}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(r.account)}>{fmt(r.amount)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(r.prevAmount)}</td></tr>
                     ))}
-                    <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>Expenses</td></tr>
-                    {(pl.rows||[]).filter(r=>r.type==='expense').length===0?(
-                      <tr><td colSpan={2} style={{color:'var(--text3)',textAlign:'center'}}>No expenses in this period</td></tr>
-                    ):(pl.rows||[]).filter(r=>r.type==='expense').sort((a,b)=>b.amount-a.amount).map(r=>(
-                      <tr key={r.account}><td style={clickable} onClick={()=>openLedgerDrill(r.account)}>{r.name}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(r.account)}>{fmt(r.amount)}</td></tr>
+                    <tr style={{background:'var(--card2)'}}><td colSpan={3} style={{fontWeight:700}}>Expenses</td></tr>
+                    {plNormalExpenseCmp.length===0?(
+                      <tr><td colSpan={3} style={{color:'var(--text3)',textAlign:'center'}}>No expenses in either period</td></tr>
+                    ):plNormalExpenseCmp.map(r=>(
+                      <tr key={r.account}><td style={clickable} onClick={()=>openLedgerDrill(r.account)}>{r.name}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(r.account)}>{fmt(r.amount)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(r.prevAmount)}</td></tr>
                     ))}
-                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Net Profit / (Loss)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td></tr>
+                    <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Net Profit / (Loss)</td><td style={{textAlign:'right',color:pl.net>=0?'var(--green)':'var(--red)'}}>{fmt(pl.net)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(plPrev.net)}</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -9187,40 +9519,60 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
               <>
                 <div className="dt-wrap" style={{marginBottom:16}}>
                   <table className="dt" style={{width:'100%'}}>
-                    <thead><tr><th colSpan={2}>Balance Sheet as at {fmtDate(asOf)} — {co.name||'Company'}</th></tr></thead>
+                    <thead>
+                      <tr><th colSpan={3}>Balance Sheet as at {fmtDateLong(asOf)} — {co.name||'Company'}</th></tr>
+                      <tr><th>Particulars</th><th style={{textAlign:'right'}}>As at {fmtDate(asOf)}</th><th style={{textAlign:'right',color:'var(--text3)'}}>As at {fmtDate(prevAsOf)} (Previous Year)</th></tr>
+                    </thead>
                     <tbody>
-                      <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{fontWeight:700}}>I. EQUITY AND LIABILITIES</td></tr>
-                      <tr style={{fontWeight:600}}><td>1. Shareholders' Funds</td><td/></tr>
-                      {groupByCaption(bs.equity,['Equity']).map(c=>(
-                        <tr key={c.caption}><td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('equity',c.caption,c.accounts)}>{c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('equity',c.caption,c.accounts)}>{fmt(c.amount)}</td></tr>
+                      <tr style={{background:'var(--card2)'}}><td colSpan={3} style={{fontWeight:700}}>I. EQUITY AND LIABILITIES</td></tr>
+                      <tr style={{fontWeight:600}}><td>1. Shareholders' Funds</td><td/><td/></tr>
+                      {mergeCaptionAmounts(groupByCaption(bs.equity,['Equity']), groupByCaption(bsPrev.equity,['Equity'])).map(c=>(
+                        <tr key={c.caption}>
+                          <td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('equity',c.caption,c.accounts)}>{c.caption}</td>
+                          <td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('equity',c.caption,c.accounts)}>{fmt(c.amount)}</td>
+                          <td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(c.prevAmount)}</td>
+                        </tr>
                       ))}
                       {BS_LIAB_GROUPS.map(g=>{
-                        const rows=bs.liabilities.filter(l=>l.group===g); if(!rows.length) return null;
+                        const rows=bs.liabilities.filter(l=>l.group===g), prevRows=bsPrev.liabilities.filter(l=>l.group===g);
+                        if(!rows.length && !prevRows.length) return null;
                         return <React.Fragment key={g}>
-                          <tr style={{fontWeight:600}}><td>{g==='Non-Current Liabilities'?'2. Non-Current Liabilities':'3. Current Liabilities'}</td><td/></tr>
-                          {groupByCaption(rows).map(c=>(
-                            <tr key={c.caption}><td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('liability',c.caption,c.accounts)}>{c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('liability',c.caption,c.accounts)}>{fmt(c.amount)}</td></tr>
+                          <tr style={{fontWeight:600}}><td>{g==='Non-Current Liabilities'?'2. Non-Current Liabilities':'3. Current Liabilities'}</td><td/><td/></tr>
+                          {mergeCaptionAmounts(groupByCaption(rows), groupByCaption(prevRows)).map(c=>(
+                            <tr key={c.caption}>
+                              <td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('liability',c.caption,c.accounts)}>{c.caption}</td>
+                              <td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('liability',c.caption,c.accounts)}>{fmt(c.amount)}</td>
+                              <td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(c.prevAmount)}</td>
+                            </tr>
                           ))}
                         </React.Fragment>;
                       })}
-                      <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>TOTAL</td><td style={{textAlign:'right'}}>{fmt(bs.totalLiab+bs.totalEquity)}</td></tr>
+                      <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>TOTAL</td><td style={{textAlign:'right'}}>{fmt(bs.totalLiab+bs.totalEquity)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(bsPrev.totalLiab+bsPrev.totalEquity)}</td></tr>
                     </tbody>
                   </table>
                 </div>
                 <div className="dt-wrap">
                   <table className="dt" style={{width:'100%'}}>
-                    <thead><tr><th colSpan={2}>II. ASSETS</th></tr></thead>
+                    <thead>
+                      <tr><th colSpan={3}>II. ASSETS</th></tr>
+                      <tr><th>Particulars</th><th style={{textAlign:'right'}}>As at {fmtDate(asOf)}</th><th style={{textAlign:'right',color:'var(--text3)'}}>As at {fmtDate(prevAsOf)} (Previous Year)</th></tr>
+                    </thead>
                     <tbody>
                       {BS_ASSET_GROUPS.map(g=>{
-                        const rows=bs.assets.filter(a=>a.group===g); if(!rows.length) return null;
+                        const rows=bs.assets.filter(a=>a.group===g), prevRows=bsPrev.assets.filter(a=>a.group===g);
+                        if(!rows.length && !prevRows.length) return null;
                         return <React.Fragment key={g}>
-                          <tr style={{fontWeight:600}}><td>{g==='Non-Current Assets'?'1. Non-Current Assets':'2. Current Assets'}</td><td/></tr>
-                          {groupByCaption(rows).map(c=>(
-                            <tr key={c.caption}><td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('asset',c.caption,c.accounts)}>{c.caption}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('asset',c.caption,c.accounts)}>{fmt(c.amount)}</td></tr>
+                          <tr style={{fontWeight:600}}><td>{g==='Non-Current Assets'?'1. Non-Current Assets':'2. Current Assets'}</td><td/><td/></tr>
+                          {mergeCaptionAmounts(groupByCaption(rows), groupByCaption(prevRows)).map(c=>(
+                            <tr key={c.caption}>
+                              <td style={{paddingLeft:20,...clickable}} onClick={()=>openCaptionDrill('asset',c.caption,c.accounts)}>{c.caption}</td>
+                              <td style={{textAlign:'right',...clickable}} onClick={()=>openCaptionDrill('asset',c.caption,c.accounts)}>{fmt(c.amount)}</td>
+                              <td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(c.prevAmount)}</td>
+                            </tr>
                           ))}
                         </React.Fragment>;
                       })}
-                      <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>TOTAL</td><td style={{textAlign:'right'}}>{fmt(bs.totalAssets)}</td></tr>
+                      <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>TOTAL</td><td style={{textAlign:'right'}}>{fmt(bs.totalAssets)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(bsPrev.totalAssets)}</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -9228,26 +9580,41 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
                 <div style={{fontSize:11.5,color:'var(--text3)',marginTop:10,whiteSpace:'pre-line'}}><b>Notes — Significant Accounting Policies:</b>{'\n'}{getPolicies()}</div>
               </>
             ):(
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-                <div className="dt-wrap">
-                  <table className="dt" style={{width:'100%'}}>
-                    <thead><tr><th colSpan={2}>Assets</th></tr></thead>
-                    <tbody>
-                      {bs.assets.map(a=><tr key={a.key}><td style={clickable} onClick={()=>openLedgerDrill(a.key)}>{a.name}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(a.key)}>{fmt(a.amount)}</td></tr>)}
-                      <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total Assets</td><td style={{textAlign:'right'}}>{fmt(bs.totalAssets)}</td></tr>
-                    </tbody>
-                  </table>
+              <>
+                <div style={{fontWeight:700,marginBottom:10}}>Balance Sheet as at {fmtDateLong(asOf)}{co.name?' — '+co.name:''} <span style={{fontWeight:400,color:'var(--text3)',fontSize:11.5}}>(Normal format, comparing against {fmtDate(prevAsOf)})</span></div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+                  <div className="dt-wrap">
+                    <table className="dt" style={{width:'100%'}}>
+                      <thead><tr><th>Assets</th><th style={{textAlign:'right'}}>As at {fmtDate(asOf)}</th><th style={{textAlign:'right',color:'var(--text3)'}}>As at {fmtDate(prevAsOf)}</th></tr></thead>
+                      <tbody>
+                        {bs.assets.map(a=>(
+                          <tr key={a.key}>
+                            <td style={clickable} onClick={()=>openLedgerDrill(a.key)}>{a.name}</td>
+                            <td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(a.key)}>{fmt(a.amount)}</td>
+                            <td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(prevAmtByKey(a.key))}</td>
+                          </tr>
+                        ))}
+                        <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total Assets</td><td style={{textAlign:'right'}}>{fmt(bs.totalAssets)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(bsPrev.totalAssets)}</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="dt-wrap">
+                    <table className="dt" style={{width:'100%'}}>
+                      <thead><tr><th>Liabilities & Equity</th><th style={{textAlign:'right'}}>As at {fmtDate(asOf)}</th><th style={{textAlign:'right',color:'var(--text3)'}}>As at {fmtDate(prevAsOf)}</th></tr></thead>
+                      <tbody>
+                        {[...bs.liabilities,...bs.equity].map(a=>(
+                          <tr key={a.key}>
+                            <td style={clickable} onClick={()=>openLedgerDrill(a.key)}>{a.name}</td>
+                            <td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(a.key)}>{fmt(a.amount)}</td>
+                            <td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(prevAmtByKey(a.key))}</td>
+                          </tr>
+                        ))}
+                        <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total Liabilities & Equity</td><td style={{textAlign:'right'}}>{fmt(bs.totalLiab+bs.totalEquity)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmt(bsPrev.totalLiab+bsPrev.totalEquity)}</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div className="dt-wrap">
-                  <table className="dt" style={{width:'100%'}}>
-                    <thead><tr><th colSpan={2}>Liabilities & Equity</th></tr></thead>
-                    <tbody>
-                      {[...bs.liabilities,...bs.equity].map(a=><tr key={a.key}><td style={clickable} onClick={()=>openLedgerDrill(a.key)}>{a.name}</td><td style={{textAlign:'right',...clickable}} onClick={()=>openLedgerDrill(a.key)}>{fmt(a.amount)}</td></tr>)}
-                      <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total Liabilities & Equity</td><td style={{textAlign:'right'}}>{fmt(bs.totalLiab+bs.totalEquity)}</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              </>
             )}
           </>
         )}
@@ -9261,16 +9628,35 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
             </div>
             <div className="dt-wrap">
               <table className="dt" style={{width:'100%'}}>
-                <thead><tr><th>Account</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th></tr></thead>
+                <thead>
+                  <tr><th colSpan={5}>Trial Balance as at {fmtDateLong(asOf)}{co.name?' — '+co.name:''}</th></tr>
+                  <tr>
+                    <th rowSpan={2} style={{verticalAlign:'bottom'}}>Account</th>
+                    <th colSpan={2} style={{textAlign:'center'}}>As at {fmtDate(asOf)}</th>
+                    <th colSpan={2} style={{textAlign:'center',color:'var(--text3)'}}>As at {fmtDate(prevAsOf)} (Previous Year)</th>
+                  </tr>
+                  <tr>
+                    <th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th>
+                    <th style={{textAlign:'right',color:'var(--text3)'}}>Debit</th><th style={{textAlign:'right',color:'var(--text3)'}}>Credit</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {[...tb].sort((a,b)=>allAccOrder.findIndex(x=>x.key===a.account)-allAccOrder.findIndex(x=>x.key===b.account)).map(r=>(
-                    <tr key={r.account}>
-                      <td style={clickable} onClick={()=>openLedgerDrill(r.account)}>{coaByKey(r.account).name}</td>
-                      <td style={{textAlign:'right'}}>{r.balance>=0?fmtN(r.balance):''}</td>
-                      <td style={{textAlign:'right'}}>{r.balance<0?fmtN(-r.balance):''}</td>
-                    </tr>
-                  ))}
-                  <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}><td>Total</td><td style={{textAlign:'right'}}>{fmtN(tbDebit)}</td><td style={{textAlign:'right'}}>{fmtN(tbCredit)}</td></tr>
+                  {tbUnionAccounts.map(key=>{
+                    const bal=tbBalOf(tb,key), balP=tbBalOf(tbPrev,key);
+                    return (
+                      <tr key={key}>
+                        <td style={clickable} onClick={()=>openLedgerDrill(key)}>{coaByKey(key).name}</td>
+                        <td style={{textAlign:'right'}}>{bal>=0?fmtN(bal):''}</td>
+                        <td style={{textAlign:'right'}}>{bal<0?fmtN(-bal):''}</td>
+                        <td style={{textAlign:'right',color:'var(--text3)'}}>{balP>=0?fmtN(balP):''}</td>
+                        <td style={{textAlign:'right',color:'var(--text3)'}}>{balP<0?fmtN(-balP):''}</td>
+                      </tr>
+                    );
+                  })}
+                  <tr style={{fontWeight:700,borderTop:'2px solid var(--border)'}}>
+                    <td>Total</td><td style={{textAlign:'right'}}>{fmtN(tbDebit)}</td><td style={{textAlign:'right'}}>{fmtN(tbCredit)}</td>
+                    <td style={{textAlign:'right',color:'var(--text3)'}}>{fmtN(tbDebitPrev)}</td><td style={{textAlign:'right',color:'var(--text3)'}}>{fmtN(tbCreditPrev)}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -9379,13 +9765,14 @@ const QuotationsPage = ({inline=true,onClose,currentUser})=>{
   const save=()=>{
     if(!form.customer.name){toast.error('Customer name required');return;}
     let f=form;
+    const wasExisting=list.some(q=>q.id===f.id);
     if(!f.quoteNo){ const {no,commit}=nextDocNo('QUO'); f={...f,quoteNo:no}; commit(); }
-    const exists=list.some(q=>q.id===f.id);
-    persist(exists?list.map(q=>q.id===f.id?f:q):[...list,f]);
+    persist(wasExisting?list.map(q=>q.id===f.id?f:q):[...list,f]);
+    logAudit(wasExisting?'QUOTATION_EDITED':'QUOTATION_CREATED',`${f.quoteNo} — ${f.customer?.name||''} — ${fmt(total(f))}`,currentUser);
     setForm(null);
     toast.success('Quotation saved');
   };
-  const del=id=>{if(!window.confirm('Delete this quotation?'))return;persist(list.filter(q=>q.id!==id));};
+  const del=id=>{if(!window.confirm('Delete this quotation?'))return;const q=list.find(x=>x.id===id);persist(list.filter(q=>q.id!==id));logAudit('QUOTATION_DELETED',`${q?.quoteNo||''} — ${q?.customer?.name||''}`,currentUser);};
   const setStatus=(id,status)=>{persist(list.map(q=>q.id===id?{...q,status}:q));};
   const convert=(q)=>{
     if(!window.confirm(`Convert ${q.quoteNo} into a real invoice for ${fmt(total(q))}?`))return;
@@ -9473,13 +9860,14 @@ const DeliveryChallanPage = ({inline=true,onClose,currentUser})=>{
   const save=()=>{
     if(!form.customer.name){toast.error('Customer name required');return;}
     let f=form;
+    const wasExisting=list.some(d=>d.id===f.id);
     if(!f.dcNo){ const {no,commit}=nextDocNo('DC'); f={...f,dcNo:no}; commit(); }
-    const exists=list.some(d=>d.id===f.id);
-    persist(exists?list.map(d=>d.id===f.id?f:d):[...list,f]);
+    persist(wasExisting?list.map(d=>d.id===f.id?f:d):[...list,f]);
+    logAudit(wasExisting?'DC_EDITED':'DC_CREATED',`${f.dcNo} — ${f.customer?.name||''}`,currentUser);
     setForm(null);
     toast.success('Delivery Challan saved');
   };
-  const del=id=>{if(!window.confirm('Delete this delivery challan?'))return;persist(list.filter(d=>d.id!==id));};
+  const del=id=>{if(!window.confirm('Delete this delivery challan?'))return;const d=list.find(x=>x.id===id);persist(list.filter(d=>d.id!==id));logAudit('DC_DELETED',`${d?.dcNo||''} — ${d?.customer?.name||''}`,currentUser);};
 
   return <div className={inline?"inline-card":"overlay"}>
     <div className={inline?"inline-card-inner":"modal"}>
@@ -9558,10 +9946,11 @@ const RecurringInvoicesPage = ({inline=true,onClose,currentUser})=>{
     if(!form.name||!form.customer.name){toast.error('Template name and customer are required');return;}
     const exists=list.some(r=>r.id===form.id);
     persist(exists?list.map(r=>r.id===form.id?form:r):[...list,form]);
+    logAudit(exists?'RECURRING_TEMPLATE_EDITED':'RECURRING_TEMPLATE_CREATED',`${form.name} — ${form.customer?.name||''} — ${form.frequency}`,currentUser);
     setForm(null);
     toast.success('Recurring template saved');
   };
-  const del=id=>{if(!window.confirm('Delete this recurring template?'))return;persist(list.filter(r=>r.id!==id));};
+  const del=id=>{if(!window.confirm('Delete this recurring template?'))return;const r=list.find(x=>x.id===id);persist(list.filter(r=>r.id!==id));logAudit('RECURRING_TEMPLATE_DELETED',`${r?.name||''}`,currentUser);};
   const generateNow=(r)=>{
     const inv=convertItemsToInvoice(r.customer,r.items,`Recurring invoice — ${r.name}`,currentUser);
     if(!inv){toast.error('Add at least one item first');return;}
@@ -9816,7 +10205,7 @@ const App = ()=>{
     setMenuOpen(false);
   };
 
-  const logout=()=>{setUser(null);toast.info('Logged out');};
+  const logout=()=>{logAudit('USER_LOGOUT','Logged out',user);setUser(null);toast.info('Logged out');};
   const loadInv=inv=>{setLoadedInv(inv);setFormKey(k=>k+1);setPage('invoice');setSearchQuery('');};
   const loadPO=po=>{setLoadedPO(po);setPoKey(k=>k+1);setModal('po');};
   const newPOModal=()=>{setLoadedPO(null);setPoKey(k=>k+1);setModal('po');};
@@ -10081,17 +10470,17 @@ const App = ()=>{
         {page==='history'&&<HistoryModal onClose={()=>setPage('invoice')} onLoad={loadInv} currentUser={user} inline={true} searchQuery={searchQuery}/>}
         {page==='pohistory'&&<POHistoryModal onClose={()=>setPage('invoice')} onLoad={po=>{setLoadedPO(po);setPoKey(k=>k+1);setModal('po');}} currentUser={user} onNewPO={()=>{setLoadedPO(null);setPoKey(k=>k+1);setModal('po');}} inline={true} searchQuery={searchQuery}/>}
         {page==='expenses'&&<PurchaseModal onClose={()=>setPage('invoice')} currentUser={user} inline={true} searchQuery={searchQuery}/>}
-        {page==='customers'&&<CustomerModal onClose={()=>setPage('invoice')} inline={true} searchQuery={searchQuery}/>}
+        {page==='customers'&&<CustomerModal onClose={()=>setPage('invoice')} inline={true} searchQuery={searchQuery} currentUser={user}/>}
         {page==='dashboard'&&<Dashboard onClose={()=>setPage('invoice')} onLoad={loadInv} inline={true}/>}
         {page==='company'&&<CompanyModal onClose={()=>setPage('invoice')} currentUser={user} inline={true}/>}
-        {page==='hsn'&&<HSNModal onClose={()=>setPage('invoice')} inline={true} searchQuery={searchQuery}/>}
-        {page==='terms'&&canSee(user.role,'terms')&&<TermsModal onClose={()=>setPage('invoice')} inline={true}/>}
+        {page==='hsn'&&<HSNModal onClose={()=>setPage('invoice')} inline={true} searchQuery={searchQuery} currentUser={user}/>}
+        {page==='terms'&&canSee(user.role,'terms')&&<TermsModal onClose={()=>setPage('invoice')} inline={true} currentUser={user}/>}
         {page==='inventory'&&canSee(user.role,'inventory')&&<InventoryPage currentUser={user} initialTab={invView}/>}
         {page==='aging'&&canSee(user.role,'aging')&&<AgingReportPage initialTab={agingView}/>}
         {page==='bankrecon'&&canSee(user.role,'bankrecon')&&<BankReconPage currentUser={user}/>}
         {page==='salesview'&&canSee(user.role,'salesview')&&<SalesPage currentUser={user}/>}
         {page==='reports'&&canSee(user.role,'reports')&&<ReportsPage currentUser={user}/>}
-        {page==='coa'&&canSee(user.role,'reports')&&<ChartOfAccountsPage isAdmin={isAdmin}/>}
+        {page==='coa'&&canSee(user.role,'reports')&&<ChartOfAccountsPage isAdmin={isAdmin} currentUser={user}/>}
         {page==='journal'&&canSee(user.role,'reports')&&<JournalVouchersPage currentUser={user}/>}
         {page==='ledger'&&canSee(user.role,'reports')&&<GeneralLedgerPage/>}
         {page==='trialbalance'&&canSee(user.role,'reports')&&<TrialBalancePage/>}
@@ -10117,7 +10506,7 @@ const App = ()=>{
 
     {/* All sections render inline in app-body above */}
     {/* Products master modal — stays as overlay */}
-    {modal==='products'&&<ProductMasterModal onClose={()=>{setModal(null);setFormKey(k=>k+1);}}/>}
+    {modal==='products'&&<ProductMasterModal onClose={()=>{setModal(null);setFormKey(k=>k+1);}} currentUser={user}/>}
   </div>
   </>;
 };
