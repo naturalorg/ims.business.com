@@ -1268,393 +1268,386 @@ const LogoIcon = ({size=32})=>{
 };
 
 
-/* ── PDF GENERATOR (Redesigned) ── */
+/* ── PDF GENERATOR — client "Leroc" template (Tax Invoice / Debit Note / Credit Note / Non-GST) ──
+   Layout follows the approved sample:
+     framed page → header (logo + company + big title) → meta row → Bill To / Ship To → Subject
+     → items grid → totals + words / notes / bank + signature → Terms & Conditions → (optional) e-Invoice IRN block.
+
+   ── HOW TO ADD IRN LATER ──────────────────────────────────────────────────────────────────────
+   Nothing else needs to change in this file. When e-invoicing is implemented, save this on the invoice:
+       inv.irn = { irn:'<64-char hash>', ackNo:'112526687593737', ackDate:'2025-09-11 12:50:00',
+                   qr:'data:image/png;base64,....' }          // qr is optional
+   and the IRN block (QR + IRN + Ack No + Ack Date) prints automatically under the Terms & Conditions.
+   ─────────────────────────────────────────────────────────────────────────────────────────────── */
+const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// "2025-07-21" → "21 Jul 2025"
+const fmtDateDMY = d => {
+  if(!d) return '';
+  if(typeof d!=='string') return fmtDate(d)||'';
+  const p=d.split('-'); if(p.length!==3) return d;
+  const mi=parseInt(p[1],10)-1;
+  return `${p[2].padStart(2,'0')} ${MON3[mi]||p[1]} ${p[0]}`;
+};
+// "Net 30" from invoice date → due date (or a manual inv.paymentTerms override)
+const payTermsLabel = inv => {
+  if(inv.paymentTerms) return inv.paymentTerms;
+  if(!inv.date || !inv.dueDate) return '—';
+  const n=Math.round((new Date(inv.dueDate)-new Date(inv.date))/86400000);
+  if(isNaN(n)) return '—';
+  return n<=0 ? 'Due on receipt' : 'Net '+n;
+};
+// "Karnataka (29)" from buyer GSTIN, else the buyer's state, else our own state
+const placeOfSupplyLabel = (inv, co) => {
+  if(inv.placeOfSupply) return inv.placeOfSupply;
+  const sc=stateCode((inv.billTo?.gstin||'').trim());
+  if(sc && STATE_CODES[sc]) return `${STATE_CODES[sc]} (${sc})`;
+  return inv.billTo?.state || co.state || '';
+};
+// 6745000 → "Indian Rupee Sixty-Seven Lakh Eighty-Five Thousand Only"
+const amountInWordsIN = amt => {
+  const n=Math.abs(Number(amt)||0);
+  let rup=Math.floor(n+1e-9), paise=Math.round((n-rup)*100);
+  if(paise>=100){rup+=1;paise=0;}
+  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  const two=x=>x<20?ones[x]:tens[Math.floor(x/10)]+(x%10?'-'+ones[x%10]:'');
+  const three=x=>x>=100?ones[Math.floor(x/100)]+' Hundred'+(x%100?' '+two(x%100):''):two(x);
+  const cr=Math.floor(rup/10000000), lk=Math.floor((rup%10000000)/100000), th=Math.floor((rup%100000)/1000), rest=rup%1000;
+  const words=[cr&&three(cr)+' Crore', lk&&two(lk)+' Lakh', th&&two(th)+' Thousand', rest&&three(rest)].filter(Boolean).join(' ');
+  let s='Indian Rupee '+(words||'Zero');
+  if(paise) s+=' and '+two(paise)+' Paise';
+  return s+' Only';
+};
+
 const makePDF = (inv, co, terms) => {
   try {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:'mm', format:'a4' });
-  const PW=210, PH=297, ML=14, MR=14, CW=PW-ML-MR;
 
-  // Globex-style professional palette
-  const WHITE=[255,255,255], BG=[247,248,252];
-  const BLUE=[30,85,135], LBLUE=[212,226,242];
-  const DARK=[22,22,22], MED=[95,95,95], LGRAY=[165,165,165], XGRAY=[218,218,222];
-  const ALTROW=[244,247,252];
+  // ── page geometry (mm) ──
+  const PW=210, PH=297;
+  const L=6.5, R=PW-6.5, FT=6.5, FB=PH-6.5, CW=R-L;   // outer frame
+  const PAD=3.5, MIDX=105, SPLIT=117.5;               // inner padding, Bill/Ship divider, totals divider
+  const CONT_Y=22;                                    // where content starts on continuation pages
 
-  const gstType=inv.gstType||'INTRA', docType=(inv.isB2C?'TAX INVOICE (B2C)':(inv.docType||'TAX INVOICE'));
-  const isNonGST = inv.docType==='NON GST INVOICE';
-  const items=(inv.items||[]).filter(r=>r.desc);
+  // ── palette ──
+  const DARK=[25,25,25], MED=[85,85,85], LGRAY=[140,140,140], GRID=[150,150,150], BAR=[238,238,238], RED=[200,35,35];
 
-  // Plain professional page border — simple ruled frame, no decorative circles
-  const drawPageFrame=(isFirst)=>{
-    doc.setFillColor(...WHITE); doc.rect(0,0,PW,PH,'F');
-    doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5);
-    doc.rect(10,10,PW-20,PH-20);
-    if(!isFirst){
-      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...DARK);
-      doc.text((co.name||'')+' — '+docType+' (cont.)',ML+2,20);
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MED);
-      doc.text('Invoice: '+(inv.invNo||''),PW-MR-2,20,{align:'right'});
-      doc.setDrawColor(...XGRAY); doc.setLineWidth(0.4); doc.line(ML,23,PW-MR,23);
+  // ── document type flags ──
+  const rawType = inv.docType||'TAX INVOICE';
+  const isCN = rawType==='CREDIT NOTE', isDN = rawType==='DEBIT NOTE', isNote = isCN||isDN;
+  const isNonGST = rawType==='NON GST INVOICE';
+  const gstType = inv.gstType||'INTRA';
+  const docTitle = isCN?'Credit Note' : isDN?'Debit Note' : (inv.isB2C?'TAX INVOICE (B2C)':rawType);
+  const items = (inv.items||[]).filter(r=>r.desc);
+
+  // ── tiny drawing helpers (DRY=true measures without drawing) ──
+  let DRY=false;
+  const font=(b,i)=>doc.setFont('helvetica', b&&i?'bolditalic':b?'bold':i?'italic':'normal');
+  const T=(s,x,y,o={})=>{
+    if(DRY) return;
+    const {size=7.5,bold=false,italic=false,color=DARK,align='left'}=o;
+    font(bold,italic); doc.setFontSize(size); doc.setTextColor(...color);
+    doc.text(String(s),x,y,{align});
+  };
+  const wrap=(s,w,size=7.5,bold=false,italic=false)=>{
+    font(bold,italic); doc.setFontSize(size);
+    return doc.splitTextToSize(String(s==null?'':s),w);
+  };
+  const tw=(s,size,bold=false,italic=false)=>{ font(bold,italic); doc.setFontSize(size); return doc.getTextWidth(String(s)); };
+  const HL=(y,x1=L,x2=R,w=0.25,c=GRID)=>{ if(DRY)return; doc.setDrawColor(...c); doc.setLineWidth(w); doc.line(x1,y,x2,y); };
+  const VL=(x,y1,y2,w=0.25,c=GRID)=>{ if(DRY)return; doc.setDrawColor(...c); doc.setLineWidth(w); doc.line(x,y1,x,y2); };
+  const FILL=(x,y,w,h,c)=>{ if(DRY)return; doc.setFillColor(...c); doc.rect(x,y,w,h,'F'); };
+  const imgFmt=d=>d.startsWith('data:image/png')?'PNG':d.startsWith('data:image/webp')?'WEBP':'JPEG';
+
+  // Amount with a drawn ₹ sign (the built-in PDF fonts have no ₹ glyph), right-aligned at xr
+  const money=(str,xr,y,size=7.5,bold=false,color=DARK)=>{
+    if(DRY) return;
+    const numW=tw(str,size,bold);
+    const em=size*0.3528, gw=em*0.5, h=em*0.72, gap=em*0.16;
+    const x0=xr-numW-gap-gw, top=y-h;
+    T(str,xr,y,{size,bold,color,align:'right'});
+    doc.setDrawColor(...color); doc.setLineWidth(Math.max(0.12,em*(bold?0.085:0.065)));
+    doc.line(x0,top,x0+gw,top);                       // top bar
+    doc.line(x0,top+h*0.2,x0+gw,top+h*0.2);          // second bar
+    const cx=x0+gw*0.5, cy=top+h*0.25, rx=gw*0.42, ry=h*0.25;   // bowl
+    let px=cx, py=top;
+    for(let i=1;i<=10;i++){
+      const a=-Math.PI/2+Math.PI*i/10, nx=cx+rx*Math.cos(a), ny=cy+ry*Math.sin(a);
+      doc.line(px,py,nx,ny); px=nx; py=ny;
     }
+    doc.line(cx,top+h*0.5,x0,top+h*0.5);
+    doc.line(x0+gw*0.15,top+h*0.5,x0+gw*0.95,top+h);  // leg
   };
 
-  drawPageFrame(true);
-  let Y=15;
+  let Y=FT;
+  const newPage=()=>{ doc.addPage(); Y=CONT_Y; };
 
-  // ══ HEADER: LOGO (left) + COMPANY DETAILS (left, beside logo) + DOC TITLE (top-right) ══
-  const isCDN = inv.docType==='CREDIT NOTE'||inv.docType==='DEBIT NOTE';
-  const logoSize=26, logoX=ML+2;
-  const textX = co.logo ? (logoX+logoSize+5) : ML+2;
+  // ══════════ 1. HEADER — logo + company details (left), big document title (right) ══════════
+  const logoBox=24, logoX=L+PAD, logoY=FT+2.5;
+  const textX = co.logo ? logoX+logoBox+5 : L+PAD;
   if(co.logo){
     try{
-      const mime=co.logo.substring(5,co.logo.indexOf(';'));
-      const ext=mime.split('/')[1].toUpperCase();
-      doc.addImage(co.logo,ext==='JPG'?'JPEG':ext,logoX,Y,logoSize,logoSize);
+      let w=logoBox,h=logoBox;
+      try{ const p=doc.getImageProperties(co.logo); const r=p.width/p.height; if(r>1)h=logoBox/r; else w=logoBox*r; }catch(e){}
+      doc.addImage(co.logo,imgFmt(co.logo),logoX+(logoBox-w)/2,logoY+(logoBox-h)/2,w,h);
     }catch(e){}
   }
+  const coName=co.name||'Your Company';
+  const pan=co.panNo || (co.gstin&&co.gstin.length>=12 ? co.gstin.substring(2,12) : '');
+  const coLines=[];
+  if(co.formerName) coLines.push('(Formerly known as '+co.formerName+')');
+  String(co.address||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(s=>coLines.push(s));
+  const cityLine=[[co.city,co.pin].filter(Boolean).join(' - '),co.state,'India'].filter(Boolean).join(', ');
+  if(cityLine) coLines.push(cityLine);
+  if(co.gstin||pan) coLines.push([co.gstin?'GSTIN '+co.gstin:'', pan?'PAN:'+pan:''].filter(Boolean).join(', '));
+  const webMail=[co.website?'web: '+co.website:'', co.email?'Email: '+co.email:'', co.phone?'Ph: '+co.phone:''].filter(Boolean).join(', ');
+  if(webMail) coLines.push(webMail);
 
-  const titleZoneW=62; // reserved width on the right for the big doc-type title
-  const coBlockW = PW-MR-titleZoneW-textX;
+  const titleSize0=21;
+  let titleSize=titleSize0;
+  while(titleSize>13 && tw(docTitle,titleSize)>60) titleSize-=1;
+  const coBlockW=(R-PAD-62)-textX;
+  T(coName,textX,FT+7,{size:13,bold:true});
+  let cy=FT+10.8;
+  coLines.forEach(l=>{ wrap(l,coBlockW,7).forEach(s=>{ T(s,textX,cy,{size:7,color:DARK}); cy+=3.2; }); });
+  const hdrBottom=Math.max(FT+30, cy+1.5, logoY+logoBox+2.5);
+  T(docTitle,R-PAD,hdrBottom-3.4,{size:titleSize,align:'right'});
+  Y=hdrBottom; HL(Y);
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...DARK);
-  doc.text(co.name||'Your Company',textX,Y+5);
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MED);
-  const addrStr=[co.address,co.city,co.state,co.pin].filter(Boolean).join(', ');
-  let coY=Y+10;
-  if(addrStr){doc.splitTextToSize(addrStr,coBlockW).slice(0,2).forEach(l=>{doc.text(l,textX,coY);coY+=3.8;});}
-  if(co.gstin) {doc.text('GSTIN: '+co.gstin,textX,coY);coY+=3.8;}
-  if(co.email) {doc.text('Email: '+co.email,textX,coY);coY+=3.8;}
-  if(co.phone) {doc.text('Phone: '+co.phone,textX,coY);coY+=3.8;}
-  if(co.website){doc.text(co.website,textX,coY);}
-
-  // Big document-type title — top-right corner
-  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(...BLUE);
-  doc.text(docType, PW-MR-2, Y+9, {align:'right'});
-  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...LGRAY);
-  doc.text(gstType==='INTRA'?'Intra-State (CGST + SGST)':'Inter-State (IGST)', PW-MR-2, Y+14, {align:'right'});
-
-  Y=Math.max(coY+5,Y+logoSize+4,Y+18);
-  doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5); doc.line(ML,Y,PW-MR,Y); Y+=5;
-
-  // ══ META ROW — Invoice / Note number, dates, PO — two columns, right under the header ══
-  const metaLeft=[];
-  if(isCDN){
-    metaLeft.push(['Number:', inv.invNo||'—']);
-    metaLeft.push(['Date:', fmtDate(inv.date)||'—']);
-    if(inv.origInvNo) metaLeft.push(['Orig. Inv No:', inv.origInvNo]);
-    if(inv.origInvDate) metaLeft.push(['Orig. Inv Date:', fmtDate(inv.origInvDate)]);
+  // ══════════ 2. META ROW ══════════
+  const metaL=[], metaR=[];
+  if(isNote){
+    metaL.push(['#', inv.invNo||'—']);
+    metaL.push([isCN?'Credit Date':'Debit Date', fmtDateDMY(inv.date)||'—']);
+    if(inv.poNo) metaL.push(['Ref#', inv.poNo]);
+    if(inv.origInvNo) metaL.push(['Invoice#', inv.origInvNo]);
+    if(inv.origInvDate) metaL.push(['Invoice Date', fmtDateDMY(inv.origInvDate)]);
   } else {
-    metaLeft.push(['Invoice No:', inv.invNo||'—']);
-    metaLeft.push(['Invoice Date:', fmtDate(inv.date)||'—']);
-    metaLeft.push(['Due Date:', inv.dueDate?fmtDate(inv.dueDate):'—']);
+    metaL.push(['INVOICE NO', inv.invNo||'—']);
+    metaL.push(['INVOICE DATE', fmtDateDMY(inv.date)||'—']);
+    metaL.push(['TERMS', payTermsLabel(inv)]);
+    if(inv.poNo) metaR.push(['PO No', inv.poNo]);
   }
-  const metaRight=[];
-  if(inv.poNo) metaRight.push(['PO / Ref No:', inv.poNo]);
+  metaR.unshift(['Place Of Supply', placeOfSupplyLabel(inv,co)||'—']);
+  const mRow=4.2, mTop=Y;
+  const mH=Math.max(metaL.length,metaR.length)*mRow+4.2;
+  metaL.forEach(([k,v],i)=>{ const y=mTop+4.4+i*mRow; T(k,L+PAD,y,{color:MED}); T(': '+v,L+PAD+45.5,y,{bold:true}); });
+  metaR.forEach(([k,v],i)=>{ const y=mTop+4.4+i*mRow; T(k,MIDX+PAD,y,{color:MED}); T(': '+v,MIDX+PAD+41,y,{bold:true}); });
+  VL(MIDX,mTop,mTop+mH);
+  Y=mTop+mH; HL(Y);
 
-  const metaRowH=5.5;
-  const metaH=Math.max(metaLeft.length,metaRight.length)*metaRowH;
-  let mly=Y+4;
-  metaLeft.forEach(([l,v])=>{
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...MED);
-    doc.text(l, ML+2, mly);
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...DARK);
-    doc.text(v, ML+36, mly);
-    mly+=metaRowH;
-  });
-  let mry=Y+4;
-  metaRight.forEach(([l,v])=>{
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...MED);
-    doc.text(l, PW-MR-44, mry);
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...DARK);
-    doc.text(v, PW-MR-2, mry, {align:'right'});
-    mry+=metaRowH;
-  });
-
-  Y+=metaH+6;
-  doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5); doc.line(ML,Y,PW-MR,Y); Y+=5;
-
-  // BILL TO / SHIP TO
-  const colW=(CW/2)-3, col2X=ML+colW+6;
-  // Headers — plain bold labels with a thin underline (no fill block)
-  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...BLUE);
-  doc.text('BILL TO',ML+2,Y+4);
-  doc.text('SHIP TO',col2X+2,Y+4);
-  doc.setDrawColor(...BLUE); doc.setLineWidth(0.5);
-  doc.line(ML+2,Y+5.5,ML+22,Y+5.5); doc.line(col2X+2,Y+5.5,col2X+22,Y+5.5);
-  Y+=9;
-
+  // ══════════ 3. BILL TO / SHIP TO ══════════
   const bt=inv.billTo||{};
-  const stData=inv.sameAddress?bt:(inv.shipTo||bt);
-
-  const drawCustomer=(cx,d,maxW)=>{
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...DARK);
-    doc.text(d.name||'',cx+2,Y+5);
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MED);
-    const ls=[];
-    if(d.address)ls.push(d.address);
-    const cc=[d.city,d.state,d.pin].filter(Boolean).join(', ');
-    if(cc)ls.push(cc);
-    if(d.gstin)ls.push('GSTIN: '+d.gstin);
-    if(d.phone)ls.push('Ph: '+d.phone);
-    if(d.email)ls.push(d.email);
-    let ly=Y+10; ls.slice(0,5).forEach(l=>{doc.splitTextToSize(l,maxW-4).forEach(s=>{doc.text(s,cx+2,ly);ly+=3.8;});});
-    return ly;
+  const st=inv.sameAddress?bt:(inv.shipTo||bt);
+  const partyLines=(d,isBill,w)=>{
+    const out=[];
+    out.push({t:d.name||'',bold:isBill,size:isBill?9:7.5});
+    String(d.address||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(s=>wrap(s,w,7.5).forEach(x=>out.push({t:x})));
+    if(d.city) out.push({t:d.city});
+    const ps=[d.pin,d.state].filter(Boolean).join(' '); if(ps) out.push({t:ps});
+    if(isBill && (d.city||d.state||d.pin)) out.push({t:'India'});
+    if(isBill && d.gstin) out.push({t:'GSTIN '+d.gstin});
+    if(d.phone) out.push({t:'Ph: '+d.phone});
+    if(d.email) out.push({t:d.email});
+    return out;
   };
-  const bBot=drawCustomer(ML,bt,colW);
-  const sBot=drawCustomer(col2X,stData,colW);
-  Y=Math.max(bBot,sBot)+6;
+  const colWBill = isNote ? CW-2*PAD : MIDX-L-2*PAD;
+  const billLines=partyLines(bt,true,colWBill);
+  const shipLines=isNote?[]:partyLines(st,false,R-MIDX-2*PAD);
+  const barH=4.6;
+  FILL(L,Y,CW,barH,BAR);
+  T('Bill To',L+PAD,Y+3.3,{bold:true});
+  if(!isNote) T('Ship To',MIDX+PAD,Y+3.3,{bold:true});
+  HL(Y+barH);
+  const partyTop=Y+barH;
+  const lineH=3.9;
+  const heightOf=ls=>ls.reduce((s,l)=>s+(l.size&&l.size>8?4.6:lineH),0);
+  const partyH=Math.max(heightOf(billLines),heightOf(shipLines),12)+5.5;
+  const drawParty=(ls,x)=>{ let y=partyTop+4.6; ls.forEach(l=>{ T(l.t,x,y,{bold:l.bold,size:l.size||7.5}); y+=(l.size&&l.size>8?4.6:lineH); }); };
+  drawParty(billLines,L+PAD);
+  if(!isNote) drawParty(shipLines,MIDX+PAD);
+  if(!isNote) VL(MIDX,Y,partyTop+partyH);
+  Y=partyTop+partyH; HL(Y);
 
-  doc.setDrawColor(...XGRAY); doc.setLineWidth(0.5); doc.line(ML,Y,PW-MR,Y); Y+=3;
-
-  // PRODUCTS TABLE — compact padding to save vertical space
-  const bS={fontSize:7.5,cellPadding:{top:2.6,bottom:2.6,left:3,right:3},textColor:DARK,lineColor:XGRAY,lineWidth:0.15,overflow:'linebreak',fillColor:WHITE};
-  const hS={fillColor:ALTROW,textColor:DARK,fontStyle:'bold',fontSize:7,halign:'center',cellPadding:{top:3,bottom:3,left:2,right:2},lineColor:XGRAY,lineWidth:0.15};
-  const aS={fillColor:WHITE};
-
-  let tH,tB,cS;
-  // Total available = 182mm
-
-  if(isNonGST){
-    // 4 cols for Non-GST: DESC(100)+QTY(25)+RATE(30)+AMT(27)=182
-    tH=[['DESCRIPTION','QTY','RATE (Rs.)','AMOUNT (Rs.)']];
-    tB=items.map(r=>[r.desc||'',(r.qty||1)+' '+(r.unit||'Nos'),fmtN(r.rate||0),fmtN(r.total||((r.qty||0)*(parseFloat(r.rate)||0)))]);
-    cS={0:{cellWidth:100},1:{cellWidth:25,halign:'center'},2:{cellWidth:30,halign:'right'},3:{cellWidth:27,halign:'right'}};
-  } else if(gstType==='INTRA'){
-    // 7 cols: DESC(50)+HSN(19)+QTY(16)+RATE(25)+TAX%(12)+TAX AMT(28)+AMT(32)=182
-    // HSN=19 ensures 6-digit codes never wrap. Short header labels prevent header row wrapping.
-    tH=[['DESCRIPTION','HSN/SAC','QTY','RATE (Rs.)','TAX%','TAX (Rs.)','AMOUNT (Rs.)']];
-    tB=items.map((r)=>{
-      const tR=parseFloat(r.taxRate)||0,gst=parseFloat(r.gstAmt)||0;
-      return[r.desc||'',r.hsnCode||'',(r.qty||1)+' '+(r.unit||'Nos'),fmtN(r.rate||0),
-             tR+'%',fmtN(gst),fmtN(r.total||0)];
-    });
-    cS={0:{cellWidth:50},1:{cellWidth:19,halign:'center'},2:{cellWidth:16,halign:'center'},
-        3:{cellWidth:25,halign:'right'},4:{cellWidth:12,halign:'center'},
-        5:{cellWidth:28,halign:'right'},6:{cellWidth:32,halign:'right'}};
-  } else {
-    // 6 cols: DESC(64)+HSN(19)+QTY(16)+RATE(27)+IGST(26)+AMT(30)=182
-    tH=[['DESCRIPTION','HSN/SAC','QTY','RATE (Rs.)','IGST (Rs.)','AMOUNT (Rs.)']];
-    tB=items.map((r)=>{
-      const tR=parseFloat(r.taxRate)||0,gst=parseFloat(r.gstAmt)||0;
-      return[r.desc||'',r.hsnCode||'',(r.qty||1)+' '+(r.unit||'Nos'),
-             fmtN(r.rate||0),fmtN(gst),fmtN(r.total||0)];
-    });
-    cS={0:{cellWidth:64},1:{cellWidth:19,halign:'center'},2:{cellWidth:16,halign:'center'},
-        3:{cellWidth:27,halign:'right'},4:{cellWidth:26,halign:'right'},5:{cellWidth:30,halign:'right'}};
+  // ══════════ 4. SUBJECT (compact) ══════════
+  const subj=String(inv.subject||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  if(subj.length){
+    T('Subject :',L+PAD,Y+4,{size:6.5,color:LGRAY});
+    let sy=Y+7.6;
+    subj.forEach(s=>wrap(s,CW-2*PAD,7).forEach(x=>{ T(x,L+PAD,sy,{size:7}); sy+=3.4; }));
+    Y=sy+0.6; HL(Y);
   }
 
-  doc.autoTable({startY:Y,head:tH,body:tB,styles:bS,headStyles:hS,alternateRowStyles:aS,columnStyles:cS,
-    theme:'grid',
-    margin:{left:ML,right:MR,top:32},showHead:'everyPage',tableLineColor:XGRAY,tableLineWidth:0.15,
-    didDrawPage:(d)=>{if(d.pageNumber>1)drawPageFrame(false);}
-  });
+  // ══════════ 5. ITEMS GRID ══════════
+  const num=v=>parseFloat(v)||0;
+  const qtyTxt=r=>{ const q=parseFloat(r.qty); return (isNaN(q)?'':q.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}))+(r.unit?' '+r.unit:''); };
+  const lineAmt=r=> isNonGST ? (num(r.total)||num(r.qty)*num(r.rate)) : (num(r.taxable)||num(r.qty)*num(r.rate)*(1-num(r.discount)/100));
+  const hasDisc=!isNonGST && items.some(r=>num(r.discount)>0);
+  const cols=[];  // {h,w,al,get}
+  cols.push({h:isNote?'#':'S.\nNo',w:8,al:'left',get:(r,i)=>String(i+1)});
+  cols.push({h:'Item & Description',w:0,al:'left',get:r=>r.desc||''});   // w=0 → takes the remaining width
+  if(!isNonGST) cols.push({h:'HSN\n/SAC',w:isNote?22:18,al:'left',get:r=>r.hsnCode||''});
+  cols.push({h:'Qty',w:isNote?18:14,al:'right',get:r=>qtyTxt(r)});
+  cols.push({h:'Rate',w:isNonGST?28:(isNote?27:(gstType==='INTRA'?25:27)),al:'right',get:r=>fmtN(num(r.rate))});
+  if(hasDisc) cols.push({h:'Disc\n%',w:10,al:'right',get:r=>String(num(r.discount))});
+  if(!isNote && !isNonGST){
+    if(gstType==='INTRA'){
+      cols.push({h:'CGST',w:22,al:'right',get:r=>fmtN(num(r.gstAmt)/2)});
+      cols.push({h:'SGST',w:22,al:'right',get:r=>fmtN(num(r.gstAmt)/2)});
+    } else cols.push({h:'IGST',w:22,al:'right',get:r=>fmtN(num(r.gstAmt))});
+  }
+  cols.push({h:'Amount',w:isNonGST?28:(isNote?27:(gstType==='INTRA'?22:28)),al:'right',get:r=>fmtN(lineAmt(r))});
+  const fixedW=cols.reduce((s,c)=>s+c.w,0);
+  cols.find(c=>c.w===0).w=CW-fixedW;
+  const columnStyles={}; cols.forEach((c,i)=>{ columnStyles[i]={cellWidth:c.w,halign:c.al}; });
 
+  doc.autoTable({
+    startY:Y, theme:'grid',
+    head:[cols.map(c=>c.h)],
+    body:items.map((r,i)=>cols.map(c=>c.get(r,i))),
+    styles:{font:'helvetica',fontSize:7.5,cellPadding:{top:1.7,bottom:1.7,left:1.8,right:1.8},textColor:DARK,lineColor:GRID,lineWidth:0.2,overflow:'linebreak',fillColor:[255,255,255],valign:'top'},
+    headStyles:{fillColor:BAR,textColor:DARK,fontStyle:'bold',fontSize:7.5,valign:'middle'},
+    alternateRowStyles:{fillColor:[255,255,255]},
+    columnStyles, showHead:'everyPage',
+    margin:{left:L,right:PW-R,top:CONT_Y,bottom:PH-FB+2}
+  });
   Y=doc.lastAutoTable.finalY;
 
-  // TOTALS BLOCK (right side)
-  const sub=parseFloat(inv.subtotal)||0,tgst=parseFloat(inv.totalGST)||0;
-  const roff=parseFloat(inv.roundOff)||0;
-  // For Non-GST: compute grand from items directly (fallback for saved invoices that had 0)
-  const ngItemTotal=isNonGST?items.reduce((s,r)=>s+(parseFloat(r.total)||((parseFloat(r.qty)||0)*(parseFloat(r.rate)||0))),0):0;
-  const grand=isNonGST?ngItemTotal:(parseFloat(inv.grand)||0);
-  const bMap=inv.taxBreakdown||{};
-
-  let sRows;
+  // ══════════ 6. TOTALS (right) + WORDS / NOTES / BANK (left) + SIGNATURE ══════════
+  const grandRaw=isNonGST
+    ? items.reduce((s,r)=>s+lineAmt(r),0)
+    : num(inv.grand);
+  const grand=Math.abs(grandRaw);
+  const sub=Math.abs(num(inv.subtotal)), roff=num(inv.roundOff)*(isCN&&num(inv.grand)<0?-1:1);
+  const rows=[];   // {label,val,bold,big,rupee,color}
   if(isNonGST){
-    // Non-GST: just show TOTAL (no tax breakdown)
-    sRows=[['TOTAL (No GST)','Rs. '+fmtN(grand)]];
+    rows.push({label:'Total',val:fmtN(grand),bold:true,big:true,rupee:true,size:8.5});
   } else {
-    sRows=[['SUB-TOTAL','Rs. '+fmtN(sub)]];
-    // Consolidated totals — one line each for CGST, SGST or IGST
-    let totalCGST=0,totalSGST=0,totalIGST=0;
-    Object.entries(bMap).filter(([,a])=>a>0).forEach(([rate,amt])=>{
-      if(gstType==='INTRA'){totalCGST+=amt/2;totalSGST+=amt/2;}
-      else{totalIGST+=amt;}
+    rows.push({label:'Sub Total',val:fmtN(sub)});
+    let taxRows=Object.entries(inv.taxBreakdown||{}).map(([rt,amt])=>[parseFloat(rt)||0,Math.abs(parseFloat(amt)||0)]).filter(([rt,amt])=>rt>0||amt>0).sort((a,b)=>a[0]-b[0]);
+    if(!taxRows.length) taxRows=[[0,0]];
+    taxRows.forEach(([rt,amt])=>{
+      if(gstType==='INTRA'){ const h=+(rt/2).toFixed(2); rows.push({label:`CGST${h} (${h}%)`,val:fmtN(amt/2)}); rows.push({label:`SGST${h} (${h}%)`,val:fmtN(amt/2)}); }
+      else rows.push({label:`IGST${rt} (${rt}%)`,val:fmtN(amt)});
     });
-    if(gstType==='INTRA'){
-      if(totalCGST>0)sRows.push(['TOTAL CGST','Rs. '+fmtN(totalCGST)]);
-      if(totalSGST>0)sRows.push(['TOTAL SGST','Rs. '+fmtN(totalSGST)]);
-    } else {
-      if(totalIGST>0)sRows.push(['TOTAL IGST','Rs. '+fmtN(totalIGST)]);
+    if(Math.abs(roff)>=0.005) rows.push({label:'Round Off',val:(roff>0?'+ ':'- ')+fmtN(Math.abs(roff))});
+    rows.push({label:'Total',val:fmtN(grand),bold:true,big:true,rupee:true,size:8.5});
+    if(isCN){
+      const used=inv.creditsUsed!=null&&inv.creditsUsed!==''?Math.min(Math.abs(num(inv.creditsUsed)),grand):grand;
+      rows.push({label:'Credits Used',val:'(-) '+fmtN(used),color:RED});
+      rows.push({label:'Credits Remaining',val:fmtN(Math.max(grand-used,0)),bold:true,big:true,rupee:true,size:8});
     }
-    if(tgst>0)sRows.push(['TOTAL TAX','Rs. '+fmtN(tgst)]);
-    if(roff!==0)sRows.push(['ROUND OFF',(roff>0?'+ ':'- ')+'Rs. '+fmtN(Math.abs(roff))]);
   }
+  const rowH=r=>r.big?6.2:4.8;
+  const rowsH=rows.reduce((s,r)=>s+rowH(r),0)+3;
 
-  const totW=96,totX=PW-MR-totW,rowH=6.2,grandH=7.5;
-  const totBlock=sRows.length*rowH+grandH;
-  if(Y+totBlock+8>PH-24){doc.addPage();drawPageFrame(false);Y=32;}
-  else Y+=4;
-  const totTop=Y;
+  const leftX=L+PAD, leftW=SPLIT-L-2*PAD;
+  const inWords=amountInWordsIN(grand);
+  const noteTxt=(inv.notes&&String(inv.notes).trim())||(isCN?'':'Thanks for your business.');
+  const pm=co.paymentMode||'netbanking';
+  const showBank=!isCN&&(pm==='netbanking'||pm==='both');
+  const showUPI=!isCN&&(pm==='upi'||pm==='both');
+  const drawLeft=y0=>{
+    let y=y0+5;
+    T('Total In Words',leftX,y,{color:MED}); y+=4.2;
+    wrap(inWords,leftW,7.5,true,true).forEach(l=>{ T(l,leftX,y,{bold:true,italic:true}); y+=3.8; });
+    y+=2.4;
+    if(noteTxt){
+      T('Notes',leftX,y,{color:MED}); y+=3.8;
+      String(noteTxt).split('\n').forEach(n=>wrap(n,leftW,7.5).forEach(l=>{ T(l,leftX,y); y+=3.6; }));
+      y+=2.4;
+    }
+    if(showBank||showUPI){
+      let yb=y, yu=y;
+      if(showBank){
+        T("Company's Bank Details:",leftX,yb,{bold:true}); yb+=4;
+        if(co.bankName||co.bankAccount){
+          T(coName,leftX,yb,{bold:true}); yb+=3.8;
+          [['Bank Name',co.bankName],['A/C NO',co.bankAccount],['IFSC',co.bankIFSC],['Branch',co.bankBranch]].filter(([,v])=>v).forEach(([k,v])=>{
+            T(k,leftX,yb); T(': '+v,leftX+15.5,yb); yb+=3.6;
+          });
+        } else { T('No bank details configured.',leftX,yb,{italic:true,color:LGRAY,size:7}); yb+=3.6; }
+      }
+      if(showUPI){
+        const ux=showBank?leftX+66:leftX;
+        T('UPI Payment:',ux,yu,{bold:true}); yu+=4;
+        if(co.upiId){ T('UPI ID',ux,yu); T(': '+co.upiId,ux+11,yu); yu+=4.2; }
+        if(co.upiQR){
+          const qs=24;
+          if(!DRY){ try{ doc.addImage(co.upiQR,imgFmt(co.upiQR),ux,yu-1,qs,qs); }catch(e){} }
+          T('Scan to pay',ux+qs/2,yu+qs+2.6,{size:6.5,color:MED,align:'center'});
+          yu+=qs+4;
+        } else if(!co.upiId){ T('No UPI details configured.',ux,yu,{italic:true,color:LGRAY,size:7}); yu+=3.6; }
+      }
+      y=Math.max(yb,yu);
+    }
+    return y-y0+1.5;
+  };
+  DRY=true; const leftH=drawLeft(0); DRY=false;
+  const sigMin=24;
+  const secH=Math.max(leftH, rowsH+sigMin);
+  if(Y+secH>FB-2){ newPage(); HL(Y-0.01); }
 
-  sRows.forEach(([lbl,val],i)=>{
-    const ry=totTop+i*rowH;
-    if(i===0){doc.setDrawColor(...XGRAY);doc.setLineWidth(0.3);doc.line(totX,ry,PW-MR,ry);}
-    doc.setDrawColor(...XGRAY);doc.setLineWidth(0.2);doc.line(totX,ry+rowH,PW-MR,ry+rowH);
-    const isBold=lbl.startsWith('TOTAL')||lbl.startsWith('SUB');
-    doc.setFont('helvetica',isBold?'bold':'normal');doc.setFontSize(7.5);
-    doc.setTextColor(isBold?DARK[0]:MED[0],isBold?DARK[1]:MED[1],isBold?DARK[2]:MED[2]);
-    doc.text(lbl,totX+4,ry+4.5);
-    doc.setFont('helvetica',isBold?'bold':'normal');doc.setTextColor(...DARK);
-    doc.text(val,PW-MR-2,ry+4.5,{align:'right'});
+  const secTop=Y;
+  drawLeft(secTop);
+  let ry=secTop+1.5;
+  rows.forEach(r=>{
+    const by=ry+rowH(r)-1.5, sz=r.size||7.5, col=r.color||DARK;
+    T(r.label,R-34.5,by,{align:'right',bold:r.bold,size:sz,color:col});
+    if(r.rupee) money(r.val,R-1.8,by,sz,r.bold,col); else T(r.val,R-1.8,by,{align:'right',bold:r.bold,size:sz,color:col});
+    ry+=rowH(r);
   });
+  HL(secTop+rowsH,SPLIT,R);
+  const sigCx=(SPLIT+R)/2;
+  T(coName,sigCx,secTop+rowsH+5,{align:'center'});
+  if(co.signatory) T(co.signatory,sigCx,secTop+secH-6.2,{align:'center',size:6.5,color:LGRAY});
+  T('Authorized Signature',sigCx,secTop+secH-2.2,{align:'center'});
+  VL(SPLIT,secTop,secTop+secH);
+  Y=secTop+secH; HL(Y);
 
-  // Grand Total row — bordered, bold, subtle tint (no heavy color block, closer to a classic ledger total)
-  const gY=totTop+sRows.length*rowH;
-  doc.setFillColor(...LBLUE); doc.rect(totX,gY,totW,grandH,'F');
-  doc.setDrawColor(...BLUE); doc.setLineWidth(0.5);
-  doc.line(totX,gY,PW-MR,gY); doc.line(totX,gY+grandH,PW-MR,gY+grandH);
-  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...BLUE);
-  doc.text(isNonGST?'TOTAL AMOUNT':'GRAND TOTAL',totX+4,gY+5);
-  doc.setTextColor(...DARK);
-  doc.text('Rs. '+fmtN(grand),PW-MR-2,gY+5,{align:'right'});
-
-  // Amount in words — left side, aligned with top of totals box
-  if(sub>0||isNonGST){
-    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...MED);
-    doc.text('Amount in Words:',ML+2,totTop+5);
-    doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(...MED);
-    doc.splitTextToSize(numberToWords(grand),totX-ML-6).slice(0,3).forEach((l,i)=>doc.text(l,ML+2,totTop+11+i*4.5));
+  // ══════════ 7. TERMS & CONDITIONS (toggle: Settings → Terms & Conditions) ══════════
+  if(S.get(SK.SHOW_TERMS,true)){
+    const tl=String(terms||DEFAULT_TERMS).split('\n').map(s=>s.trim()).filter(Boolean);
+    const tLines=[]; tl.forEach(t=>wrap(t,CW-2*PAD,7).forEach(x=>tLines.push(x)));
+    const tH=tLines.length*3.35+9;
+    if(Y+tH>FB-2) newPage();
+    T('Terms & Conditions',L+PAD,Y+4.6,{color:MED});
+    let ty=Y+8.6;
+    tLines.forEach(l=>{ T(l,L+PAD,ty,{size:7}); ty+=3.35; });
+    Y=Y+tH; HL(Y);
   }
 
-  // Compact signature block — directly under the totals box, same column width
-  const sigTop=gY+grandH+6;
-  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...DARK);
-  doc.text('For '+(co.name||'Your Company'),totX+totW/2,sigTop,{align:'center'});
-  const sigLineY=sigTop+11;
-  doc.setDrawColor(...DARK);doc.setLineWidth(0.4);
-  doc.line(totX+6,sigLineY,totX+totW-6,sigLineY);
-  doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...MED);
-  doc.text('Authorized Signatory',totX+totW/2,sigLineY+4.5,{align:'center'});
-  let sigBottomExtra=7;
-  if(co.signatory){
-    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...LGRAY);
-    doc.text(co.signatory,totX+totW/2,sigLineY+8,{align:'center'});
-    sigBottomExtra=11;
+  // ══════════ 8. e-INVOICE (IRN) BLOCK — prints only when inv.irn is present ══════════
+  if(inv.irn && inv.irn.irn){
+    const qs=28, iH=qs+8;
+    if(Y+iH>FB-2) newPage();
+    let tx=L+PAD;
+    if(inv.irn.qr){ try{ doc.addImage(inv.irn.qr,imgFmt(inv.irn.qr),L+PAD,Y+4,qs,qs); }catch(e){} tx=L+PAD+qs+6; }
+    const kv=[['IRN',inv.irn.irn],['Ack No.',inv.irn.ackNo],['Ack Date',inv.irn.ackDate]].filter(([,v])=>v);
+    kv.forEach(([k,v],i)=>{ const yy=Y+8+i*7; T(k+' :',tx,yy,{color:MED}); T(String(v),tx+22,yy,{bold:true}); });
+    T("e-Invoicing detail(s) generated from the Government's e-Invoicing system.",tx,Y+8+kv.length*7+1,{size:6.8,color:LGRAY});
+    Y=Y+iH; HL(Y);
   }
 
-  Y=Math.max(sigLineY+sigBottomExtra, totTop+22);
-  doc.setDrawColor(...XGRAY);doc.setLineWidth(0.5);doc.line(ML,Y,PW-MR,Y);Y+=5;
-
-  // Smart bottom section: check payment section fits; if not, new page
-  {const _pm=co.paymentMode||'netbanking';
-  const _sb=(_pm==='netbanking'||_pm==='both');
-  const _su=(_pm==='upi'||_pm==='both');
-  const _hasQR=!!(_su&&co.upiQR);
-  const _payH=(_sb||_su)?(_hasQR?50:20):0;
-  if(_payH>0&&Y+_payH>PH-24){doc.addPage();drawPageFrame(false);Y=32;}}
-
-  // ══ PAYMENT DETAILS (full width) ══
-  // Decide what to show based on company payment mode
-  const payMode=co.paymentMode||'netbanking'; // 'netbanking','upi','both'
-  const showBank=(payMode==='netbanking'||payMode==='both');
-  const showUPI=(payMode==='upi'||payMode==='both');
-
-  if(showBank||showUPI){
-    let px=ML;
-    const payColW=payMode==='both'?CW/2-4:CW;
-    let paySecHeight=8; // track height used by payment section
-
-    // NET BANKING column
-    if(showBank){
-      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
-      doc.text('BANK DETAILS',px+2,Y+5);
-      doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(px+2,Y+6.5,px+28,Y+6.5);
-      if(co.bankName||co.bankAccount){
-        let by=Y+10;
-        const bankRows=[['Bank',co.bankName],['A/c No.',co.bankAccount],['IFSC',co.bankIFSC],['Branch',co.bankBranch],['Acc. Holder',co.name]];
-        bankRows.filter(([,v])=>v).forEach(([lbl,val])=>{
-          doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MED);doc.text(lbl+':',px+2,by);
-          doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...DARK);doc.text(String(val||''),px+22,by);by+=4.0;
-        });
-        paySecHeight=Math.max(paySecHeight, by-Y+2);
-      } else {
-        doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);doc.text('No bank details configured.',px+2,Y+13);
-        paySecHeight=Math.max(paySecHeight,18);
-      }
-    }
-
-    // UPI column
-    if(showUPI){
-      const upiColW = payMode==='both' ? payColW : CW;
-      const upiX    = showBank ? ML+payColW+8 : ML;
-      // LEFT-align QR when UPI-only; centre only when in right half (both mode)
-      const qrAnchorX = upiX + 2; // always left-aligned anchor
-      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
-      doc.text('UPI PAYMENT',upiX+2,Y+5);
-      doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(upiX+2,Y+6.5,upiX+28,Y+6.5);
-      let uy=Y+10;
-      if(co.upiId){
-        doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MED);
-        doc.text('UPI ID:',upiX+2,uy);
-        doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...DARK);
-        doc.text(co.upiId,upiX+20,uy);
-        uy+=7;
-      }
-      if(co.upiQR){
-        try{
-          const qrSize=30;
-          const qrFmt=co.upiQR.startsWith('data:image/png')?'PNG':co.upiQR.startsWith('data:image/svg')?'SVG':'JPEG';
-          // Always place QR left-aligned within the UPI column
-          doc.addImage(co.upiQR,qrFmt,qrAnchorX,uy,qrSize,qrSize);
-          doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MED);
-          doc.text('Scan to pay',qrAnchorX+qrSize/2,uy+qrSize+4,{align:'center'});
-          paySecHeight=Math.max(paySecHeight, uy-Y+qrSize+8);
-          uy+=qrSize+8;
-        }catch(e){
-          doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);
-          doc.text('QR image error.',upiX+2,uy);
-          paySecHeight=Math.max(paySecHeight,uy-Y+8);
-        }
-      } else {
-        doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...LGRAY);
-        doc.text('No UPI QR configured.',upiX+2,uy);
-        paySecHeight=Math.max(paySecHeight,uy-Y+8);
-      }
-    }
-    Y+=paySecHeight;
-    doc.setDrawColor(...XGRAY);doc.setLineWidth(0.4);doc.line(ML,Y,PW-MR,Y);Y+=4;
-  }
-
-  // ══ TERMS & CONDITIONS — full width, optional (toggle in Settings → Terms & Conditions) ══
-  const showTermsOnPDF = S.get(SK.SHOW_TERMS,true);
-  if(showTermsOnPDF){
-    const tLines=(terms||DEFAULT_TERMS).split('\n').filter(Boolean).slice(0,7);
-    const tBlockH = tLines.length*4.0+9;
-    if(Y+tBlockH>PH-22){doc.addPage();drawPageFrame(false);Y=32;}
-    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BLUE);
-    doc.text('TERMS & CONDITIONS',ML+2,Y+5);
-    doc.setDrawColor(...BLUE);doc.setLineWidth(0.4);doc.line(ML+2,Y+6.5,ML+38,Y+6.5);
-    let ty=Y+9;
-    doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(...MED);
-    tLines.forEach(t=>{
-      const clean=t.replace(/^\d+\.\s*/,'');
-      doc.text('• '+clean,ML+2,ty,{maxWidth:CW-4});
-      ty+=4.0;
-    });
-    Y=ty+2;
-  }
-
-  // FOOTER all pages
+  // ══════════ FRAME + CONTINUATION HEADER + PAGE NUMBER (all pages) ══════════
   const tp=doc.internal.getNumberOfPages();
   for(let pg=1;pg<=tp;pg++){
     doc.setPage(pg);
-    doc.setFont('helvetica','italic');doc.setFontSize(6.8);doc.setTextColor(...LGRAY);
-    doc.text('This is a computer generated invoice and does not require a physical signature.',PW/2,PH-8,{align:'center'});
-    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...BLUE);
-    doc.text('Arctic Books  |  Complete Accounting Software',ML+2,PH-4);
-    doc.setFont('helvetica','normal');doc.setTextColor(...LGRAY);
-    doc.text('Page '+pg+' of '+tp,PW-MR-2,PH-4,{align:'right'});
+    doc.setDrawColor(...GRID); doc.setLineWidth(0.3); doc.rect(L,FT,CW,FB-FT);
+    if(pg>1){
+      T(coName+' — '+docTitle+' (cont.)',L+PAD,FT+6,{size:8,bold:true});
+      T((isNote?'No: ':'Invoice: ')+(inv.invNo||''),R-PAD,FT+6,{size:7.5,color:MED,align:'right'});
+      HL(FT+9.5);
+    }
+    T(String(pg),PW-8,PH-2.6,{size:6.5,color:LGRAY,align:'right'});
   }
 
   doc.save((inv.invNo||'Invoice')+'.pdf');
-  // Auto-save to folder if set
   autoSavePDF(doc, inv);
   toast.success('PDF downloaded!');
   }catch(err){console.error('PDF Error:',err);toast.error('PDF error: '+(err.message||String(err)));}
 };
-
 /* ── EXCEL EXPORT ── */
 /* ── FOLDER HANDLE (File System Access API) ── */
 let _folderHandle = null; // persists in memory per session
@@ -2382,7 +2375,7 @@ const makeExcel = (invoices) => {
 
 /* ── MODALS ── */
 const CompanyModal = ({onClose, currentUser, inline=false})=>{
-  const [d,setD]=useState(S.get(SK.CO,{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',website:'',logo:'',bankName:'',bankAccount:'',bankIFSC:'',bankBranch:'',signatory:'',panNo:'',paymentMode:'netbanking',upiId:'',upiQR:'',waEnabled:false}));
+  const [d,setD]=useState(S.get(SK.CO,{name:'',formerName:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:'',website:'',logo:'',bankName:'',bankAccount:'',bankIFSC:'',bankBranch:'',signatory:'',panNo:'',paymentMode:'netbanking',upiId:'',upiQR:'',waEnabled:false}));
   const [waNum,setWaNum]=useState(S.get(SK.WA,''));
   const [prev,setPrev]=useState(d.logo||'');
   const [upiQRPrev,setUpiQRPrev]=useState(d.upiQR||'');
@@ -2415,6 +2408,7 @@ const CompanyModal = ({onClose, currentUser, inline=false})=>{
           </div>
           <div style={{flex:1}}>
             <div className="field"><label className="field-label">Company Name *</label><input className="field-input" value={d.name} onChange={up('name')} placeholder="Your Business Name"/></div>
+            <div className="field"><label className="field-label">Formerly Known As (optional)</label><input className="field-input" value={d.formerName||''} onChange={up('formerName')} placeholder="Old registered name, if any — prints under company name on PDF"/></div>
             <div className="g2">
               <div className="field"><label className="field-label">GSTIN</label><input className="field-input" value={d.gstin} onChange={e=>setD(p=>({...p,gstin:e.target.value.toUpperCase()}))} placeholder="29AAAAA0000A1Z5" maxLength={15} style={{textTransform:'uppercase'}}/></div>
               <div className="field"><label className="field-label">PAN Number</label><input className="field-input" value={d.panNo} onChange={up('panNo')} placeholder="AAAAA0000A" maxLength={10} style={{textTransform:'uppercase'}}/></div>
@@ -4762,13 +4756,13 @@ const Login = ({onLogin})=>{
 /* ── INVOICE FORM ── */
 const newItem  = ()=>({desc:'',hsnCode:'',unit:'Nos',qty:1,rate:'',discount:0,taxRate:'18',taxable:0,gstAmt:0,total:0});
 const newNonGSTItem = ()=>({desc:'',qty:1,rate:'',total:0});
-const newInvoice = (user,docType)=>({invNo:genInvNo(docType||'TAX INVOICE'),date:today(),dueDate:'',poNo:'',
+const newInvoice = (user,docType)=>({invNo:genInvNo(docType||'TAX INVOICE'),date:today(),dueDate:'',poNo:'',subject:'',
   billTo:{name:'',address:'',city:'',state:'',pin:'',gstin:'',phone:'',email:''},
   shipTo:{name:'',address:'',city:'',state:'',pin:''},
   sameAddress:true,items:[docType==='NON GST INVOICE'?newNonGSTItem():newItem()],
   notes:'',gstType:'INTRA',docType:docType||'TAX INVOICE',isB2C:false,
   status:'Sent',sentToCustomer:true,paidDate:'',
-  origInvNo:'',origInvDate:'',
+  origInvNo:'',origInvDate:'',creditsUsed:'',
   subtotal:0,taxBreakdown:{},totalGST:0,roundOff:0,grand:0,
   createdBy:user?.email||'',time:nowTime()
 });
@@ -5076,6 +5070,13 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
                 />
                 {!inv.origInvDate&&<div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>Auto-filled when you select an invoice above</div>}
               </div>
+              {inv.docType==='CREDIT NOTE'&&(
+                <div className="field" style={{marginBottom:0}}>
+                  <label className="field-label">Credits Used</label>
+                  <input type="number" className="field-input" value={inv.creditsUsed||''} onChange={upF('creditsUsed')} placeholder="Defaults to full note amount on PDF"/>
+                  <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>Leave blank to show the full amount as used (Credits Remaining ₹0.00)</div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -5127,6 +5128,10 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
           <label className="field-label">PO / Ref No.</label>
           <input className="field-input" value={inv.poNo||''} onChange={upF('poNo')} placeholder="PO-001 (optional)"/>
         </div>
+      </div>
+      <div className="field" style={{marginTop:12,marginBottom:0}}>
+        <label className="field-label">Subject</label>
+        <input className="field-input" value={inv.subject||''} onChange={upF('subject')} placeholder="e.g. EST/2025-26/0130 Dt.22-05-2025 — Project name (optional, prints on PDF)"/>
       </div>
     </div>
 
