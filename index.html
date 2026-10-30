@@ -15,8 +15,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>window.FBReady=new Promise(function(r){window.__fbResolve=r;});</script>
+<script type="module">
+import {initializeApp,getApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import * as A from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import * as D from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+window.FBLib={...A,...D,initializeApp,getApp};
+window.__fbResolve();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 [data-theme="dark"]{
@@ -680,6 +688,36 @@ body,html{overflow-x:hidden;max-width:100vw;box-sizing:border-box}
   max-width:100%;
 }
 
+/* ── Zoho-style report toolbar ── */
+.rb-wrap{margin-bottom:14px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.rb-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.rb-crumb{font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.3px}
+.rb-title{font-size:16px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rb-dot{width:5px;height:5px;border-radius:50%;background:var(--text3);display:inline-block}
+.rb-period{font-size:12px;font-weight:500;color:var(--text2)}
+.rb-count{font-size:11px;font-weight:600;color:var(--text3);background:var(--card2);border:1px solid var(--border);padding:2px 9px;border-radius:20px}
+.rb-actions{display:flex;gap:8px;align-items:center}
+.rb-filters{display:flex;align-items:center;gap:10px;padding:10px 16px;flex-wrap:wrap;background:var(--card2);border-radius:0 0 12px 12px}
+.rb-flabel{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text2)}
+.rb-pill{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border:1px solid var(--border2);border-radius:8px;background:var(--card);color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap;transition:border-color .15s}
+.rb-pill:hover{border-color:var(--primary2)}
+.rb-pill:disabled{opacity:.5;cursor:not-allowed}
+.rb-pill b{font-weight:600}
+.rb-pill .rb-k{color:var(--text3);font-weight:500}
+.rb-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:80;min-width:210px;max-height:340px;overflow-y:auto;background:var(--card);border:1px solid var(--border2);border-radius:10px;box-shadow:var(--shadow);padding:6px}
+.rb-menu.right{left:auto;right:0}
+.rb-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:7px;font-size:13px;color:var(--text);cursor:pointer}
+.rb-item:hover,.rb-item.sel:hover{background:var(--primary);color:#fff}
+.rb-item.sel{background:var(--card3);font-weight:700}
+.rb-item small{margin-left:auto;font-size:10px;opacity:.65}
+.rb-fetch{display:inline-flex;height:36px;border-radius:8px;overflow:visible}
+.rb-fetch button{border:none;color:#fff;font-weight:700;font-size:13px;cursor:pointer;background:var(--primary2);opacity:.65;padding:0 16px;transition:opacity .15s,background .15s;display:inline-flex;align-items:center}
+.rb-fetch button:first-child{border-radius:8px 0 0 8px}
+.rb-fetch button.caret{padding:0 9px;border-left:1px solid rgba(255,255,255,.35);border-radius:0 8px 8px 0}
+.rb-fetch.dirty button{opacity:1;background:var(--primary)}
+.rb-fetch button:hover{opacity:1}
+.rb-custom{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.rb-custom input{height:36px}
 </style>
 </head>
 <body>
@@ -802,16 +840,22 @@ const FIREBASE_CONFIG = {
 const SUPER_ADMINS = ['adithya@business.com','invoice@business.com'];
 const isSuperAdmin = (email='') => SUPER_ADMINS.includes(email.toLowerCase());
 
-/* ── FIREBASE INIT ── */
-let _fbApp = null;
-let _fbDb  = null;
-const getDb = () => {
-  if(!_fbDb){
-    if(!firebase.apps.length) _fbApp = firebase.initializeApp(FIREBASE_CONFIG);
-    else _fbApp = firebase.app();
-    _fbDb = firebase.database();
-  }
-  return _fbDb;
+/* ── FIREBASE INIT (modular SDK: Auth + Realtime DB share one signed-in session) ── */
+const REQUIRE_2FA = false; // false = free plan (email + password only). Set true after enabling TOTP in Firebase.
+const LEGACY_MIGRATION = true; // set to false once every user has logged in once (see setup notes)
+let _fb=null;
+const getFB=()=>{ if(!_fb){ const L=window.FBLib; const app=L.initializeApp(FIREBASE_CONFIG); _fb={L,app,auth:L.getAuth(app),db:L.getDatabase(app)}; } return _fb; };
+const getDb=()=>{ const {L,db}=getFB(); return { ref:p=>({ once:()=>L.get(L.ref(db,p)), set:v=>L.set(L.ref(db,p),v) }) }; };
+const fbWaitUser=()=>new Promise(res=>{ const {L,auth}=getFB(); const un=L.onAuthStateChanged(auth,u=>{un();res(u);}); });
+// Admin creates a login for someone else WITHOUT logging the admin out (uses a 2nd app instance),
+// then emails the person a link to choose their own password.
+const adminCreateAuthUser=async(email)=>{
+  const {L,auth}=getFB(); let sec; try{sec=L.getApp('sec');}catch(e){sec=L.initializeApp(FIREBASE_CONFIG,'sec');}
+  const a=L.getAuth(sec);
+  const tmp=Array.from(crypto.getRandomValues(new Uint8Array(18))).map(x=>x.toString(36)).join('')+'Aa1!';
+  try{ await L.createUserWithEmailAndPassword(a,email,tmp); await L.signOut(a); }
+  catch(e){ if(e.code!=='auth/email-already-in-use') throw e; }
+  await L.sendPasswordResetEmail(auth,email);
 };
 
 /* ── STORAGE — in-memory cache synced with Firebase Realtime DB ──
@@ -987,6 +1031,379 @@ const companyHeaderRows = () => {
   return rows;
 };
 const fmtN = n => Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* Compact per-document summaries used for the PDF version of each register
+   (the Excel version keeps the full line-item detail). */
+const regSalesPdf = (invoices)=>{
+  const rows=[['Date','Invoice No','Type','Customer','GSTIN','Taxable (Rs.)','CGST (Rs.)','SGST (Rs.)','IGST (Rs.)','Total Tax (Rs.)','Invoice Total (Rs.)','Status']];
+  const T=[0,0,0,0,0,0];
+  invoices.forEach(inv=>{
+    const items=(inv.items||[]).filter(r=>r.desc); if(!items.length) return;
+    const isNG=inv.docType==='NON GST INVOICE', isCN=inv.docType==='CREDIT NOTE', sign=isCN?-1:1, gt=inv.gstType||'INTRA';
+    const dt=inv.isB2C?'B2C':isNG?'Non-GST':(isCN?'Credit Note':inv.docType==='DEBIT NOTE'?'Debit Note':'Tax Invoice');
+    let tax=0,gst=0,ng=0;
+    items.forEach(r=>{ if(isNG){ng+=(parseFloat(r.qty)||0)*(parseFloat(r.rate)||0);} else {tax+=sign*(parseFloat(r.taxable)||0); gst+=sign*(parseFloat(r.gstAmt)||0);} });
+    const cg=gt==='INTRA'?gst/2:0, ig=gt!=='INTRA'?gst:0;
+    const total=Number(isNG?ng:getGrand(inv))||0;
+    rows.push([fmtDate(inv.date),inv.invNo||'',dt,inv.billTo?.name||'',(inv.billTo?.gstin||'').toUpperCase(),tax.toFixed(2),cg.toFixed(2),cg.toFixed(2),ig.toFixed(2),gst.toFixed(2),total.toFixed(2),inv.status||'Sent']);
+    T[0]+=tax;T[1]+=cg;T[2]+=cg;T[3]+=ig;T[4]+=gst;T[5]+=total;
+  });
+  rows.push(['TOTAL','','','','',...T.map(x=>x.toFixed(2)),'']);
+  return rows;
+};
+const regPurchasePdf = (expenses)=>{
+  const rows=[['Date','Vendor','GSTIN','Bill No','Category','Taxable (Rs.)','GST (Rs.)','Bill Total (Rs.)','Paid (Rs.)','Balance (Rs.)','Status']];
+  const T=[0,0,0,0,0];
+  expenses.forEach(e=>{
+    const tx=parseFloat(e.taxable)||0, g=parseFloat(e.gstAmt)||0, tot=parseFloat(e.total)||0, pd=expPaid(e), du=expDue(e);
+    rows.push([fmtDate(e.date),e.vendor||'',(e.vendorGSTIN||'').toUpperCase(),e.billNo||'',e.category||'',tx.toFixed(2),g.toFixed(2),tot.toFixed(2),pd.toFixed(2),du.toFixed(2),e.payStatus||'']);
+    T[0]+=tx;T[1]+=g;T[2]+=tot;T[3]+=pd;T[4]+=du;
+  });
+  rows.push(['TOTAL','','','','',...T.map(x=>x.toFixed(2)),'']);
+  return rows;
+};
+const regPOPdf = (orders)=>{
+  const rows=[['PO No','PO Date','Vendor','Delivery By','Sub Total (Rs.)','Taxes (Rs.)','Grand Total (Rs.)','Status']];
+  const T=[0,0,0];
+  orders.forEach(po=>{
+    const sub=(po.items||[]).reduce((t,r)=>t+(r.qty||0)*(r.rate||0),0), tx=Number(po.taxes||0);
+    rows.push([po.poNo||'',fmtDate(po.date),po.vendorTo?.name||'',fmtDate(po.deliveryDate),sub.toFixed(2),tx.toFixed(2),(sub+tx).toFixed(2),po.status||'Draft']);
+    T[0]+=sub;T[1]+=tx;T[2]+=sub+tx;
+  });
+  rows.push(['TOTAL','','','',...T.map(x=>x.toFixed(2)),'']);
+  return rows;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   PROFESSIONAL EXPORT ENGINE
+   One place that turns tabular data into a properly formatted Excel (.xlsx),
+   PDF or CSV — company letterhead, report title + period, styled column
+   headings, number formats, totals highlighting, frozen header, filters,
+   page numbers. Every register / report export routes through here.
+   ══════════════════════════════════════════════════════════════ */
+const PRO_C = {navy:'1E2A5A', primary:'3B57C9', soft:'E8ECFF', zebra:'F7F8FE', line:'D5DAF0', text:'1B1F3B', muted:'6B7280'};
+const PRO_NUM_RE = /^-?\d{1,3}(,\d{2,3})*(\.\d+)?$|^-?\d+(\.\d+)?$/;
+const proIsNum = v => typeof v==='number' ? isFinite(v) : (typeof v==='string' && PRO_NUM_RE.test(v.trim()));
+const proToNum = v => typeof v==='number' ? v : parseFloat(String(v).replace(/,/g,''));
+const PRO_TEXTY = /gstin|hsn|sac|\bpin\b|code|voucher|ref|invoice no|bill no|inv no|po number|document|txn|phone|mobile|date|month|bucket|status|sl\.?\s?no|s\.?\s?no\b|\bno\.?$/i;
+const PRO_MONEY = /\(rs|amount|value|taxable|outstanding|payable|gross|debit|credit|cgst|sgst|igst|net position|purchased/i;
+const PRO_TOTAL_RE = /^\s*(grand\s+)?total\b|^\s*of which\b|^\s*net\b/i;
+const proIsTotalRow = r => { const f=(r||[]).find(c=>c!==''&&c!==null&&c!==undefined); return typeof f==='string' && PRO_TOTAL_RE.test(f); };
+
+/* Normalise one sheet: find the header row, trim empty trailing columns/rows */
+const proNorm = (sh) => {
+  const aoa = (sh.aoa||[]).map(r=>Array.isArray(r)?r:[]);
+  const ne = r => r.filter(c=>c!==''&&c!==null&&c!==undefined).length;
+  let hi = sh.h0 ? 0 : aoa.findIndex(r=>ne(r)>=2);
+  if(hi<0) hi = aoa.findIndex(r=>ne(r)>=1);
+  if(hi<0) return null;
+  let headers = aoa[hi].map(c=>c==null?'':String(c));
+  let n = headers.length; while(n>0 && headers[n-1]==='') n--;
+  if(n===0) return null;
+  headers = headers.slice(0,n);
+  let body = aoa.slice(hi+1).map(r=>{ const o=[]; for(let i=0;i<n;i++) o.push(r[i]==null?'':r[i]); return o; });
+  while(body.length && ne(body[body.length-1])===0) body.pop();
+  return {headers, body};
+};
+
+/* Work out, per column: numeric?, number format, alignment, width */
+const proAnalyze = (headers, body, cols) => headers.map((h,ci)=>{
+  const hs = String(h||'');
+  const vals = body.map(r=>r[ci]).filter(v=>v!==''&&v!==null&&v!==undefined);
+  const allNum = vals.length>0 && vals.every(proIsNum);
+  const texty = PRO_TEXTY.test(hs) && !/\(rs|amount|value|balance|payable|outstanding/i.test(hs);
+  const numeric = allNum && !texty;
+  let kind='text', fmt='@';
+  if(numeric){
+    if(/%/.test(hs)){ kind='pct'; fmt='0.##'; }
+    else if(PRO_MONEY.test(hs) || vals.some(v=>/\.\d{2}$/.test(String(v).trim()))){ kind='money'; fmt='#,##0.00;[Red]-#,##0.00'; }
+    else if(vals.every(v=>Number.isInteger(proToNum(v)))){ kind='int'; fmt='#,##0'; }
+    else { kind='num'; fmt='#,##0.##'; }
+  }
+  const center = !numeric && (/^(sl|s)\.?\s?no\.?$|status|type|unit|^s$|date|bucket|month/i.test(hs.trim()));
+  let width = cols && cols[ci] && cols[ci].wch ? cols[ci].wch : 0;
+  if(!width){
+    const mx = Math.max(hs.length*1.05, ...vals.slice(0,300).map(v=>String(v).length));
+    width = Math.min(46, Math.max(10, Math.ceil(mx)+2));
+  }
+  if(kind==='money') width = Math.max(width, 15);
+  width = Math.max(width, 10);
+  return {numeric, kind, fmt, center, width};
+});
+
+const proCompanyInfo = () => {
+  const co = S.get(SK.CO,{});
+  const addr = [co.address,co.city,co.state,co.pin].filter(Boolean).join(', ');
+  const line2 = [addr, co.gstin?('GSTIN: '+co.gstin):'', co.phone?('Ph: '+co.phone):'', co.email||''].filter(Boolean).join('   |   ');
+  return {co, addr, line2};
+};
+const proNowText = () => new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+/* ── EXCEL (styled, via ExcelJS) ── */
+const proXlsx = async (spec, filename) => {
+  const EJ = window.ExcelJS;
+  const {co, line2} = proCompanyInfo();
+  const wb = new EJ.Workbook();
+  wb.creator = co.name || 'Accounts'; wb.created = new Date();
+  const thin = {style:'thin', color:{argb:'FF'+PRO_C.line}};
+  let made = 0;
+  spec.sheets.forEach((sh, si)=>{
+    const N = proNorm(sh); if(!N) return;
+    const {headers, body} = N;
+    const info = proAnalyze(headers, body, sh.cols);
+    const nc = headers.length;
+    const nm = String(sh.name||('Sheet'+(si+1))).replace(/[\\\/\?\*\[\]:]/g,'').substring(0,31) || ('Sheet'+(si+1));
+    const ws = wb.addWorksheet(nm, {
+      properties:{tabColor:{argb:'FF'+(si===0?PRO_C.primary:'7C93EE')}},
+      views:[{showGridLines:false}],
+      pageSetup:{orientation: nc>7?'landscape':'portrait', paperSize:9, fitToPage:true, fitToWidth:1, fitToHeight:0,
+                 margins:{left:0.4,right:0.4,top:0.6,bottom:0.7,header:0.3,footer:0.3}}
+    });
+    info.forEach((c,i)=>{ ws.getColumn(i+1).width = c.width; });
+    const merge = (r) => { if(nc>1) ws.mergeCells(r,1,r,nc); };
+    let r = 1;
+    if(spec.band!==false){
+      // company band
+      merge(r); let c=ws.getCell(r,1); c.value = co.name || 'Company';
+      c.font={name:'Calibri',size:16,bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={vertical:'middle',horizontal:'left',indent:1};
+      for(let i=1;i<=nc;i++) ws.getCell(r,i).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+PRO_C.navy}};
+      ws.getRow(r).height=30; r++;
+      merge(r); c=ws.getCell(r,1); c.value = line2 || ' ';
+      c.font={name:'Calibri',size:9,color:{argb:'FFC9D1F5'}}; c.alignment={vertical:'middle',horizontal:'left',indent:1,wrapText:true};
+      for(let i=1;i<=nc;i++) ws.getCell(r,i).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+PRO_C.navy}};
+      ws.getRow(r).height=20; r++;
+      // report title
+      merge(r); c=ws.getCell(r,1); c.value = sh.title || (si===0 && spec.title) || sh.name || 'Report';
+      c.font={name:'Calibri',size:14,bold:true,color:{argb:'FF'+PRO_C.navy}}; c.alignment={vertical:'middle',horizontal:'left',indent:1};
+      ws.getRow(r).height=28; r++;
+      // period + generated
+      merge(r); c=ws.getCell(r,1);
+      c.value = [spec.period, 'Generated on '+proNowText()].filter(Boolean).join('   •   ');
+      c.font={name:'Calibri',size:9,italic:true,color:{argb:'FF'+PRO_C.muted}}; c.alignment={vertical:'middle',horizontal:'left',indent:1};
+      ws.getRow(r).height=18; r++;
+      ws.getRow(r).height=6; r++;
+    }
+    const hr = r;
+    headers.forEach((h,i)=>{
+      const c = ws.getCell(hr,i+1); c.value = h;
+      c.font={name:'Calibri',size:10,bold:true,color:{argb:'FFFFFFFF'}};
+      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+PRO_C.primary}};
+      c.alignment={vertical:'middle',horizontal: info[i].numeric?'right':(info[i].center?'center':'left'),wrapText:true};
+      c.border={top:thin,bottom:{style:'medium',color:{argb:'FF'+PRO_C.navy}},left:{style:'thin',color:{argb:'FF5C74D6'}},right:{style:'thin',color:{argb:'FF5C74D6'}}};
+    });
+    ws.getRow(hr).height = 34;
+    let lines = 0;
+    body.forEach((row,bi)=>{
+      const rr = ws.getRow(hr+1+bi);
+      const tot = proIsTotalRow(row);
+      if(!tot && row.some(v=>v!==''&&v!==null&&v!==undefined)) lines++;
+      info.forEach((c,ci)=>{
+        let v = row[ci]; const cell = rr.getCell(ci+1);
+        if(c.numeric && v!=='' && proIsNum(v)){
+          cell.value = proToNum(v); cell.numFmt = c.fmt;
+          cell.alignment = {vertical:'middle',horizontal:'right'};
+        } else {
+          cell.value = (v===''||v==null) ? null : v;
+          const looksNum = typeof v==='string' && proIsNum(v);
+          cell.alignment = {vertical:'middle',horizontal: looksNum?'right':(c.center?'center':'left'), wrapText:true};
+        }
+        cell.font = {name:'Calibri',size:10,bold:tot,color:{argb:'FF'+PRO_C.text}};
+        cell.border = tot ? {top:{style:'medium',color:{argb:'FF'+PRO_C.primary}},bottom:thin,left:thin,right:thin}
+                          : {bottom:thin,left:thin,right:thin};
+        if(tot) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+PRO_C.soft}};
+        else if(bi%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+PRO_C.zebra}};
+      });
+    });
+    // closing line
+    const endR = hr + body.length + 2;
+    if(nc>1) ws.mergeCells(endR,1,endR,nc);
+    const ec = ws.getCell(endR,1); ec.value = `— ${lines} record(s)  •  End of report —`;
+    ec.font={name:'Calibri',size:9,italic:true,color:{argb:'FF'+PRO_C.muted}}; ec.alignment={horizontal:'center'};
+    ws.views = [{state:'frozen', ySplit:hr, showGridLines:false}];
+    if(body.length) ws.autoFilter = {from:{row:hr,column:1}, to:{row:hr,column:nc}};
+    ws.pageSetup.printTitlesRow = `${hr}:${hr}`;
+    ws.headerFooter = {oddFooter:`&L&8${String(co.name||'').replace(/&/g,'&&')}&C&8Page &P of &N&R&8Generated &D &T`};
+    made++;
+  });
+  if(!made) throw new Error('Nothing to export');
+  const buf = await wb.xlsx.writeBuffer();
+  downloadBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), filename);
+};
+
+/* Fallback if the ExcelJS library could not load (offline) — same data, plain SheetJS */
+const proXlsxFallback = (spec, filename) => {
+  const X = window.XLSX; const wb = X.utils.book_new();
+  spec.sheets.forEach((sh,i)=>{
+    const N = proNorm(sh); if(!N) return;
+    const ws = X.utils.aoa_to_sheet([...companyHeaderRows(), [sh.title||spec.title||sh.name||'Report'], [], N.headers, ...N.body]);
+    if(sh.cols) ws['!cols']=sh.cols;
+    X.utils.book_append_sheet(wb, ws, String(sh.name||('Sheet'+(i+1))).replace(/[\\\/\?\*\[\]:]/g,'').substring(0,31));
+  });
+  X.writeFile(wb, filename);
+};
+
+/* ── CSV (clean, machine-readable: headings + rows, UTF-8 with BOM so ₹/accents open right in Excel) ── */
+const proCsv = (spec, filename) => {
+  const N = proNorm(spec.sheets[0]); if(!N) throw new Error('Nothing to export');
+  const X = window.XLSX;
+  const csv = X.utils.sheet_to_csv(X.utils.aoa_to_sheet([N.headers, ...N.body]));
+  downloadBlob(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}), filename);
+};
+
+/* ── PDF ── */
+const pdfSafe = s => String(s==null?'':s).replace(/₹/g,'Rs. ').replace(/→/g,'->').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"')
+  .replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\u00FF\u2013\u2014\u2022]/g,'');
+const proFmtPdf = (v, kind) => {
+  if(v===''||v==null) return '';
+  if(!proIsNum(v)) return pdfSafe(v);
+  const n = proToNum(v);
+  if(kind==='money') return n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(kind==='int')   return n.toLocaleString('en-IN',{maximumFractionDigits:0});
+  return n.toLocaleString('en-IN',{maximumFractionDigits:2});
+};
+const proPdf = (spec, filename) => {
+  const {jsPDF} = window.jspdf;
+  const {co, addr} = proCompanyInfo();
+  const list = (spec.pdfSheets||spec.sheets).map(sh=>({sh, N:proNorm(sh)})).filter(x=>x.N);
+  if(!list.length) throw new Error('Nothing to export');
+  // apply optional column subsets first so page size fits the widest table
+  const prepared = list.map(({sh,N})=>{
+    let keep = N.headers.map((_,i)=>i);
+    if(sh.pdfCols){ const idx = sh.pdfCols.map(nm=>N.headers.indexOf(nm)).filter(i=>i>=0); if(idx.length) keep=idx; }
+    const headers = keep.map(i=>N.headers[i]);
+    const body = N.body.map(r=>keep.map(i=>r[i]));
+    return {sh, headers, body, info:proAnalyze(headers, body, null)};
+  });
+  const maxCols = Math.max(...prepared.map(p=>p.headers.length));
+  const orient = maxCols>6 ? 'l' : 'p';
+  const size = maxCols>18 ? 'a3' : 'a4';
+  const doc = new jsPDF({orientation:orient, unit:'mm', format:size});
+  const PW = doc.internal.pageSize.getWidth(), PH = doc.internal.pageSize.getHeight();
+  const ML=10, MR=10;
+  const gen = proNowText();
+  const firstPages = [];
+  prepared.forEach((p, si)=>{
+    if(si>0) doc.addPage();
+    const startPage = doc.internal.getNumberOfPages(); firstPages.push(startPage);
+    const title = p.sh.title || (si===0 && spec.title) || p.sh.name || 'Report';
+    // first-page letterhead block
+    doc.setFillColor(59,87,201); doc.rect(0,0,PW,3,'F');
+    doc.setTextColor(30,42,90); doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.text(pdfSafe(co.name||'Company'), ML, 12);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(107,114,128);
+    let y = 16;
+    if(addr){ doc.text(pdfSafe(addr), ML, y); y+=4; }
+    if(co.gstin){ doc.text('GSTIN: '+pdfSafe(co.gstin), ML, y); y+=4; }
+    doc.text('Generated: '+gen, PW-MR, 12, {align:'right'});
+    y += 2;
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(27,31,59);
+    const tl = doc.splitTextToSize(pdfSafe(title), PW-ML-MR);
+    tl.forEach((t,i)=>{ doc.text(t, ML, y+3+i*5); });
+    y += 3 + tl.length*5;
+    if(spec.period){ doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(107,114,128); doc.text(pdfSafe(spec.period), ML, y+1); y+=4; }
+    doc.setDrawColor(213,218,240); doc.setLineWidth(0.3); doc.line(ML, y, PW-MR, y);
+    y += 3;
+    const nc = p.headers.length;
+    const fs = nc>18 ? 5.5 : nc>13 ? 6.5 : nc>9 ? 7.5 : 8.5;
+    const totals = new Set(); p.body.forEach((r,i)=>{ if(proIsTotalRow(r)) totals.add(i); });
+    const bodyFmt = p.body.map(r=>r.map((v,ci)=>proFmtPdf(v, p.info[ci].kind)));
+    const colStyles = {};
+    p.info.forEach((c,i)=>{ colStyles[i] = {halign: c.numeric?'right':(c.center?'center':'left')}; });
+    doc.autoTable({
+      head:[p.headers.map(pdfSafe)], body:bodyFmt, startY:y,
+      margin:{left:ML, right:MR, top:20, bottom:16},
+      styles:{font:'helvetica', fontSize:fs, cellPadding:{top:1.6,bottom:1.6,left:1.8,right:1.8}, textColor:[27,31,59], lineColor:[213,218,240], lineWidth:0.15, valign:'middle', overflow:'linebreak'},
+      headStyles:{fillColor:[59,87,201], textColor:[255,255,255], fontStyle:'bold', halign:'center', lineColor:[59,87,201]},
+      alternateRowStyles:{fillColor:[247,248,254]},
+      columnStyles:colStyles, showHead:'everyPage',
+      didParseCell:(d)=>{
+        if(d.section==='head' && p.info[d.column.index] && p.info[d.column.index].numeric) d.cell.styles.halign='right';
+        if(d.section==='body' && totals.has(d.row.index)){ d.cell.styles.fontStyle='bold'; d.cell.styles.fillColor=[232,236,255]; }
+      },
+      didDrawPage:()=>{
+        const pg = doc.internal.getCurrentPageInfo().pageNumber;
+        if(pg>startPage){
+          doc.setFillColor(59,87,201); doc.rect(0,0,PW,2,'F');
+          doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(30,42,90); doc.text(pdfSafe(co.name||''), ML, 9);
+          doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(107,114,128); doc.text(pdfSafe(title), PW-MR, 9, {align:'right'});
+          doc.setDrawColor(213,218,240); doc.setLineWidth(0.3); doc.line(ML,12,PW-MR,12);
+        }
+      }
+    });
+  });
+  // footer on every page
+  const total = doc.getNumberOfPages();
+  for(let pg=1; pg<=total; pg++){
+    doc.setPage(pg);
+    doc.setDrawColor(213,218,240); doc.setLineWidth(0.3); doc.line(ML, PH-11, PW-MR, PH-11);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(107,114,128);
+    doc.text(pdfSafe(co.name||''), ML, PH-6.5);
+    doc.text(`Page ${pg} of ${total}`, PW/2, PH-6.5, {align:'center'});
+    doc.text(pdfSafe(spec.title||''), PW-MR, PH-6.5, {align:'right'});
+  }
+  doc.save(filename);
+};
+
+/* ── single entry point ── */
+const PRO_FMT_LABEL = {xlsx:'Excel', pdf:'PDF', csv:'CSV'};
+const proExport = async (fmt, spec, base) => {
+  const f = PRO_FMT_LABEL[fmt] ? fmt : 'xlsx';
+  const name = String(base||'Report').replace(/\.(xlsx|csv|pdf)$/i,'') + '.' + f;
+  try{
+    if(f==='pdf') proPdf(spec, name);
+    else if(f==='csv') proCsv(spec, name);
+    else if(window.ExcelJS) await proXlsx(spec, name);
+    else proXlsxFallback(spec, name);
+    toast.success(`Exported as ${PRO_FMT_LABEL[f]} — ${name}`);
+    return true;
+  }catch(err){ console.error(err); toast.error('Export failed: '+(err.message||err)); return false; }
+};
+/* Convert a SheetJS workbook (built by the existing register builders) into an export spec */
+const proWbToSpec = (wb, meta) => ({
+  ...meta,
+  sheets: wb.SheetNames.map(n=>({
+    name:n,
+    aoa: window.XLSX.utils.sheet_to_json(wb.Sheets[n], {header:1, raw:true, defval:''}),
+    cols: wb.Sheets[n]['!cols']
+  }))
+});
+
+/* ── Date-range presets (Indian financial year: 1 Apr – 31 Mar) ── */
+const DATE_PRESETS = ['Today','This Week','This Month','This Quarter','This Year','Yesterday','Previous Week','Previous Month','Previous Quarter','Previous Year','All Time','Custom'];
+const _iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const resolveRange = (preset, cf='', ct='') => {
+  const now = new Date(); const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  const fy = m>=3 ? y : y-1;                       // FY start year
+  const q  = Math.floor(((m+9)%12)/3);             // fiscal quarter 0..3 (Apr-Jun = 0)
+  const wd = (now.getDay()+6)%7;                   // Monday = 0
+  let a=null, b=null;
+  switch(preset){
+    case 'Today':            a=b=new Date(y,m,d); break;
+    case 'Yesterday':        a=b=new Date(y,m,d-1); break;
+    case 'This Week':        a=new Date(y,m,d-wd); b=new Date(y,m,d-wd+6); break;
+    case 'Previous Week':    a=new Date(y,m,d-wd-7); b=new Date(y,m,d-wd-1); break;
+    case 'This Month':       a=new Date(y,m,1); b=new Date(y,m+1,0); break;
+    case 'Previous Month':   a=new Date(y,m-1,1); b=new Date(y,m,0); break;
+    case 'This Quarter':     a=new Date(fy,3+3*q,1); b=new Date(fy,3+3*q+3,0); break;
+    case 'Previous Quarter': a=new Date(fy,3+3*q-3,1); b=new Date(fy,3+3*q,0); break;
+    case 'This Year':        a=new Date(fy,3,1); b=new Date(fy+1,3,0); break;
+    case 'Previous Year':    a=new Date(fy-1,3,1); b=new Date(fy,3,0); break;
+    case 'Custom':           return {preset:'Custom', from:cf, to:ct};
+    default:                 return {preset:'All Time', from:'', to:''};
+  }
+  return {preset, from:_iso(a), to:_iso(b)};
+};
+const inRangeDate = (dt, r) => {
+  if(!r || !r.preset || r.preset==='All Time' || (!r.from && !r.to)) return true;
+  const s = String(dt||'').substring(0,10);
+  if(r.from && s < r.from) return false;
+  if(r.to && s > r.to) return false;
+  return true;
+};
+const _MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const _fmtDM = s => { if(!s) return ''; const p=s.split('-'); return p.length===3 ? `${p[2]} ${_MON[parseInt(p[1],10)-1]} ${p[0]}` : s; };
+const rangeLabel = r => (!r || r.preset==='All Time' || (!r.from && !r.to)) ? 'All dates' : `From ${_fmtDM(r.from)} To ${_fmtDM(r.to)}`;
+const rangePeriodText = r => (!r || r.preset==='All Time' || (!r.from && !r.to)) ? 'Period: All dates' : `Period: ${fmtDate(r.from)} to ${fmtDate(r.to)}`;
+
 const today  = ()=>new Date().toISOString().split('T')[0];
 const fmtDate= d=>{
   if(!d)return'';
@@ -1814,7 +2231,7 @@ const makeGSTR1 = (invoices) => {
 };
 
 /* ── PURCHASE REGISTER EXCEL ── */
-const makePurchaseExcel = (expenses) => {
+const makePurchaseExcel = (expenses, fmt='xlsx', meta={}) => {
   const XLSX = window.XLSX;
   const wb = XLSX.utils.book_new();
 
@@ -1943,8 +2360,10 @@ const makePurchaseExcel = (expenses) => {
   wsM['!cols']=[{wch:12},{wch:12},{wch:16},{wch:16},{wch:18}];
   XLSX.utils.book_append_sheet(wb, wsM, 'Monthly Summary');
 
-  XLSX.writeFile(wb, `PurchaseRegister_${new Date().toISOString().split('T')[0]}.xlsx`);
-  toast.success('Purchase Register downloaded!');
+  proExport(fmt, {
+    ...proWbToSpec(wb, {title:'Purchase Register', period:meta.period||''}),
+    pdfSheets: fmt==='pdf' ? [{name:'Purchase Register', aoa:regPurchasePdf(expenses), h0:true}, {name:'Monthly Summary', aoa:monRows, h0:true}, {name:'Vendor-wise Outstanding', aoa:vRows, h0:true}] : undefined
+  }, `PurchaseRegister_${new Date().toISOString().split('T')[0]}`);
 };
 
 const makeAuditExcel = (logs) => {
@@ -2273,7 +2692,7 @@ const makeFullExcel = () => {
   }
 };
 
-const makeExcel = (invoices) => {
+const makeExcel = (invoices, fmt='xlsx', meta={}) => {
   const XLSX = window.XLSX;
   const wb = XLSX.utils.book_new();
   const headers = [
@@ -2369,8 +2788,10 @@ const makeExcel = (invoices) => {
   const ws2=XLSX.utils.aoa_to_sheet(summRows);
   ws2['!cols']=[{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:22},{wch:18},{wch:18}];
   XLSX.utils.book_append_sheet(wb, ws2, 'Monthly Summary');
-  XLSX.writeFile(wb, `SalesRegister_${new Date().toISOString().split('T')[0]}.xlsx`);
-  toast.success('Excel downloaded!');
+  proExport(fmt, {
+    ...proWbToSpec(wb, {title:'Sales Register', period:meta.period||''}),
+    pdfSheets: fmt==='pdf' ? [{name:'Sales Register', aoa:regSalesPdf(invoices), h0:true}, {name:'Monthly Summary', aoa:summRows, h0:true}] : undefined
+  }, `SalesRegister_${new Date().toISOString().split('T')[0]}`);
 };
 
 /* ── MODALS ── */
@@ -2764,6 +3185,7 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
   const [q, setQ] = useState(searchQuery);
   useEffect(()=>{if(searchQuery!==undefined){setQ(searchQuery);setTab('list');}},[searchQuery]);
   const [filterCat, setFilterCat] = useState('');
+  const rr = useReportRange('All Time');
   const [filterStatus, setFilterStatus] = useState('');
   const isAdmin = currentUser?.role==='admin'||currentUser?.role==='superadmin';
   const productList = S.get(SK.PRODUCTS,[]);
@@ -2859,8 +3281,10 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
     const mQ = !q || hay.includes(q.toLowerCase());
     const mC = !filterCat || e.category===filterCat;
     const mS = !filterStatus || e.payStatus===filterStatus;
-    return mQ&&mC&&mS;
+    const mR = inRangeDate(e.date, rr.applied);
+    return mQ&&mC&&mS&&mR;
   }).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  const rangeExps = expenses.filter(e=>inRangeDate(e.date, rr.applied));
 
   const totalPurchase = filtered.reduce((s,e)=>s+(parseFloat(e.total)||0),0);
   const totalTax      = filtered.reduce((s,e)=>s+(parseFloat(e.gstAmt)||0),0);
@@ -2884,7 +3308,6 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
           </span>
         </div>
         <div style={{display:'flex',gap:8}}>
-          {isAdmin&&<button className="btn btn-success btn-sm" onClick={()=>makePurchaseExcel(expenses)}><Ic n="xlsx" s={13}/>Purchase Register</button>}
           <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
         </div>
       </div>
@@ -2899,6 +3322,8 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
 
         {/* ══ LIST ══ */}
         {tab==='list'&&<>
+          <ReportToolbar section="Purchases" title="Purchase Register" range={rr} count={rangeExps.length} canExport={isAdmin}
+            onExport={(f,r)=>makePurchaseExcel(rangeExps,f,{period:rangePeriodText(r)})}/>
           <div className="g4" style={{marginBottom:10}}>
             <div className="stat-card"><div className="stat-val" style={{fontSize:15}}>{fmt(totalPurchase)}</div><div className="stat-lbl">Total Purchases</div></div>
             <div className="stat-card"><div className="stat-val" style={{fontSize:15,color:'var(--blue)'}}>{fmt(totalTax)}</div><div className="stat-lbl">Input GST Credit</div></div>
@@ -3327,6 +3752,7 @@ const HistoryModal = ({onClose,onLoad,currentUser,inline=false,searchQuery=''})=
   const [q,setQ]=useState(searchQuery);
   useEffect(()=>{if(searchQuery!==undefined)setQ(searchQuery);},[searchQuery]);
   const co=S.get(SK.CO,{});
+  const rr=useReportRange('All Time');
   const isAdmin=currentUser?.role==='admin'||currentUser?.role==='superadmin';
   const del=id=>{
     const inv=invs.find(i=>i.invNo===id);
@@ -3340,7 +3766,8 @@ const HistoryModal = ({onClose,onLoad,currentUser,inline=false,searchQuery=''})=
     logAudit('INVOICE_DELETED',`${inv?.invNo} — ${inv?.billTo?.name} — ₹${Math.abs(getGrand(inv||{}))||0}`,currentUser);
     toast.info('Invoice deleted — stock reversed');
   };
-  const sorted=[...invs].filter(i=>!q||i.invNo?.toLowerCase().includes(q.toLowerCase())||i.billTo?.name?.toLowerCase().includes(q.toLowerCase())||(i.docType||'').toLowerCase().includes(q.toLowerCase())||(i.isB2C?'b2c':'b2b').includes(q.toLowerCase())).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  const rangeInvs=invs.filter(i=>inRangeDate(i.date,rr.applied));
+  const sorted=[...invs].filter(i=>inRangeDate(i.date,rr.applied)&&(!q||i.invNo?.toLowerCase().includes(q.toLowerCase())||i.billTo?.name?.toLowerCase().includes(q.toLowerCase())||(i.docType||'').toLowerCase().includes(q.toLowerCase())||(i.isB2C?'b2c':'b2b').includes(q.toLowerCase()))).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
   const total=invs.reduce((s,i)=>s+getGrand(i),0);
   const mn=new Date(),mInvs=invs.filter(i=>{const d=new Date(i.date||'');return d.getMonth()===mn.getMonth()&&d.getFullYear()===mn.getFullYear();});
   if(inline) return <div className="inline-card">
@@ -3355,13 +3782,14 @@ const HistoryModal = ({onClose,onLoad,currentUser,inline=false,searchQuery=''})=
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           {isAdmin&&<>
             <button className="btn btn-outline-primary btn-sm" onClick={()=>makeGSTR1(invs)}><Ic n="xlsx" s={13}/>GSTR-1</button>
-            <button className="btn btn-success btn-sm" onClick={()=>makeExcel(invs)}><Ic n="xlsx" s={13}/>Sales Register</button>
           </>}
           <button className="btn btn-outline btn-sm" onClick={pickSaveFolder} title="Set folder for auto-saving PDFs"><Ic n="folder" s={16}/> Save Folder</button>
           <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
         </div>
       </div>
       <div className="modal-body">
+        <ReportToolbar section="Sales" title="Sales Register" range={rr} count={rangeInvs.length} canExport={isAdmin}
+          onExport={(f,r)=>makeExcel(rangeInvs,f,{period:rangePeriodText(r)})}/>
         <div className="g4" style={{marginBottom:18}}>
           <div className="stat-card"><div className="stat-val">{invs.length}</div><div className="stat-lbl">Total Records</div></div>
           <div className="stat-card"><div className="stat-val" style={{fontSize:16,color:total<0?'var(--red)':undefined}}>{fmt(total)}</div><div className="stat-lbl">Net Revenue</div></div>
@@ -4403,18 +4831,21 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
   const totalExp=expenses.reduce((s,e)=>s+(parseFloat(e.total)||0),0);
   const netProfit=total-totalExp;
 
-  const saveUser=()=>{
-    if(!uForm.email||!uForm.name||!uForm.password){toast.error('All fields required');return;}
+  const saveUser=async()=>{
+    if(!uForm.email||!uForm.name){toast.error('Name and email are required');return;}
     if(!uForm.email.includes('@')){toast.error('Valid email required');return;}
-    if(uForm.password.length<4){toast.error('Password must be at least 4 characters');return;}
     // Prevent admin from creating superadmin
     if(!isSuper&&uForm.role==='superadmin'){toast.error('Only Super Admin can assign Super Admin role');return;}
+    if(!editUID){
+      if(users.find(u=>u.email.toLowerCase()===uForm.email.toLowerCase())){toast.error('Email already exists');return;}
+      try{ await adminCreateAuthUser(uForm.email.trim()); }catch(e){ toast.error('Could not create login: '+(e.message||e.code)); return; }
+    }
     let updated;
     if(editUID){
-      updated=users.map(u=>u.id===editUID?{...u,...uForm}:u);
+      updated=users.map(u=>{ if(u.id!==editUID) return u; const m={...u,...uForm}; delete m.password; return m; });
     } else {
       if(users.find(u=>u.email.toLowerCase()===uForm.email.toLowerCase())){toast.error('Email already exists');return;}
-      const newU={id:Date.now().toString(),...uForm,createdAt:new Date().toISOString()};
+      const newU={id:Date.now().toString(),...uForm,createdAt:new Date().toISOString()}; delete newU.password;
       updated=[...users,newU];
     }
     // Update local state immediately
@@ -4431,7 +4862,7 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
         logAudit(editUID?'USER_EDITED':'USER_CREATED',`${uForm.name} (${uForm.email}) role:${uForm.role}`,currentUser);
       });
     setUForm({email:'',name:'',password:'',role:'user',active:true});setEditUID(null);
-    toast.success(editUID?'User updated!':'User created successfully!');
+    toast.success(editUID?'User updated!':'User created! A password-setup email was sent to them.');
   };
   const delUser=id=>{
     if(!isSuper){toast.error('Only Super Admin can delete users');return;}
@@ -4449,7 +4880,7 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
   };
   const editUser=u=>{
     if(isSuperAdmin(u.email)&&!isSuper){toast.error('Only Super Admin can edit Super Admin credentials');return;}
-    setUForm({email:u.email,name:u.name,password:u.password,role:u.role,active:u.active});
+    setUForm({email:u.email,name:u.name,password:'',role:u.role,active:u.active});
     setEditUID(u.id);
     setTab('users');
     setTimeout(()=>modalBodyRef.current?.scrollTo({top:0,behavior:'smooth'}),50);
@@ -4539,13 +4970,7 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
                 <div className="field"><label className="field-label">Email Address *</label><input className="field-input" value={uForm.email} onChange={e=>setUForm(p=>({...p,email:e.target.value}))} placeholder="user@company.com" type="email"/></div>
               </div>
               <div className="g3">
-                <div className="field">
-                  <label className="field-label">Password *</label>
-                  <div className="pw-wrap">
-                    <input className="field-input" type={showPw?'text':'password'} value={uForm.password} onChange={e=>setUForm(p=>({...p,password:e.target.value}))} placeholder="Min 8 chars"/>
-                    <button className="pw-eye" onClick={()=>setShowPw(p=>!p)}>{showPw?<Ic n="eyeoff" s={14}/>:<Ic n="eye" s={14}/>}</button>
-                  </div>
-                </div>
+                <div className="field"><label className="field-label">Password</label><div style={{fontSize:12,color:"var(--text3)",padding:"9px 0",lineHeight:1.5}}>Not set by admin. The user gets an email to choose their own password, and can use “Forgot password?” any time.</div></div>
                 <div className="field"><label className="field-label">Role</label>
                   <select className="field-input" value={uForm.role} onChange={e=>setUForm(p=>({...p,role:e.target.value}))}>
                     <option value="user">User (full access)</option>
@@ -4683,25 +5108,52 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
 };
 
 /* ── LOGIN ── */
-const Login = ({onLogin})=>{
-  const [email,setEmail]=useState('');
-  const [pw,setPw]=useState('');
-  const [showPw,setShowPw]=useState(false);
-  const [err,setErr]=useState('');
-  const [loading,setLoading]=useState(false);
-  const login=()=>{
-    setErr('');setLoading(true);
-    setTimeout(()=>{
-      // Read users from cache — never write during login (prevents data loss race)
-      let users = S.get(SK.USERS,[]);
-      if(!Array.isArray(users)) users=[];
-      const u=users.find(u=>u.email.toLowerCase()===email.toLowerCase()&&u.password===pw);
-      if(!u){setErr('Invalid email or password.');setLoading(false);return;}
-      if(!u.active){setErr('Account is deactivated. Contact admin.');setLoading(false);return;}
-      logAudit('USER_LOGIN',`Login from browser`,u);
-      onLogin(u);setLoading(false);
-    },600);
-  };
+const Login = ({onAuthed})=>{
+  const [email,setEmail]=useState(''), [pw,setPw]=useState(''), [showPw,setShowPw]=useState(false);
+  const [err,setErr]=useState(''), [info,setInfo]=useState(''), [loading,setLoading]=useState(false);
+  const [stage,setStage]=useState('cred'), [code,setCode]=useState(''), [resolver,setResolver]=useState(null), [secret,setSecret]=useState(null);
+  const qrRef=useRef();
+  const fail=e=>{ console.warn(e); const c=e?.code||'';
+    setErr(['auth/invalid-credential','auth/wrong-password','auth/user-not-found'].includes(c)?'Invalid email or password.':
+      c==='auth/too-many-requests'?'Too many attempts. Wait a few minutes or reset your password.':
+      c==='auth/invalid-verification-code'?'Wrong code. Check your authenticator app and try again.':
+      c==='auth/weak-password'?'Your old password is too short for the new system. Contact your admin.':(e?.message||'Something went wrong.'));
+    setLoading(false); };
+  const startEnrol=async()=>{ const {L,auth}=getFB(); try{
+      const s=await L.multiFactor(auth.currentUser).getSession();
+      setSecret(await L.TotpMultiFactorGenerator.generateSecret(s)); setStage('enrol'); setLoading(false);
+    }catch(e){ if(e.code==='auth/unverified-email'){ try{await L.sendEmailVerification(auth.currentUser);}catch(x){} setStage('verify'); setLoading(false);} else fail(e); } };
+  const afterSignIn=async()=>{ const {L,auth}=getFB(); if(REQUIRE_2FA&&L.multiFactor(auth.currentUser).enrolledFactors.length===0){ await startEnrol(); } else { await onAuthed(); } };
+  const legacyMigrate=async(em)=>{ try{
+      const v=(await getDb().ref('invoicepro/'+SK.USERS).once('value')).val(); const list=v?Object.values(v):[];
+      const p=list.find(u=>u.email&&u.email.toLowerCase()===em.toLowerCase()&&u.password&&u.password===pw&&u.active);
+      if(!p) return false;
+      const {L,auth}=getFB(); await L.createUserWithEmailAndPassword(auth,em,pw);
+      await getDb().ref('invoicepro/'+SK.USERS).set(list.map(u=>{ if(u.id!==p.id) return u; const c={...u}; delete c.password; return c; }));
+      await afterSignIn(); return true;
+    }catch(e){ if(e.code==='auth/email-already-in-use') return false; fail(e); return true; } };
+  const login=async()=>{ setErr('');setInfo('');setLoading(true); const {L,auth}=getFB(); const em=email.trim();
+    try{ await L.signInWithEmailAndPassword(auth,em,pw); await afterSignIn(); }
+    catch(e){
+      if(e.code==='auth/multi-factor-auth-required'){ setResolver(L.getMultiFactorResolver(auth,e)); setStage('mfa'); setCode(''); setLoading(false); return; }
+      if(LEGACY_MIGRATION&&['auth/invalid-credential','auth/user-not-found','auth/wrong-password'].includes(e.code)){ if(await legacyMigrate(em)) return; }
+      fail(e); } };
+  const verifyMfa=async()=>{ setErr('');setLoading(true); const {L}=getFB(); try{
+      const h=resolver.hints.find(h=>h.factorId==='totp')||resolver.hints[0];
+      await resolver.resolveSignIn(L.TotpMultiFactorGenerator.assertionForSignIn(h.uid,code.trim())); await onAuthed();
+    }catch(e){ fail(e); } };
+  const confirmEnrol=async()=>{ setErr('');setLoading(true); const {L,auth}=getFB(); try{
+      await L.multiFactor(auth.currentUser).enroll(L.TotpMultiFactorGenerator.assertionForEnrollment(secret,code.trim()),'Authenticator'); await onAuthed();
+    }catch(e){ fail(e); } };
+  const afterVerify=async()=>{ setErr('');setLoading(true); const {auth}=getFB(); try{ await auth.currentUser.reload(); await auth.currentUser.getIdToken(true); await startEnrol(); }catch(e){ fail(e); } };
+  const forgot=async()=>{ if(!email.includes('@')){setErr('Enter your email above first.');return;} const {L,auth}=getFB();
+    try{ await L.sendPasswordResetEmail(auth,email.trim()); }catch(e){ if(e.code==='auth/invalid-email'){fail(e);return;} }
+    setErr(''); setInfo('If this email has an account, a password reset link is on its way. Check your inbox (and spam).'); };
+  const cancel=async()=>{ try{ await getFB().L.signOut(getFB().auth);}catch(e){} setStage('cred'); setPw(''); setCode(''); setErr(''); };
+  useEffect(()=>{ if(stage==='enrol'&&secret&&qrRef.current&&window.QRCode){ qrRef.current.innerHTML=''; new QRCode(qrRef.current,{text:secret.generateQrCodeUrl(getFB().auth.currentUser.email,'Arctic Books'),width:180,height:180}); } },[stage,secret]);
+  const codeBox=(go)=><input className="field-input" inputMode="numeric" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,''))} placeholder="123456" style={{textAlign:'center',letterSpacing:6,fontSize:20}} onKeyDown={e=>e.key==='Enter'&&go()} autoFocus/>;
+  const btn=(label,fn,icon)=><button className="btn btn-primary" style={{width:'100%',justifyContent:'center',padding:'11px',fontSize:14}} onClick={fn} disabled={loading}>{loading?<span className="spinner"/>:<>{icon&&<Ic n={icon} s={14}/>}{label}</>}</button>;
+  const link=(label,fn)=><div style={{textAlign:'center',marginTop:12}}><a href="#" onClick={e=>{e.preventDefault();fn();}} style={{color:'var(--primary2)',fontSize:12.5,fontWeight:600,textDecoration:'none'}}>{label}</a></div>;
   return <div className="login-bg">
     <div className="login-card">
       <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
@@ -4711,23 +5163,31 @@ const Login = ({onLogin})=>{
           <div className="login-sub" style={{margin:0,fontSize:11}}>Complete Accounting Software</div>
         </div>
       </div>
-      <div className="login-title">Welcome back</div>
-      <div className="login-desc" style={{marginBottom:28}}>Sign in to manage your invoices</div>
-      <div className="field">
-        <label className="field-label">Email Address</label>
-        <input className="field-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" onKeyDown={e=>e.key==='Enter'&&login()}/>
-      </div>
-      <div className="field" style={{marginBottom:20}}>
-        <label className="field-label">Password</label>
-        <div className="pw-wrap">
-          <input className="field-input" type={showPw?'text':'password'} value={pw} onChange={e=>setPw(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&login()}/>
-          <button className="pw-eye" onClick={()=>setShowPw(p=>!p)}>{showPw?<Ic n="eyeoff" s={14}/>:<Ic n="eye" s={14}/>}</button>
-        </div>
-      </div>
+      {stage==='cred'&&<>
+        <div className="login-title">Welcome back</div>
+        <div className="login-desc" style={{marginBottom:28}}>Sign in to manage your invoices</div>
+        <div className="field"><label className="field-label">Email Address</label>
+          <input className="field-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" onKeyDown={e=>e.key==='Enter'&&login()}/></div>
+        <div className="field" style={{marginBottom:20}}><label className="field-label">Password</label>
+          <div className="pw-wrap"><input className="field-input" type={showPw?'text':'password'} value={pw} onChange={e=>setPw(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&login()}/>
+          <button className="pw-eye" onClick={()=>setShowPw(p=>!p)}>{showPw?<Ic n="eyeoff" s={14}/>:<Ic n="eye" s={14}/>}</button></div></div>
+      </>}
+      {stage==='mfa'&&<><div className="login-title">Two-step verification</div>
+        <div className="login-desc">Open Google Authenticator and enter the 6-digit code for Arctic Books.</div>
+        <div className="field" style={{marginBottom:20}}>{codeBox(verifyMfa)}</div></>}
+      {stage==='verify'&&<><div className="login-title">Verify your email</div>
+        <div className="login-desc">We emailed a verification link to your address. Click it, then press Continue to set up Google Authenticator.</div></>}
+      {stage==='enrol'&&<><div className="login-title">Set up Google Authenticator</div>
+        <div className="login-desc">1. Install Google Authenticator on your phone.<br/>2. Tap + and scan this QR code.<br/>3. Enter the 6-digit code it shows.</div>
+        <div ref={qrRef} style={{display:'flex',justifyContent:'center',background:'#fff',padding:10,borderRadius:10,margin:'0 auto 10px',width:200}}/>
+        <div style={{fontSize:11,color:'var(--text3)',textAlign:'center',marginBottom:14,wordBreak:'break-all'}}>Can't scan? Enter this key manually:<br/><b style={{color:'var(--text2)'}}>{secret?.secretKey}</b></div>
+        <div className="field" style={{marginBottom:20}}>{codeBox(confirmEnrol)}</div></>}
       {err&&<div style={{color:'var(--red)',fontSize:13,marginBottom:14,padding:'10px 14px',background:'rgba(239,68,68,0.08)',borderRadius:8,border:'1px solid rgba(239,68,68,0.2)'}}>{err}</div>}
-      <button className="btn btn-primary" style={{width:'100%',justifyContent:'center',padding:'11px',fontSize:14}} onClick={login} disabled={loading}>
-        {loading?<><span className="spinner"/><span>Signing in...</span></>:<><Ic n="lock" s={14}/>Sign In</>}
-      </button>
+      {info&&<div style={{color:'var(--text2)',fontSize:13,marginBottom:14,padding:'10px 14px',background:'var(--card2)',borderRadius:8,border:'1px solid var(--border)'}}>{info}</div>}
+      {stage==='cred'&&<>{btn('Sign In',login,'lock')}{link('Forgot password?',forgot)}</>}
+      {stage==='mfa'&&<>{btn('Verify',verifyMfa,'lock')}{link('Back to sign in',cancel)}</>}
+      {stage==='verify'&&<>{btn('Continue',afterVerify)}{link('Back to sign in',cancel)}</>}
+      {stage==='enrol'&&<>{btn('Activate & Sign In',confirmEnrol,'lock')}{link('Cancel',cancel)}</>}
 
       <div style={{marginTop:28,borderTop:'1px solid var(--border)',paddingTop:20}}>
         <div style={{textAlign:'center',fontSize:11,color:'var(--text3)',marginBottom:10,textTransform:'uppercase',letterSpacing:'0.6px',fontWeight:600}}>Need Help?</div>
@@ -5663,7 +6123,7 @@ const makePOPDF = (po, co) => {
 };
 
 // ── PO Excel Export ──
-const makePOExcel = (orders) => {
+const makePOExcel = (orders, fmt='xlsx', meta={}) => {
   const wb = window.XLSX.utils.book_new();
   const headers=['Sl.No','PO Number','PO Date','Delivery By','Vendor Name','Vendor GSTIN',
     'Vendor Address','Deliver To','Description','HSN/SAC','Qty','Unit','Rate (Rs.)','Amount (Rs.)',
@@ -5693,8 +6153,10 @@ const makePOExcel = (orders) => {
   ws['!cols']=[{wch:5},{wch:16},{wch:12},{wch:12},{wch:24},{wch:18},{wch:30},{wch:24},
     {wch:30},{wch:12},{wch:8},{wch:8},{wch:14},{wch:14},{wch:14},{wch:12},{wch:14},{wch:10},{wch:12},{wch:30},{wch:20}];
   window.XLSX.utils.book_append_sheet(wb, ws, 'PO Register');
-  window.XLSX.writeFile(wb, `PO_Register_${new Date().toISOString().split('T')[0]}.xlsx`);
-  toast.success('PO Register downloaded!');
+  proExport(fmt, {
+    ...proWbToSpec(wb, {title:'Purchase Order Register', period:meta.period||''}),
+    pdfSheets: fmt==='pdf' ? [{name:'PO Register', aoa:regPOPdf(orders), h0:true}] : undefined
+  }, `PO_Register_${new Date().toISOString().split('T')[0]}`);
 };
 
 // ── PO Form Component ──
@@ -5919,10 +6381,12 @@ const POHistoryModal = ({onClose, onLoad, currentUser, onNewPO, inline=false, se
   const [q,setQ]=useState(searchQuery);
   useEffect(()=>{if(searchQuery!==undefined)setQ(searchQuery);},[searchQuery]);
   const isAdmin=currentUser?.role==='admin'||currentUser?.role==='superadmin';
-  const filtered=[...orders].reverse().filter(p=>!q||
+  const rr=useReportRange('All Time');
+  const rangeOrders=orders.filter(p=>inRangeDate(p.date,rr.applied));
+  const filtered=[...orders].reverse().filter(p=>inRangeDate(p.date,rr.applied)&&(!q||
     p.poNo?.toLowerCase().includes(q.toLowerCase())||
     p.vendorTo?.name?.toLowerCase().includes(q.toLowerCase())||
-    p.refNo?.toLowerCase().includes(q.toLowerCase()));
+    p.refNo?.toLowerCase().includes(q.toLowerCase())));
   const delPO=poNo=>{
     if(!window.confirm('Delete this PO?'))return;
     const updated=orders.filter(p=>p.poNo!==poNo);
@@ -5939,13 +6403,12 @@ const POHistoryModal = ({onClose, onLoad, currentUser, onNewPO, inline=false, se
           <button className="btn btn-sm btn-outline-primary" onClick={()=>{onClose();onNewPO&&onNewPO();}}>
             <Ic n="plus" s={14}/> New PO
           </button>
-          {isAdmin&&orders.length>0&&<button className="btn btn-sm btn-outline" onClick={()=>makePOExcel(orders)}>
-            <Ic n="xlsx" s={14}/> Excel
-          </button>}
           <button className="close-btn" onClick={onClose}><Ic n="x"/></button>
         </div>
       </div>
       <div className="modal-body">
+        <ReportToolbar section="Purchases" title="Purchase Order Register" range={rr} count={rangeOrders.length} canExport={isAdmin}
+          onExport={(f,r)=>makePOExcel(rangeOrders,f,{period:rangePeriodText(r)})}/>
         <div style={{position:'relative',marginBottom:14}}>
           <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
           <input className="field-input" value={q} onChange={e=>setQ(e.target.value)}
@@ -6685,15 +7148,11 @@ const Dashboard = ({onClose, onLoad, inline=false})=>{
 /* ══════════════════════════════════════════════════════════════
    ⭐ FEATURE: INVENTORY PAGE
    ══════════════════════════════════════════════════════════════ */
-const xlsxDownload = (sheets, filename) => {
-  const wb = XLSX.utils.book_new();
-  sheets.forEach(([name, aoa, cols]) => {
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    if (cols) ws['!cols'] = cols;
-    XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 31));
-  });
-  XLSX.writeFile(wb, filename);
-  toast.success('Downloaded: ' + filename);
+const xlsxDownload = (sheets, filename, fmt='xlsx', meta={}) => {
+  proExport(fmt, {
+    title: sheets[0][0], period: meta.period||'',
+    sheets: sheets.map(([name, aoa, cols]) => ({name, aoa, cols, h0:true}))
+  }, filename);
 };
 
 const TabBar = ({tabs, value, onChange}) => (
@@ -6831,31 +7290,31 @@ const InventoryPage = ({inline=true, onClose, currentUser, initialTab})=>{
     .filter(r=>r.idle>=60).sort((a,b)=>b.idle-a.idle);
 
   /* ── Exports ── */
-  const expSummary = ()=>xlsxDownload([['Stock Summary',
+  const expSummary = (fmt='xlsx')=>xlsxDownload([['Stock Summary',
     [['Product','Unit','HSN','Opening','Qty In','Qty Out','Closing','Avg Rate (Rs.)','Stock Value (Rs.)','Reorder Level','Status'],
      ...rows.map(r=>[r.p.name,r.p.unit||'',r.p.hsnCode||'',r.opening,r.qtyIn,r.qtyOut,r.closing,
        r.avgRate.toFixed(2),r.stockValue.toFixed(2),r.p.reorderLevel||0,r.low?'LOW STOCK':'OK']),
      ['TOTAL','','','','','','','',totalStockValue.toFixed(2),'','']],
     [{wch:30},{wch:8},{wch:12},{wch:10},{wch:10},{wch:10},{wch:10},{wch:14},{wch:16},{wch:14},{wch:12}]]],
-    `Stock_Summary_${today()}.xlsx`);
+    `Stock_Summary_${today()}.xlsx`, fmt);
 
-  const expLedger = ()=>xlsxDownload([['Stock Ledger',
+  const expLedger = (fmt='xlsx')=>xlsxDownload([['Stock Ledger',
     [['Date','Time','Product','Direction','Document','Ref No','Party','Qty','Rate (Rs.)','Value (Rs.)','Balance','Reason','User'],
      ...moves.map(l=>[l.date,l.time||'',l.product,l.dir||(l.qtyChange>0?'IN':'OUT'),l.doc||'',l.ref||'',l.party||'',
        l.qtyChange,Number(l.rate||0).toFixed(2),Number(l.value||0).toFixed(2),l.balanceAfter,l.reason||'',l.user||''])],
     [{wch:12},{wch:9},{wch:28},{wch:9},{wch:14},{wch:16},{wch:22},{wch:9},{wch:12},{wch:14},{wch:10},{wch:24},{wch:16}]]],
-    `Stock_Ledger_${today()}.xlsx`);
+    `Stock_Ledger_${today()}.xlsx`, fmt);
 
-  const expAgeing = ()=>xlsxDownload([['Inventory Ageing',
+  const expAgeing = (fmt='xlsx')=>xlsxDownload([['Inventory Ageing',
     [['Product','Unit','Qty on Hand','Stock Value (Rs.)','Oldest Stock (Days)',
       ...INV_AGE_BUCKETS.flatMap(b=>[b.label+' Qty',b.label+' Value (Rs.)'])],
      ...ageRows.map(r=>[r.name,r.product.unit||'',r.qty,r.val.toFixed(2),r.oldest,
        ...INV_AGE_BUCKETS.flatMap(b=>[r.b[b.key],r.bv[b.key].toFixed(2)])]),
      ['TOTAL','',ageRows.reduce((t,r)=>t+r.qty,0),ageRows.reduce((t,r)=>t+r.val,0).toFixed(2),'',
        ...INV_AGE_BUCKETS.flatMap(b=>[ageTotals[b.key].qty,ageTotals[b.key].val.toFixed(2)])]]]],
-    `Inventory_Ageing_${today()}.xlsx`);
+    `Inventory_Ageing_${today()}.xlsx`, fmt);
 
-  const expDocs = (list,label)=>xlsxDownload([[label,
+  const expDocs = (list,label,fmt='xlsx')=>xlsxDownload([[label,
     [['Date','Document Type','Ref / Bill No','Party','Qty In','Qty Out','Net Qty','Value In (Rs.)','Value Out (Rs.)','Line Items'],
      ...list.map(d=>[d.date,d.doc,d.ref,d.party,d.qtyIn,d.qtyOut,d.qtyIn-d.qtyOut,
        d.valIn.toFixed(2),d.valOut.toFixed(2),d.lines.length])],
@@ -6864,7 +7323,7 @@ const InventoryPage = ({inline=true, onClose, currentUser, initialTab})=>{
     [['Date','Ref','Document','Party','Product','Qty','Rate (Rs.)','Value (Rs.)','Balance After'],
      ...list.flatMap(d=>d.lines.map(l=>[l.date,d.ref,d.doc,d.party,l.product,l.qtyChange,
        Number(l.rate||0).toFixed(2),Number(l.value||0).toFixed(2),l.balanceAfter]))]]],
-    `${label.replace(/ /g,'_')}_${today()}.xlsx`);
+    `${label.replace(/ /g,'_')}_${today()}.xlsx`, fmt);
 
   /* ── shared little pieces ── */
   const renderFilters = (showProduct)=>(
@@ -6924,7 +7383,7 @@ const InventoryPage = ({inline=true, onClose, currentUser, initialTab})=>{
         {tab==='summary'&&<>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:10,flexWrap:'wrap'}}>
             <div style={{flex:1,minWidth:280}}>{renderFilters()}</div>
-            <button className="btn btn-outline-primary btn-sm" style={{marginBottom:12}} onClick={expSummary}><Ic n="xlsx" s={13}/> Export</button>
+            <div style={{marginBottom:12}}><ExportMenu onExport={f=>expSummary(f)}/></div>
           </div>
           {rows.length===0?<Empty text='No stock-tracked items yet. Record a purchase, or tick "Track inventory" on a product in Product Master.'/>:
           <Wrap min={920}>
@@ -6980,7 +7439,7 @@ const InventoryPage = ({inline=true, onClose, currentUser, initialTab})=>{
               How long the stock you are still holding has been sitting there. Calculated FIFO — the oldest purchase
               layer is treated as the first one sold, so what remains is genuinely your slowest stock.
             </div>
-            <button className="btn btn-outline-primary btn-sm" onClick={expAgeing}><Ic n="xlsx" s={13}/> Export</button>
+            <div ><ExportMenu onExport={f=>expAgeing(f)}/></div>
           </div>
           <div className="g4" style={{marginBottom:12,gridTemplateColumns:'repeat(5,1fr)'}}>
             {INV_AGE_BUCKETS.map((b,i)=>(
@@ -7095,7 +7554,7 @@ const InventoryPage = ({inline=true, onClose, currentUser, initialTab})=>{
           return <>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:10,flexWrap:'wrap'}}>
               <div style={{flex:1,minWidth:280}}>{renderFilters()}</div>
-              <button className="btn btn-outline-primary btn-sm" style={{marginBottom:12}} onClick={()=>expDocs(list,label)}><Ic n="xlsx" s={13}/> Export</button>
+              <div style={{marginBottom:12}}><ExportMenu onExport={f=>expDocs(list,label,f)}/></div>
             </div>
             {list.length===0?<Empty text="No inventory movements found for this view."/>:
             <Wrap min={900}>
@@ -7157,7 +7616,7 @@ const InventoryPage = ({inline=true, onClose, currentUser, initialTab})=>{
             <div style={{fontSize:12,color:'var(--text2)',flex:1,minWidth:260}}>
               Closing stock valued at FIFO cost, plus anything that has not moved in 60 days or more —
               money sitting on a shelf.</div>
-            <button className="btn btn-outline-primary btn-sm" onClick={expSummary}><Ic n="xlsx" s={13}/> Export</button>
+            <div ><ExportMenu onExport={f=>expSummary(f)}/></div>
           </div>
           <Wrap min={720}>
             <HeadRow><th style={th}>Product</th><th style={thR}>Qty</th><th style={thR}>FIFO Value</th>
@@ -7196,7 +7655,7 @@ const InventoryPage = ({inline=true, onClose, currentUser, initialTab})=>{
         {tab==='log'&&<>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:10,flexWrap:'wrap'}}>
             <div style={{flex:1,minWidth:280}}>{renderFilters()}</div>
-            <button className="btn btn-outline-primary btn-sm" style={{marginBottom:12}} onClick={expLedger}><Ic n="xlsx" s={13}/> Export</button>
+            <div style={{marginBottom:12}}><ExportMenu onExport={f=>expLedger(f)}/></div>
           </div>
           {moves.length===0?<Empty text="No stock movements recorded yet."/>:
           <Wrap min={1000}>
@@ -7312,7 +7771,7 @@ const AgingReportPage = ({inline=true, onClose, initialTab})=>{
   const arBuckets = arBills.reduce((a,b)=>{a[b.bucket]+=b.due;return a;},emptyBuckets());
   const apBuckets = apBills.reduce((a,b)=>{a[b.bucket]+=b.due;return a;},emptyBuckets());
 
-  const exportParty = ()=>xlsxDownload([[isAP?'Payables by Vendor':'Receivables by Customer',
+  const exportParty = (fmt='xlsx')=>xlsxDownload([[isAP?'Payables by Vendor':'Receivables by Customer',
     [[isAP?'Vendor':'Customer','GSTIN',...AGING_BUCKETS.map(b=>b.label),'Total Outstanding (Rs.)','Open Bills'],
      ...byParty.map(p=>[p.party,p.gstin,...AGING_BUCKETS.map(b=>p[b.key].toFixed(2)),p.total.toFixed(2),p.bills.length]),
      ['GRAND TOTAL','',...AGING_BUCKETS.map(b=>totals[b.key].toFixed(2)),grandTotal.toFixed(2),filteredBills.length]],
@@ -7322,15 +7781,15 @@ const AgingReportPage = ({inline=true, onClose, initialTab})=>{
      ...filteredBills.sort((a,b)=>b.daysOverdue-a.daysOverdue).map(b=>[b.date,b.party,b.docType,b.docNo,b.dueDate,
        b.gross.toFixed(2),b.paid.toFixed(2),b.due.toFixed(2),b.daysOverdue,
        (AGING_BUCKETS.find(x=>x.key===b.bucket)||{}).label||''])]]],
-    `${isAP?'Trade_Payables':'Trade_Receivables'}_${asOn}.xlsx`);
+    `${isAP?'Trade_Payables':'Trade_Receivables'}_${asOn}.xlsx`, fmt, {period:'Ageing as on '+fmtDate(asOn)});
 
-  const exportSummary = ()=>xlsxDownload([['Aging Summary',
+  const exportSummary = (fmt='xlsx')=>xlsxDownload([['Aging Summary',
     [['Bucket','Trade Receivables (Rs.)','Trade Payables (Rs.)','Net Position (Rs.)'],
      ...AGING_BUCKETS.map(b=>[b.label,arBuckets[b.key].toFixed(2),apBuckets[b.key].toFixed(2),(arBuckets[b.key]-apBuckets[b.key]).toFixed(2)]),
      ['TOTAL',arTotal.toFixed(2),apTotal.toFixed(2),(arTotal-apTotal).toFixed(2)],
      ['Of which overdue',arOver.toFixed(2),apOver.toFixed(2),(arOver-apOver).toFixed(2)]],
     [{wch:18},{wch:24},{wch:22},{wch:20}]]],
-    `Aging_Summary_${asOn}.xlsx`);
+    `Aging_Summary_${asOn}.xlsx`, fmt, {period:'Ageing as on '+fmtDate(asOn)});
 
   const bucketColor = (k,v)=> v<=0?'var(--text3)' : (k==='b3'||k==='b4')?'var(--red)' : k==='b2'?'var(--gold)':'var(--text)';
 
@@ -7455,8 +7914,7 @@ const AgingReportPage = ({inline=true, onClose, initialTab})=>{
           </div>}
           <div><div style={{fontSize:10,color:'var(--text3)',marginBottom:3}}>Ageing as on</div>
             <input type="date" className="field-input" value={asOn} onChange={e=>setAsOn(e.target.value)} style={{width:160}}/></div>
-          <button className="btn btn-outline-primary btn-sm" onClick={tab==='summary'?exportSummary:exportParty}>
-            <Ic n="xlsx" s={13}/> Export Excel</button>
+          <ExportMenu onExport={f=>tab==='summary'?exportSummary(f):exportParty(f)}/>
         </div>
 
         {/* ══ SUMMARY ══ */}
@@ -8529,51 +8987,134 @@ const downloadBlob = (blob, filename) => {
   setTimeout(()=>URL.revokeObjectURL(url), 3000);
 };
 const exportTableAs = (format, filename, title, headers, rows) => {
-  try{
-    const co = S.get(SK.CO,{});
-    const addr = [co.address,co.city,co.state,co.pin].filter(Boolean).join(', ');
-    if(format==='xlsx'){
-      const X = window.XLSX;
-      const wb = X.utils.book_new();
-      const ws = X.utils.aoa_to_sheet([...companyHeaderRows(), [title],[],headers,...rows]);
-      X.utils.book_append_sheet(wb, ws, 'Report');
-      X.writeFile(wb, `${filename}.xlsx`);
-    } else if(format==='csv'){
-      const X = window.XLSX;
-      const ws = X.utils.aoa_to_sheet([...companyHeaderRows(), [title],[],headers,...rows]);
-      const csv = X.utils.sheet_to_csv(ws);
-      downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8;'}), `${filename}.csv`);
-    } else if(format==='pdf'){
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({unit:'mm', format:'a4'});
-      let y=14;
-      if(co.name){ doc.setFontSize(12); doc.setFont(undefined,'bold'); doc.text(co.name, 14, y); doc.setFont(undefined,'normal'); y+=5; }
-      if(addr){ doc.setFontSize(8); doc.text(addr, 14, y); y+=4; }
-      if(co.gstin){ doc.setFontSize(8); doc.text('GSTIN: '+co.gstin, 14, y); y+=4; }
-      y+=2; doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.text(title, 14, y); doc.setFont(undefined,'normal'); y+=4;
-      doc.autoTable({ head:[headers], body:rows, startY:y+2, styles:{fontSize:8, cellPadding:2}, headStyles:{fillColor:[80,90,220]}, margin:{left:10,right:10} });
-      doc.save(`${filename}.pdf`);
-    }
-    toast.success(`Exported as ${format.toUpperCase()}`);
-  }catch(err){ toast.error('Export failed: '+err.message); }
+  proExport(format, {title, sheets:[{name:'Report', aoa:[headers, ...rows], h0:true}]}, filename);
 };
-/* Small shared export control — dropdown format + Export button, optionally with a date-range filter */
-const ExportBar = ({onExport, from, to, onFromChange, onToChange, showDateFilter=false, label='Export'})=>{
-  const [fmt,setFmt]=useState('xlsx');
-  return <div style={{display:'flex',gap:8,alignItems:'flex-end',flexWrap:'wrap'}}>
-    {showDateFilter&&<>
-      <div className="field"><label className="field-label">From</label><input type="date" className="field-input" value={from} onChange={e=>onFromChange(e.target.value)}/></div>
-      <div className="field"><label className="field-label">To</label><input type="date" className="field-input" value={to} onChange={e=>onToChange(e.target.value)}/></div>
-    </>}
-    <div className="field">
-      <label className="field-label">Format</label>
-      <select className="field-input" value={fmt} onChange={e=>setFmt(e.target.value)}>
-        <option value="xlsx">Excel (.xlsx)</option>
-        <option value="csv">CSV</option>
-        <option value="pdf">PDF</option>
-      </select>
+/* ══════════════════════════════════════════════════════════════
+   ZOHO-STYLE REPORT CONTROLS — Date Range dropdown, Fetch Data, Export menu
+   ══════════════════════════════════════════════════════════════ */
+const RbChev = ()=><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>;
+const RbFunnel = ()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>;
+const RbDown = ()=><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+
+const useOutsideClose = (ref, onClose) => {
+  useEffect(()=>{
+    const h = e => { if(ref.current && !ref.current.contains(e.target)) onClose(); };
+    document.addEventListener('mousedown', h);
+    return ()=>document.removeEventListener('mousedown', h);
+  },[]);
+};
+
+/* Date Range dropdown — same presets as Zoho Books; Custom reveals two date inputs */
+const DateRangePill = ({value, from, to, onChange, allowAll=true, label='Date Range'})=>{
+  const [open,setOpen] = useState(false);
+  const ref = useRef(null);
+  useOutsideClose(ref, ()=>setOpen(false));
+  const presets = allowAll ? DATE_PRESETS : DATE_PRESETS.filter(p=>p!=='All Time');
+  const pick = p => {
+    setOpen(false);
+    if(p==='Custom'){ const t=resolveRange('This Year'); onChange({preset:'Custom', from:from||t.from, to:to||t.to}); }
+    else onChange(resolveRange(p));
+  };
+  return <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+    <div ref={ref} style={{position:'relative'}}>
+      <button type="button" className="rb-pill" onClick={()=>setOpen(o=>!o)}>
+        <span className="rb-k">{label} :</span><b>{value}</b><RbChev/>
+      </button>
+      {open&&<div className="rb-menu">
+        {presets.map(p=><div key={p} className={'rb-item'+(p===value?' sel':'')} onClick={()=>pick(p)}>{p}</div>)}
+      </div>}
     </div>
-    <button className="btn btn-outline" onClick={()=>onExport(fmt)}><Ic n="save" s={14}/> {label}</button>
+    {value==='Custom'&&<div className="rb-custom">
+      <input type="date" className="field-input" value={from||''} onChange={e=>onChange({preset:'Custom',from:e.target.value,to:to||''})} style={{width:150}}/>
+      <span>to</span>
+      <input type="date" className="field-input" value={to||''} onChange={e=>onChange({preset:'Custom',from:from||'',to:e.target.value})} style={{width:150}}/>
+    </div>}
+  </div>;
+};
+
+/* Export dropdown — PDF / Excel / CSV */
+const ExportMenu = ({onExport, label='Export', disabled=false})=>{
+  const [open,setOpen] = useState(false);
+  const ref = useRef(null);
+  useOutsideClose(ref, ()=>setOpen(false));
+  const go = f => { setOpen(false); onExport(f); };
+  return <div ref={ref} style={{position:'relative',display:'inline-block'}}>
+    <button type="button" className="rb-pill" disabled={disabled} onClick={()=>setOpen(o=>!o)} style={{fontWeight:600}}>
+      <RbDown/> {label} <RbChev/>
+    </button>
+    {open&&<div className="rb-menu right" style={{minWidth:190}}>
+      <div className="rb-item" onClick={()=>go('pdf')}><Ic n="pdf" s={15}/> PDF <small>.pdf</small></div>
+      <div className="rb-item" onClick={()=>go('xlsx')}><Ic n="xlsx" s={15}/> Excel <small>.xlsx</small></div>
+      <div className="rb-item" onClick={()=>go('csv')}><Ic n="file" s={15}/> CSV <small>.csv</small></div>
+    </div>}
+  </div>;
+};
+
+/* Hook holding the Date Range: `draft` = what's picked, `applied` = what was last fetched */
+const useReportRange = (initial='All Time')=>{
+  const init = resolveRange(initial);
+  const [draft,setDraft] = useState(init);
+  const [applied,setApplied] = useState(init);
+  const dirty = draft.from!==applied.from || draft.to!==applied.to || draft.preset!==applied.preset;
+  return {draft, applied, dirty, setDraft,
+    fetchData:()=>setApplied(draft),
+    reset:()=>{ setDraft(init); setApplied(init); }};
+};
+
+/* The Zoho-style toolbar: breadcrumb + title + period, Filters row, Fetch Data, Export */
+const ReportToolbar = ({section, title, range, onExport, count=0, canExport=true, children})=>{
+  const {draft, applied, dirty, setDraft, fetchData, reset} = range;
+  const [more,setMore] = useState(false);
+  const [fm,setFm] = useState(false);
+  const fref = useRef(null);
+  useOutsideClose(fref, ()=>setFm(false));
+  const doFetch = ()=>{
+    if(draft.preset==='Custom' && draft.from && draft.to && draft.from>draft.to){ toast.error('"From" date cannot be after "To" date'); return; }
+    fetchData();
+  };
+  const doExport = f => {
+    if(!count){ toast.error('No records in the selected date range to export'); return; }
+    onExport(f, applied);
+  };
+  return <div className="rb-wrap">
+    <div className="rb-head">
+      <div>
+        {section&&<div className="rb-crumb">{section}</div>}
+        <div className="rb-title">
+          <span>{title}</span><span className="rb-dot"/>
+          <span className="rb-period">{rangeLabel(applied)}</span>
+          <span className="rb-count">{count} record{count===1?'':'s'}</span>
+        </div>
+      </div>
+      <div className="rb-actions">
+        {canExport&&<ExportMenu onExport={doExport}/>}
+      </div>
+    </div>
+    <div className="rb-filters">
+      <span className="rb-flabel"><RbFunnel/> Filters :</span>
+      <DateRangePill value={draft.preset} from={draft.from} to={draft.to} onChange={setDraft}/>
+      {children&&<button type="button" className="rb-pill" onClick={()=>setMore(m=>!m)}><b style={{color:'var(--primary2)'}}>＋</b> More Filters</button>}
+      <div ref={fref} className={'rb-fetch'+(dirty?' dirty':'')} style={{position:'relative'}}>
+        <button type="button" onClick={doFetch} title="Apply the selected date range">Fetch Data</button>
+        <button type="button" className="caret" onClick={()=>setFm(o=>!o)}><RbChev/></button>
+        {fm&&<div className="rb-menu" style={{minWidth:190}}>
+          <div className="rb-item" onClick={()=>{setFm(false);doFetch();}}>Fetch Data</div>
+          <div className="rb-item" onClick={()=>{setFm(false);reset();}}>Reset to All Dates</div>
+        </div>}
+      </div>
+      {dirty&&<span style={{fontSize:11,color:'var(--gold)',fontWeight:600}}>Range changed — click Fetch Data to apply</span>}
+    </div>
+    {children&&more&&<div style={{padding:'10px 16px',borderTop:'1px solid var(--border)',display:'flex',gap:10,flexWrap:'wrap',alignItems:'flex-end'}}>{children}</div>}
+  </div>;
+};
+
+/* Shared export control used by every accounting screen (same props as before) */
+const ExportBar = ({onExport, from, to, onFromChange, onToChange, showDateFilter=false, label='Export'})=>{
+  const [preset,setPreset] = useState('Custom');
+  return <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
+    {showDateFilter&&<DateRangePill value={preset} from={from} to={to} allowAll={false}
+      onChange={o=>{ setPreset(o.preset); onFromChange(o.from); onToChange(o.to); }}/>}
+    <ExportMenu label={label} onExport={onExport}/>
   </div>;
 };
 
@@ -10135,6 +10676,9 @@ const App = ()=>{
   // never against a fallback/partial snapshot (that mismatch is what used to wipe real data).
   const bootLoad = async () => {
     setLoadMsg('Loading your data from cloud...');
+    await window.FBReady; const {L:_L,auth:_auth}=getFB(); const fu=await fbWaitUser();
+    // Not signed in (or 2FA not finished): show login only — no data is loaded until sign-in succeeds.
+    if(!fu||(REQUIRE_2FA&&_L.multiFactor(fu).enrolledFactors.length===0)){ setAppReady(true); return; }
     const ok = await loadCache();
     if(ok){
       try{ migrateInventory(); }catch(err){ console.warn('Inventory migration skipped:', err.message); }
@@ -10143,6 +10687,10 @@ const App = ()=>{
       try{ ensureTxnRefNumbers(); }catch(err){ console.warn('Transaction reference number backfill skipped:', err.message); }
       setLoadMsg('Almost ready...');
       seedUsers();
+      const _p=(S.get(SK.USERS,[])||[]).find(u=>u.email&&u.email.toLowerCase()===(fu.email||'').toLowerCase());
+      if(!_p){ toast.error('No access profile for this account. Contact admin.'); await _L.signOut(_auth); }
+      else if(!_p.active){ toast.error('Account is deactivated. Contact admin.'); await _L.signOut(_auth); }
+      else { logAudit('USER_LOGIN','Login from browser',_p); setUser(_p); }
       const savedTheme = S.get(SK.THEME,'dark');
       setTheme(savedTheme);
       document.documentElement.setAttribute('data-theme', savedTheme);
@@ -10210,7 +10758,7 @@ const App = ()=>{
     setMenuOpen(false);
   };
 
-  const logout=()=>{logAudit('USER_LOGOUT','Logged out',user);setUser(null);toast.info('Logged out');};
+  const logout=()=>{logAudit('USER_LOGOUT','Logged out',user);try{getFB().L.signOut(getFB().auth);}catch(e){}setUser(null);toast.info('Logged out');};
   const loadInv=inv=>{setLoadedInv(inv);setFormKey(k=>k+1);setPage('invoice');setSearchQuery('');};
   const loadPO=po=>{setLoadedPO(po);setPoKey(k=>k+1);setModal('po');};
   const newPOModal=()=>{setLoadedPO(null);setPoKey(k=>k+1);setModal('po');};
@@ -10236,7 +10784,7 @@ const App = ()=>{
     </div>
   );
 
-  if(!user) return <><CloudErrorBanner/><Login onLogin={login}/><Toast/></>;
+  if(!user) return <><CloudErrorBanner/><Login onAuthed={bootLoad}/><Toast/></>;
 
   const invCount=(S.get(SK.INV,[])).length;
   const overdueCount=(S.get(SK.INV,[])).filter(i=>i.status==='Overdue').length;
