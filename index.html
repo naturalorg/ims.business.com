@@ -5111,8 +5111,17 @@ const AdminPanel = ({currentUser,onClose,inline=false})=>{
 const Login = ({onAuthed})=>{
   const [email,setEmail]=useState(''), [pw,setPw]=useState(''), [showPw,setShowPw]=useState(false);
   const [err,setErr]=useState(''), [info,setInfo]=useState(''), [loading,setLoading]=useState(false);
-  const [stage,setStage]=useState('cred'), [code,setCode]=useState(''), [resolver,setResolver]=useState(null), [secret,setSecret]=useState(null);
+  const qs=new URLSearchParams(window.location.search), aMode=qs.get('mode'), aCode=qs.get('oobCode');
+  const [np,setNp]=useState(''), [acctEmail,setAcctEmail]=useState('');
+  const [stage,setStage]=useState(aMode==='resetPassword'&&aCode?'newpw':'cred'), [code,setCode]=useState(''), [resolver,setResolver]=useState(null), [secret,setSecret]=useState(null);
   const qrRef=useRef();
+  // Password-reset / email-verify links open in THIS app (set as the custom action URL in Firebase Templates)
+  useEffect(()=>{ const {L,auth}=getFB();
+    if(aMode==='resetPassword'&&aCode){ L.verifyPasswordResetCode(auth,aCode).then(em=>{setAcctEmail(em);setEmail(em);}).catch(()=>{setErr('This reset link is invalid or has expired. Request a new one with "Forgot password?".');setStage('cred');}); }
+    else if(aMode==='verifyEmail'&&aCode){ L.applyActionCode(auth,aCode).then(()=>setInfo('Email verified. You can sign in now.')).catch(()=>{}); } },[]);
+  const setNewPw=async()=>{ if(np.length<6){setErr('Password must be at least 6 characters.');return;} setErr('');setLoading(true); const {L,auth}=getFB();
+    try{ await L.confirmPasswordReset(auth,aCode,np); window.history.replaceState({},'',window.location.pathname); setNp('');setPw('');setStage('cred');setInfo('Password updated. Please sign in with your new password.'); setLoading(false); }
+    catch(e){ setErr('This link is invalid or has expired. Request a new one with "Forgot password?".'); setLoading(false); } };
   const fail=e=>{ console.warn(e); const c=e?.code||'';
     setErr(['auth/invalid-credential','auth/wrong-password','auth/user-not-found'].includes(c)?'Invalid email or password.':
       c==='auth/too-many-requests'?'Too many attempts. Wait a few minutes or reset your password.':
@@ -5182,11 +5191,14 @@ const Login = ({onAuthed})=>{
         <div ref={qrRef} style={{display:'flex',justifyContent:'center',background:'#fff',padding:10,borderRadius:10,margin:'0 auto 10px',width:200}}/>
         <div style={{fontSize:11,color:'var(--text3)',textAlign:'center',marginBottom:14,wordBreak:'break-all'}}>Can't scan? Enter this key manually:<br/><b style={{color:'var(--text2)'}}>{secret?.secretKey}</b></div>
         <div className="field" style={{marginBottom:20}}>{codeBox(confirmEnrol)}</div></>}
+      {stage==='newpw'&&<><div className="login-title">Set a new password</div><div className="login-desc">{acctEmail?('For '+acctEmail):'Checking your link…'}</div>
+        <div className="field" style={{marginBottom:20}}><label className="field-label">New password</label><input className="field-input" type="password" value={np} onChange={e=>setNp(e.target.value)} placeholder="At least 6 characters" onKeyDown={e=>e.key==='Enter'&&setNewPw()} autoFocus/></div></>}
       {err&&<div style={{color:'var(--red)',fontSize:13,marginBottom:14,padding:'10px 14px',background:'rgba(239,68,68,0.08)',borderRadius:8,border:'1px solid rgba(239,68,68,0.2)'}}>{err}</div>}
       {info&&<div style={{color:'var(--text2)',fontSize:13,marginBottom:14,padding:'10px 14px',background:'var(--card2)',borderRadius:8,border:'1px solid var(--border)'}}>{info}</div>}
       {stage==='cred'&&<>{btn('Sign In',login,'lock')}{link('Forgot password?',forgot)}</>}
       {stage==='mfa'&&<>{btn('Verify',verifyMfa,'lock')}{link('Back to sign in',cancel)}</>}
       {stage==='verify'&&<>{btn('Continue',afterVerify)}{link('Back to sign in',cancel)}</>}
+      {stage==='newpw'&&btn('Save new password',setNewPw,'lock')}
       {stage==='enrol'&&<>{btn('Activate & Sign In',confirmEnrol,'lock')}{link('Cancel',cancel)}</>}
 
       <div style={{marginTop:28,borderTop:'1px solid var(--border)',paddingTop:20}}>
