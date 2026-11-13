@@ -718,6 +718,33 @@ body,html{overflow-x:hidden;max-width:100vw;box-sizing:border-box}
 .rb-fetch button:hover{opacity:1}
 .rb-custom{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
 .rb-custom input{height:36px}
+
+/* ===== ALIGNMENT LAYER (audit fixes) ===== */
+/* 1. Buttons: one border model + one height scale, so Primary / Outline / Danger buttons in the same row line up */
+.btn{box-sizing:border-box;min-height:38px;border-width:1px;border-style:solid;border-color:transparent;line-height:1.25;justify-content:center;text-align:center}
+.btn-outline{border-color:var(--border2)}
+.btn-outline-primary{border-color:rgba(79,111,232,0.25)}
+.btn-outline-gold{border-color:rgba(241,73,92,0.22)}
+.btn-danger{border-color:rgba(255,77,106,0.22)}
+.btn-success{border-color:rgba(15,217,138,0.22)}
+.btn-sm{min-height:32px}.btn-xs{min-height:28px}
+.btn-icon{min-height:34px;padding:0}
+/* 2. Inputs / selects / dates share the same height as buttons */
+.field-input{box-sizing:border-box;min-height:38px;line-height:1.3}
+textarea.field-input{min-height:72px}
+/* 3. Tables: header and body cells share the same padding and baseline; numbers use equal-width digits */
+th{padding:10px 10px;vertical-align:middle}
+td{vertical-align:middle;line-height:1.35}
+td,th,.stat-val,.tax-val,.tax-row{font-variant-numeric:tabular-nums}
+th[data-al="r"]{text-align:right}
+th[data-al="c"]{text-align:center}
+/* any block that directly holds a table scrolls sideways instead of overflowing the page */
+div:has(>table){overflow-x:auto;max-width:100%}
+/* 4. Grids and headers */
+.g2>*,.g3>*,.g4>*{min-width:0}
+.content-header{flex-wrap:wrap;gap:12px}
+@media(max-width:900px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.g2,.g3,.g4{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1404,7 +1431,13 @@ const _fmtDM = s => { if(!s) return ''; const p=s.split('-'); return p.length===
 const rangeLabel = r => (!r || r.preset==='All Time' || (!r.from && !r.to)) ? 'All dates' : `From ${_fmtDM(r.from)} To ${_fmtDM(r.to)}`;
 const rangePeriodText = r => (!r || r.preset==='All Time' || (!r.from && !r.to)) ? 'Period: All dates' : `Period: ${fmtDate(r.from)} to ${fmtDate(r.to)}`;
 
-const today  = ()=>new Date().toISOString().split('T')[0];
+const _pd = s=>{ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):new Date(s); }; // parse YYYY-MM-DD as LOCAL date
+const today  = ()=>_iso(new Date());
+// Indian financial year helpers (1 Apr - 31 Mar)
+const fyStartYearOf = d=>{ const x=typeof d==='string'?_pd(d):(d||new Date()); return x.getMonth()>=3?x.getFullYear():x.getFullYear()-1; };
+const fyStartOf = y=>`${y}-04-01`;
+const fyEndOf   = y=>`${y+1}-03-31`;
+const fyLabelOf = y=>`FY ${y}-${String(y+1).slice(2)}`;
 const fmtDate= d=>{
   if(!d)return'';
   if(typeof d==='number'){ // Excel date-serial slipped through (e.g. bad import) — convert to a real date
@@ -1431,22 +1464,18 @@ const fmtDateLong = d=>{
 // "corresponding period last year" comparative column on the P&L.
 const shiftYear = (dateStr, delta)=>{
   if(!dateStr) return dateStr;
-  const d=new Date(dateStr);
+  const d=_pd(dateStr);
   if(isNaN(d.getTime())) return dateStr;
-  d.setFullYear(d.getFullYear()+delta);
-  return d.toISOString().split('T')[0];
+  const m=d.getMonth(); d.setFullYear(d.getFullYear()+delta); if(d.getMonth()!==m) d.setDate(0); // 29 Feb -> 28 Feb
+  return _iso(d);
 };
 // Given any date, returns the closing date of the PREVIOUS financial year (i.e. 31 March just
 // before the FY that `asOf` falls in) — the standard comparative date for a Balance Sheet / Trial Balance.
 const prevFYEnd = (asOf)=>{
   if(!asOf) return asOf;
-  const d=new Date(asOf);
+  const d=_pd(asOf);
   if(isNaN(d.getTime())) return asOf;
-  const y=d.getFullYear(), m=d.getMonth()+1;
-  const fyStartYear = m>=4 ? y : y-1;
-  const prevEnd = new Date(fyStartYear, 3, 1); // 1 April of the current FY
-  prevEnd.setDate(prevEnd.getDate()-1);        // → 31 March of the previous FY
-  return prevEnd.toISOString().split('T')[0];
+  return `${fyStartYearOf(d)}-03-31`;   // 31 March just before the FY that asOf falls in
 };
 // Helper: get correct grand total for any invoice type (fixes NonGST invoices saved with grand=0)
 const getGrand = inv => {
@@ -2226,7 +2255,7 @@ const makeGSTR1 = (invoices) => {
   wsCDNR['!cols']=[{wch:20},{wch:22},{wch:16},{wch:14},{wch:8},{wch:14},{wch:18},{wch:18},{wch:18},{wch:10},{wch:8},{wch:14},{wch:12},{wch:12},{wch:12},{wch:8}];
   XLSX.utils.book_append_sheet(wb,wsCDNR,'CDNR (Credit-Debit Notes)');
 
-  XLSX.writeFile(wb,`GSTR1_${new Date().toISOString().split('T')[0]}.xlsx`);
+  XLSX.writeFile(wb,`GSTR1_${today()}.xlsx`);
   toast.success('GSTR-1 report downloaded!');
 };
 
@@ -2363,7 +2392,7 @@ const makePurchaseExcel = (expenses, fmt='xlsx', meta={}) => {
   proExport(fmt, {
     ...proWbToSpec(wb, {title:'Purchase Register', period:meta.period||''}),
     pdfSheets: fmt==='pdf' ? [{name:'Purchase Register', aoa:regPurchasePdf(expenses), h0:true}, {name:'Monthly Summary', aoa:monRows, h0:true}, {name:'Vendor-wise Outstanding', aoa:vRows, h0:true}] : undefined
-  }, `PurchaseRegister_${new Date().toISOString().split('T')[0]}`);
+  }, `PurchaseRegister_${today()}`);
 };
 
 const makeAuditExcel = (logs) => {
@@ -2400,7 +2429,7 @@ const makeAuditExcel = (logs) => {
     const ws2 = utils.json_to_sheet(sumRows);
     ws2['!cols'] = [{wch:22},{wch:20},{wch:10}];
     utils.book_append_sheet(wb, ws2, 'Summary');
-    const dt = new Date().toISOString().slice(0,10);
+    const dt = today();
     writeFile(wb, `AuditLog_${dt}.xlsx`);
     toast.success(`Audit log exported — ${logs.length} entries`);
   } catch(e) { toast.error('Export failed: '+e.message); }
@@ -2417,7 +2446,7 @@ const makeFullExcel = () => {
   try {
     const XLSX = window.XLSX;
     const wb   = XLSX.utils.book_new();
-    const dt   = new Date().toISOString().slice(0,10);
+    const dt   = today();
     const co   = S.get(SK.CO, {});
     const invoices  = S.get(SK.INV, []);
     const expenses  = S.get(SK.EXP, []);
@@ -2791,7 +2820,7 @@ const makeExcel = (invoices, fmt='xlsx', meta={}) => {
   proExport(fmt, {
     ...proWbToSpec(wb, {title:'Sales Register', period:meta.period||''}),
     pdfSheets: fmt==='pdf' ? [{name:'Sales Register', aoa:regSalesPdf(invoices), h0:true}, {name:'Monthly Summary', aoa:summRows, h0:true}] : undefined
-  }, `SalesRegister_${new Date().toISOString().split('T')[0]}`);
+  }, `SalesRegister_${today()}`);
 };
 
 /* ── MODALS ── */
@@ -3096,10 +3125,10 @@ const ensureDefaultExpenseHeads = () => {
    ══════════════════════════════════════════════════════════════ */
 const addDaysStr = (dateStr, days) => {
   if(!dateStr) return '';
-  const d = new Date(dateStr);
+  const d = _pd(dateStr);
   if(isNaN(d)) return '';
   d.setDate(d.getDate() + (parseInt(days)||0));
-  return d.toISOString().split('T')[0];
+  return _iso(d);
 };
 
 // Always return an array of line items — migrating legacy one-line bills.
@@ -4727,7 +4756,7 @@ const ExportTab = ({invs, isSuper, currentUser})=>{
                 bankTxns:S.get(SK.BANK,[]),bankAccounts:S.get(SK.BANK_ACCTS,[]),quickSales:S.get(SK.QSALE,[]),quotations:S.get(SK.QUOTE,[]),deliveryChallans:S.get(SK.DC,[]),recurring:S.get(SK.RECUR,[]),series:S.get(SK.SERIES,{}),stockLog:S.get(SK.STOCK,[])};
               const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
               const url=URL.createObjectURL(blob);const a=document.createElement('a');
-              a.href=url;a.download=`ArcticBooks_Backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
+              a.href=url;a.download=`ArcticBooks_Backup_${today()}.json`;a.click();
               URL.revokeObjectURL(url);
               logAudit('BACKUP_EXPORTED',`Full data backup — JSON (${(data.invoices||[]).length} invoices, ${(data.expenses||[]).length} expenses)`,currentUser);
               toast.success(`JSON backup: ${(data.invoices||[]).length} invoices, ${(data.expenses||[]).length} expenses`);
@@ -5119,6 +5148,8 @@ const Login = ({onAuthed})=>{
   useEffect(()=>{ const {L,auth}=getFB();
     if(aMode==='resetPassword'&&aCode){ L.verifyPasswordResetCode(auth,aCode).then(em=>{setAcctEmail(em);setEmail(em);}).catch(()=>{setErr('This reset link is invalid or has expired. Request a new one with "Forgot password?".');setStage('cred');}); }
     else if(aMode==='verifyEmail'&&aCode){ L.applyActionCode(auth,aCode).then(()=>setInfo('Email verified. You can sign in now.')).catch(()=>{}); } },[]);
+  const [pasted,setPasted]=useState('');
+  const usePasted=()=>{ try{ const u=new URL(pasted.trim()); if(!u.searchParams.get('oobCode')) throw new Error('x'); window.location.href=window.location.pathname+u.search; }catch(e){ setErr('That does not look like a reset link. Copy the full link from the email and paste it here.'); } };
   const setNewPw=async()=>{ if(np.length<6){setErr('Password must be at least 6 characters.');return;} setErr('');setLoading(true); const {L,auth}=getFB();
     try{ await L.confirmPasswordReset(auth,aCode,np); window.history.replaceState({},'',window.location.pathname); setNp('');setPw('');setStage('cred');setInfo('Password updated. Please sign in with your new password.'); setLoading(false); }
     catch(e){ setErr('This link is invalid or has expired. Request a new one with "Forgot password?".'); setLoading(false); } };
@@ -5191,13 +5222,16 @@ const Login = ({onAuthed})=>{
         <div ref={qrRef} style={{display:'flex',justifyContent:'center',background:'#fff',padding:10,borderRadius:10,margin:'0 auto 10px',width:200}}/>
         <div style={{fontSize:11,color:'var(--text3)',textAlign:'center',marginBottom:14,wordBreak:'break-all'}}>Can't scan? Enter this key manually:<br/><b style={{color:'var(--text2)'}}>{secret?.secretKey}</b></div>
         <div className="field" style={{marginBottom:20}}>{codeBox(confirmEnrol)}</div></>}
+      {stage==='paste'&&<><div className="login-title">Use your reset link</div><div className="login-desc">In the email, right-click the reset link, choose Copy link address, and paste it here.</div>
+        <div className="field" style={{marginBottom:20}}><input className="field-input" value={pasted} onChange={e=>setPasted(e.target.value)} placeholder="https://..." onKeyDown={e=>e.key==='Enter'&&usePasted()} autoFocus/></div></>}
       {stage==='newpw'&&<><div className="login-title">Set a new password</div><div className="login-desc">{acctEmail?('For '+acctEmail):'Checking your link…'}</div>
         <div className="field" style={{marginBottom:20}}><label className="field-label">New password</label><input className="field-input" type="password" value={np} onChange={e=>setNp(e.target.value)} placeholder="At least 6 characters" onKeyDown={e=>e.key==='Enter'&&setNewPw()} autoFocus/></div></>}
       {err&&<div style={{color:'var(--red)',fontSize:13,marginBottom:14,padding:'10px 14px',background:'rgba(239,68,68,0.08)',borderRadius:8,border:'1px solid rgba(239,68,68,0.2)'}}>{err}</div>}
       {info&&<div style={{color:'var(--text2)',fontSize:13,marginBottom:14,padding:'10px 14px',background:'var(--card2)',borderRadius:8,border:'1px solid var(--border)'}}>{info}</div>}
-      {stage==='cred'&&<>{btn('Sign In',login,'lock')}{link('Forgot password?',forgot)}</>}
+      {stage==='cred'&&<>{btn('Sign In',login,'lock')}{link('Forgot password?',forgot)}{link('Have a reset link? Paste it here',()=>{setErr('');setInfo('');setStage('paste');})}</>}
       {stage==='mfa'&&<>{btn('Verify',verifyMfa,'lock')}{link('Back to sign in',cancel)}</>}
       {stage==='verify'&&<>{btn('Continue',afterVerify)}{link('Back to sign in',cancel)}</>}
+      {stage==='paste'&&<>{btn('Continue',usePasted)}{link('Back to sign in',()=>{setErr('');setStage('cred');})}</>}
       {stage==='newpw'&&btn('Save new password',setNewPw,'lock')}
       {stage==='enrol'&&<>{btn('Activate & Sign In',confirmEnrol,'lock')}{link('Cancel',cancel)}</>}
 
@@ -6168,7 +6202,7 @@ const makePOExcel = (orders, fmt='xlsx', meta={}) => {
   proExport(fmt, {
     ...proWbToSpec(wb, {title:'Purchase Order Register', period:meta.period||''}),
     pdfSheets: fmt==='pdf' ? [{name:'PO Register', aoa:regPOPdf(orders), h0:true}] : undefined
-  }, `PO_Register_${new Date().toISOString().split('T')[0]}`);
+  }, `PO_Register_${today()}`);
 };
 
 // ── PO Form Component ──
@@ -8104,7 +8138,7 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
             const dt=new Date(Math.round((v-25569)*86400*1000));
             return isNaN(dt)?today():dt.toISOString().split('T')[0];
           }
-          if(v instanceof Date)return isNaN(v)?today():v.toISOString().split('T')[0];
+          if(v instanceof Date)return isNaN(v)?today():_iso(v);
           const s=String(v).trim();
           // Handle common DD/MM/YYYY or DD-MM-YYYY text dates from bank exports
           const dmY=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
@@ -9795,10 +9829,13 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
   const [tab,setTab]=useState('pl');
   const [format,setFormat]=useState('schedule3'); // 'schedule3' | 'normal'
   const [basis,setBasis]=useState('accrual');       // 'accrual' | 'cash' — Normal format only; Schedule III is always accrual
-  const fyStart = `${getFY()}-04-01`;
+  const [selFY,setSelFY]=useState(getFY());
+  const fyStart = fyStartOf(selFY);
   const [fromDate,setFromDate]=useState(fyStart);
   const [toDate,setToDate]=useState(today());
   const [asOf,setAsOf]=useState(today());
+  const pickFY=y=>{ y=parseInt(y); setSelFY(y); const end=fyEndOf(y), t=today(); const e=end<t?end:t; setFromDate(fyStartOf(y)); setToDate(e); setAsOf(e); }; // current FY -> up to today; past FY -> 31 March
+  const fySel=<div className="field"><label className="field-label">Financial Year</label><select className="field-input" value={selFY} onChange={ev=>pickFY(ev.target.value)}>{[0,1,2,3,4,5].map(k=>getFY()-k).map(y=><option key={y} value={y}>{fyLabelOf(y)} (1 Apr {y} - 31 Mar {y+1})</option>)}</select></div>;
   const co = S.get(SK.CO,{});
   // Drill-down state: null = statement view; {kind:'caption', side, caption, accounts} = list of ledgers under one caption; {kind:'ledger', account} = transactions
   const [drill,setDrill]=useState(null);
@@ -9982,6 +10019,7 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
           <>
             <div style={{display:'flex',flexWrap:'wrap',gap:20,marginBottom:16,alignItems:'flex-end'}}>
               <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'flex-end'}}>
+                {fySel}
                 <div className="field"><label className="field-label">From</label><input type="date" className="field-input" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></div>
                 <div className="field"><label className="field-label">To</label><input type="date" className="field-input" value={toDate} onChange={e=>setToDate(e.target.value)}/></div>
               </div>
@@ -10070,7 +10108,7 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
         {tab==='bs'&&(
           <>
             <div style={{display:'flex',flexWrap:'wrap',gap:20,marginBottom:16,alignItems:'flex-end'}}>
-              <div className="field" style={{maxWidth:220}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+              {fySel}<div className="field" style={{maxWidth:220}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
               <ExportBar onExport={doExportBS} label="Export Balance Sheet"/>
             </div>
             {format==='schedule3'?(
@@ -10181,7 +10219,7 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
         {tab==='tb'&&(
           <>
             <div style={{display:'flex',flexWrap:'wrap',gap:20,marginBottom:16,alignItems:'flex-end'}}>
-              <div className="field" style={{maxWidth:220}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
+              {fySel}<div className="field" style={{maxWidth:220}}><label className="field-label">As of</label><input type="date" className="field-input" value={asOf} onChange={e=>setAsOf(e.target.value)}/></div>
               <ExportBar onExport={doExportTB} label="Export Trial Balance"/>
             </div>
             <div className="dt-wrap">
@@ -10235,12 +10273,12 @@ const ReportsPage = ({inline=true, onClose, currentUser})=>{
    History, Sales, Ageing and GSTR reports without any special-casing.
    ══════════════════════════════════════════════════════════════ */
 const advanceDate = (dateStr, freq)=>{
-  const d = new Date(dateStr||today());
+  const d = _pd(dateStr||today());
   if(freq==='Weekly') d.setDate(d.getDate()+7);
   else if(freq==='Quarterly') d.setMonth(d.getMonth()+3);
   else if(freq==='Yearly') d.setFullYear(d.getFullYear()+1);
   else d.setMonth(d.getMonth()+1); // Monthly (default)
-  return d.toISOString().split('T')[0];
+  return _iso(d);
 };
 const nextDocNo = (label)=>{
   const key = SK.CTR+'_'+label+'_'+getFY();
@@ -11077,6 +11115,29 @@ const App = ()=>{
 };
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+<script>
+/* Alignment helper: right/centre-aligns a column header to match its data cells (all tables, all pages) */
+(function(){
+  var t=null;
+  function fix(){
+    document.querySelectorAll('table').forEach(function(tb){
+      if(!tb.tHead||tb.tHead.rows.length!==1||!tb.tBodies[0]) return;
+      var hr=tb.tHead.rows[0], hc=hr.cells, n=hc.length;
+      for(var k=0;k<n;k++) if(hc[k].colSpan>1) return;
+      var rows=[].slice.call(tb.tBodies[0].rows).filter(function(r){return r.cells.length===n&&![].some.call(r.cells,function(c){return c.colSpan>1;});}).slice(0,8);
+      if(!rows.length) return;
+      for(var i=0;i<n;i++){
+        if(hc[i].style.textAlign) continue;
+        var r=0,c=0;
+        rows.forEach(function(row){var a=getComputedStyle(row.cells[i]).textAlign; if(a==='right'||a==='end') r++; else if(a==='center') c++;});
+        var v=r>rows.length/2?'r':(c>rows.length/2?'c':'');
+        if(v) hc[i].setAttribute('data-al',v); else hc[i].removeAttribute('data-al');
+      }
+    });
+  }
+  new MutationObserver(function(){clearTimeout(t);t=setTimeout(fix,300);}).observe(document.documentElement,{childList:true,subtree:true});
+})();
 </script>
 </body>
 </html>
