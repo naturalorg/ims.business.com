@@ -372,6 +372,22 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 [data-theme="dark"] .field-input:focus{background:#0D1117;box-shadow:0 0 0 3px rgba(79,111,232,0.2)}
 .field-input::placeholder{color:var(--text3)}
 textarea.field-input{resize:vertical;min-height:72px}
+/* ── Searchable dropdown (SearchSelect) ── */
+.ss-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;cursor:pointer;text-align:left;min-height:38px;user-select:none}
+.ss-btn:focus{border-color:var(--primary)}
+.ss-btn .ss-val{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ss-btn .ss-ph{color:var(--text3)}
+.ss-pop{position:fixed;z-index:100000;background:var(--card);border:1px solid var(--border2);border-radius:10px;box-shadow:0 14px 44px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden}
+.ss-search{padding:8px;border-bottom:1px solid var(--border)}
+.ss-list{overflow-y:auto;flex:1}
+.ss-grp{padding:6px 12px 3px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);background:var(--card2);position:sticky;top:0;z-index:1}
+.ss-opt{padding:7px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.ss-opt.hi{background:var(--primary-bg)}
+.ss-opt.sel .ss-lbl{font-weight:700}
+.ss-opt.dis{opacity:.5;cursor:not-allowed}
+.ss-sub{font-size:11px;color:var(--text3)}
+.ss-badge{font-size:9.5px;padding:1px 6px;border-radius:8px;background:var(--card2);color:var(--gold);border:1px solid var(--border);white-space:nowrap}
+.ss-create{color:var(--primary2);font-weight:600}
 select.field-input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238B9CC4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
 
 /* GRIDS */
@@ -753,7 +769,7 @@ div:has(>table){overflow-x:auto;max-width:100%}
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ── CONSTANTS ── */
-const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series', STOCK:'ip_stock', BANK:'ip_bank', QSALE:'ip_quicksales', BANK_OB:'ip_bank_ob', BANK_ACCTS:'ip_bank_accounts', QUOTE:'ip_quotations', DC:'ip_delivery_challans', RECUR:'ip_recurring', JOURNAL:'ip_journal', ACCMAP:'ip_acc_map', POLICIES:'ip_policies', COA_CUSTOM:'ip_coa_custom', REFSEQ:'ip_ref_seq', TXNREFSEQ:'ip_txn_ref_seq', SHOW_TERMS:'ip_show_terms' };
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series', STOCK:'ip_stock', BANK:'ip_bank', QSALE:'ip_quicksales', BANK_OB:'ip_bank_ob', BANK_ACCTS:'ip_bank_accounts', QUOTE:'ip_quotations', DC:'ip_delivery_challans', RECUR:'ip_recurring', JOURNAL:'ip_journal', ACCMAP:'ip_acc_map', POLICIES:'ip_policies', COA_CUSTOM:'ip_coa_custom', REFSEQ:'ip_ref_seq', TXNREFSEQ:'ip_txn_ref_seq', SHOW_TERMS:'ip_show_terms', BANK_RULES:'ip_bank_rules' };
 
 // Audit log display metadata — maps every action code to its Module column + Action column + badge color.
 // Colors are grouped by verb so Added/Created=green, Edited/Updated=blue, Deleted=red, everything else=amber/teal.
@@ -3368,10 +3384,7 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
               <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
               <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search vendor, bill no, product, category..." style={{paddingLeft:38,width:'100%'}}/>
             </div>
-            <select className="field-input" value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{width:180}}>
-              <option value="">All Categories</option>
-              {usedCats.map(c=><option key={c} value={c}>{c}</option>)}
-            </select>
+            <SearchSelect value={filterCat} onChange={setFilterCat} style={{width:200}} options={[{value:'',label:'All Categories'},...usedCats.map(c=>({value:c,label:c}))]}/>
             <select className="field-input" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} style={{width:130}}>
               <option value="">All Status</option><option value="Paid">Paid</option>
               <option value="Pending">Pending</option><option value="Partial">Partial</option>
@@ -3501,25 +3514,11 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
           <div className="g3" style={{marginBottom:12}}>
             <div className="field">
               <label className="field-label">Expense Head (Chart of Accounts)</label>
-              {!addingHead?(
-                <select className="field-input" value={form.category||''} onChange={e=>{
-                    if(e.target.value==='__new__'){ setAddingHead(true); return; }
-                    const acc = expenseAccounts.find(a=>a.name===e.target.value);
-                    setForm(p=>calcPurchase({...p, category:e.target.value, expenseAccountKey:acc?acc.key:''}));
-                  }}>
-                  <option value="">— Select Expense Head —</option>
-                  {expenseAccounts.map(a=><option key={a.key} value={a.name}>{a.name}{a.custom?' (custom)':''}</option>)}
-                  <option value="__new__">+ Add New Expense Head…</option>
-                </select>
-              ):(
-                <div style={{display:'flex',gap:6}}>
-                  <input className="field-input" autoFocus value={newHeadName} onChange={e=>setNewHeadName(e.target.value)}
-                    placeholder="e.g. Printing & Stationery" onKeyDown={e=>{if(e.key==='Enter')createHead();}}/>
-                  <button className="btn btn-sm btn-primary" onClick={createHead}>Add</button>
-                  <button className="btn btn-sm btn-outline" onClick={()=>{setAddingHead(false);setNewHeadName('');}}>Cancel</button>
-                </div>
-              )}
-              <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>Posts straight to that ledger — manage all heads under Reports → Chart of Accounts.</div>
+              <SearchSelect value={form.expenseAccountKey||(expenseAccounts.find(a=>a.name===form.category)||{}).key||''}
+                options={buildAccountOptions(['expense'])} placeholder="— Select / type to search Expense Head —"
+                onChange={key=>{ const acc=getAllAccounts().find(a=>a.key===key); if(acc) setForm(p=>calcPurchase({...p, category:acc.name, expenseAccountKey:acc.key})); }}
+                onCreate={name=>{ const key=createLedgerAccount({name, type:'expense'}); setExpenseAccounts(getAllAccounts().filter(a=>a.type==='expense')); setForm(p=>calcPurchase({...p, category:name, expenseAccountKey:key})); toast.success(`"${name}" added to Chart of Accounts — it'll post there from now on.`); }}/>
+              <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>Posts straight to that ledger. Type to search, or type a new name to add one — sub-heads (e.g. Travel › Fuel) are managed under Reports → Chart of Accounts.</div>
             </div>
             <div className="field"><label className="field-label">GST Type</label>
               <select className="field-input" value={form.gstType||'INTRA'} onChange={upF('gstType')}>
@@ -3532,12 +3531,8 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
 
           <div className="g3" style={{marginBottom:12}}>
             <div className="field"><label className="field-label">TDS Section</label>
-              <select className="field-input" value={form.tdsSection||''} onChange={e=>{
-                  const code=e.target.value;
-                  setForm(p=>calcPurchase({...p, tdsSection:code, tdsRate: code?String(tdsSectionRate(code)):''}));
-                }}>
-                {TDS_SECTIONS.map(s=><option key={s.code} value={s.code}>{s.label}</option>)}
-              </select>
+              <SearchSelect value={form.tdsSection||''} options={TDS_SECTIONS.map(s=>({value:s.code,label:s.label}))}
+                onChange={code=>setForm(p=>calcPurchase({...p, tdsSection:code, tdsRate: code?String(tdsSectionRate(code)):''}))}/>
             </div>
             <div className="field"><label className="field-label">TDS Rate (%)</label>
               <input type="number" step="0.01" min="0" className="field-input" value={form.tdsRate||''}
@@ -3622,9 +3617,8 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
 
           <div className="g4" style={{marginBottom:4}}>
             <div className="field"><label className="field-label">Payment Mode</label>
-              <select className="field-input" value={form.payMode||''} onChange={upF('payMode')}>
-                {PAY_MODES.map(m=><option key={m} value={m}>{m}</option>)}
-              </select>
+              <SearchSelect value={form.payMode||''} options={simpleOptions(PAY_MODES)}
+                onChange={v=>setForm(p=>calcPurchase({...p, payMode:v, paidFromKey:(v==='Cash'&&!p.paidFromKey)?'CASH_IN_HAND':p.paidFromKey}))}/>
             </div>
             <div className="field"><label className="field-label">Payment Status</label>
               <select className="field-input" value={form.payStatus||'Pending'} onChange={upF('payStatus')}>
@@ -3640,6 +3634,13 @@ const PurchaseModal = ({onClose, currentUser, inline=false, searchQuery=''})=>{
             </div>
             <div className="field"><label className="field-label">Paid Date</label><input type="date" className="field-input" value={form.paidDate||''} onChange={upF('paidDate')}/></div>
           </div>
+          {(form.payStatus==='Paid'||form.payStatus==='Partial')&&<div className="field" style={{maxWidth:420,marginTop:8}}>
+            <label className="field-label">Paid From (bank / cash ledger)</label>
+            <SearchSelect value={form.paidFromKey||''} clearable placeholder="Choose where the money came from…"
+              options={getPaymentLedgers().map(a=>({value:a.key,label:a.name,sub:a.derived?'Bank account':'Cash / wallet ledger'}))}
+              onChange={v=>setForm(p=>({...p,paidFromKey:v}))}/>
+            <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>Posts this payment to that ledger so Trade Payables clears in the books. Leave blank if you will reconcile it from the bank statement instead — a statement line linked later is never counted twice.</div>
+          </div>}
         </div>}
       </div>
 
@@ -4753,7 +4754,7 @@ const ExportTab = ({invs, isSuper, currentUser})=>{
             </button>
             <button className="btn btn-outline btn-sm" onClick={()=>{
               const data={exportDate:new Date().toISOString(),company:S.get(SK.CO,{}),hsn:S.get(SK.HSN,[]),invoices:S.get(SK.INV,[]),expenses:S.get(SK.EXP,[]),purchaseOrders:S.get(SK.PO,[]),customers:S.get(SK.CUST,[]),products:S.get(SK.PRODUCTS,[]),terms:S.get(SK.TERMS,''),poTerms:S.get(SK.PO_TERMS,''),auditLog:S.get(SK.AUDIT,[]),frozenPeriods:S.get(SK.FREEZE,{sales:[],expenses:[]}),
-                bankTxns:S.get(SK.BANK,[]),bankAccounts:S.get(SK.BANK_ACCTS,[]),quickSales:S.get(SK.QSALE,[]),quotations:S.get(SK.QUOTE,[]),deliveryChallans:S.get(SK.DC,[]),recurring:S.get(SK.RECUR,[]),series:S.get(SK.SERIES,{}),stockLog:S.get(SK.STOCK,[])};
+                bankTxns:S.get(SK.BANK,[]),bankAccounts:S.get(SK.BANK_ACCTS,[]),quickSales:S.get(SK.QSALE,[]),quotations:S.get(SK.QUOTE,[]),deliveryChallans:S.get(SK.DC,[]),recurring:S.get(SK.RECUR,[]),series:S.get(SK.SERIES,{}),stockLog:S.get(SK.STOCK,[]),journal:S.get(SK.JOURNAL,[]),coaCustom:S.get(SK.COA_CUSTOM,[]),accMap:S.get(SK.ACCMAP,{}),bankRules:S.get(SK.BANK_RULES,[])};
               const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
               const url=URL.createObjectURL(blob);const a=document.createElement('a');
               a.href=url;a.download=`ArcticBooks_Backup_${today()}.json`;a.click();
@@ -4774,6 +4775,7 @@ const ExportTab = ({invs, isSuper, currentUser})=>{
                   const map=[[SK.CO,'company',{}],[SK.HSN,'hsn',[]],[SK.INV,'invoices',[]],[SK.EXP,'expenses',[]],[SK.PO,'purchaseOrders',[]],[SK.CUST,'customers',[]],[SK.PRODUCTS,'products',[]],[SK.TERMS,'terms',''],[SK.PO_TERMS,'poTerms',''],[SK.AUDIT,'auditLog',[]],[SK.FREEZE,'frozenPeriods',{sales:[],expenses:[]}],
                     [SK.BANK,'bankTxns',[]],[SK.BANK_ACCTS,'bankAccounts',[]],[SK.QSALE,'quickSales',[]],[SK.QUOTE,'quotations',[]],[SK.DC,'deliveryChallans',[]],[SK.RECUR,'recurring',[]],[SK.SERIES,'series',{}],[SK.STOCK,'stockLog',[]]];
                   map.forEach(([key,field,dflt])=>{ if(data[field]!==undefined) S.set(key,data[field]); else S.set(key,dflt); });
+                  [[SK.JOURNAL,'journal'],[SK.COA_CUSTOM,'coaCustom'],[SK.ACCMAP,'accMap'],[SK.BANK_RULES,'bankRules']].forEach(([key,field])=>{ if(data[field]!==undefined) S.set(key,data[field]); });
                   logAudit('DATA_RESTORED',`Restored from backup dated ${data.exportDate||'unknown'}`,currentUser);
                   toast.success('Backup restored! Reloading…');
                   setTimeout(()=>window.location.reload(),1200);
@@ -7378,10 +7380,7 @@ const InventoryPage = ({inline=true, onClose, currentUser, initialTab})=>{
         <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',zIndex:1}}><Ic n="search" s={14}/></span>
         <input className="field-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search..." style={{paddingLeft:38,width:'100%'}}/>
       </div>
-      {showProduct&&<select className="field-input" value={selProduct} onChange={e=>setSelProduct(e.target.value)} style={{width:220}}>
-        <option value="">— Select a product —</option>
-        {tracked.map((p,i)=><option key={i} value={p.name}>{p.name}</option>)}
-      </select>}
+      {showProduct&&<SearchSelect value={selProduct} onChange={setSelProduct} style={{width:240}} placeholder="— Select a product —" options={[{value:'',label:'— Select a product —'},...tracked.map(p=>({value:p.name,label:p.name}))]}/>}
       <div><div style={{fontSize:10,color:'var(--text3)',marginBottom:3}}>From</div>
         <input type="date" className="field-input" value={from} onChange={e=>setFrom(e.target.value)} style={{width:150}}/></div>
       <div><div style={{fontSize:10,color:'var(--text3)',marginBottom:3}}>To</div>
@@ -8037,9 +8036,224 @@ const AgingReportPage = ({inline=true, onClose, initialTab})=>{
 };
 
 /* ══════════════════════════════════════════════════════════════
-   ⭐ FEATURE: BANK RECONCILIATION
+   ⭐ FEATURE: BANK RECONCILIATION (v2)
+   • each bank account = its own ledger (sub-ledger of Cash & Cash Equivalents)
+   • smart match suggestions scored on amount + document no. + party name + date
+   • one payment ↔ many invoices/bills, partial payments, short/excess amounts (TDS, advance, discount…)
+   • post any statement line straight to a ledger (bank charges, interest, loan EMI…) + remembered rules
+   • inter-bank transfers matched across accounts, duplicate protection, statement-balance check
    ══════════════════════════════════════════════════════════════ */
 const blankTxn = ()=>({id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:today(),desc:'',amount:'',type:'credit',refNo:'',matched:false,matchedRef:'',matchedType:''});
+
+const NAME_NOISE = ['pvt','ltd','private','limited','and','the','co','company','enterprises','traders','trading','india','services','solutions','llp','corp','neft','imps','upi','rtgs','from','payment','transfer'];
+const nameTokens = s => (s||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').split(/\s+/).filter(w=>w.length>=3 && !NAME_NOISE.includes(w));
+const daysApart = (a,b)=>{ const x=new Date(a), y=new Date(b); if(isNaN(x)||isNaN(y)) return 999; return Math.abs(x-y)/864e5; };
+const txnDupKey = t => `${t.acctId||'PRIMARY'}|${t.date}|${t.type}|${(parseFloat(t.amount)||0).toFixed(2)}|${String(t.refNo||t.desc||'').toLowerCase().replace(/\s+/g,' ').trim().slice(0,40)}`;
+const suggestKeyword = desc => {
+  const skip=['neft','imps','upi','rtgs','from','to','by','txn','ref','transfer','payment','chq','cheque','cr','dr','ach','pos','atm','the','for','and'];
+  return (desc||'').toLowerCase().replace(/[^a-z ]+/g,' ').split(/\s+/).filter(w=>w.length>=3&&!skip.includes(w)).slice(0,2).join(' ');
+};
+const matchBankRule = (t,rules)=>(rules||[]).find(r=>r.keyword && (t.desc||'').toLowerCase().includes(String(r.keyword).toLowerCase()) && (r.type==='any'||r.type===t.type));
+
+// Every open document a bank line could settle — with what is STILL OUTSTANDING (after earlier partial payments).
+// Money in → unpaid Sales Invoices. Money out → unpaid Purchase bills (net of TDS withheld).
+const getOpenItems = (type)=>{
+  if(type==='credit'){
+    return S.get(SK.INV,[]).filter(i=>(i.docType==='TAX INVOICE'||i.docType==='NON GST INVOICE'||i.docType==='DEBIT NOTE')&&i.status!=='Paid'&&i.status!=='Draft'&&i.status!=='Cancelled')
+      .map(i=>{ const total=Math.abs(getGrand(i)); const out=+(total-invPaid(i)).toFixed(2);
+        return {kind:'invoice',ref:i.invNo,party:i.billTo?.name||'Unknown',total,out,date:i.date,due:i.dueDate||i.date,docNo:i.invNo,extra:''}; })
+      .filter(o=>o.out>0.01);
+  }
+  return S.get(SK.EXP,[]).filter(e=>e.payStatus!=='Paid')
+    .map(e=>({kind:'expense',ref:e.id,party:e.vendor||'Unknown Vendor',total:expNetPayable(e),out:+expDue(e).toFixed(2),date:e.billDate||e.date,due:expDueDate(e),docNo:e.billNo||'',extra:e.category||''}))
+    .filter(o=>o.out>0.01);
+};
+const scoreOpenItem = (t,o)=>{
+  let score=0; const reasons=[];
+  const hay=`${t.desc||''} ${t.refNo||''}`.toLowerCase(); const amt=parseFloat(t.amount)||0;
+  if(Math.abs(o.out-amt)<0.01){score+=60;reasons.push('Exact amount');}
+  else if(Math.abs(o.total-amt)<0.01){score+=45;reasons.push('Equals full bill');}
+  else if(o.out>0 && Math.abs(o.out-amt)/o.out<=0.02){score+=20;reasons.push('Within 2%');}
+  const no=String(o.docNo||'').toLowerCase();
+  if(no.length>=3 && hay.includes(no)){score+=40;reasons.push('Doc no. in narration');}
+  const toks=nameTokens(o.party);
+  if(toks.length){ const hit=toks.filter(w=>hay.includes(w)).length; if(hit){ score+=Math.round(30*hit/toks.length); reasons.push('Name match'); } }
+  const dd=daysApart(t.date,o.due||o.date); if(dd<=30) score+=Math.round(10*(1-dd/30));
+  return {score,reasons};
+};
+// How a bank amount is split over the chosen documents (oldest first).
+// partial=true → only the bank amount is applied, later documents stay open; otherwise each is cleared in full.
+const computeAllocs = (items,B,partial)=>{
+  const sorted=[...items].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  if(!partial) return sorted.map(o=>({kind:o.kind,ref:o.ref,amt:+o.out.toFixed(2)}));
+  let rem=B; const out=[];
+  sorted.forEach(o=>{ const a=Math.min(o.out,rem); if(a>0.004){ out.push({kind:o.kind,ref:o.ref,amt:+a.toFixed(2)}); rem=+(rem-a).toFixed(2); } });
+  return out;
+};
+// Adds (delta>0) or removes (delta<0) a payment on an invoice / bill and refreshes its status.
+const adjustDocPaid = (kind, ref, delta, t)=>{
+  if(kind==='invoice'){
+    S.set(SK.INV, S.get(SK.INV,[]).map(i=>{
+      if(i.invNo!==ref) return i;
+      const total=Math.abs(getGrand(i)); const np=Math.max(0,Math.min(total,invPaid(i)+delta));
+      const full = total-np<=0.01;
+      if(delta>0) return {...i, paidAmount:+np.toFixed(2), status: full?'Paid':i.status, paidDate:t.date, paymentRef:t.refNo||''};
+      return {...i, paidAmount:+np.toFixed(2), status: (i.status==='Paid'&&!full)?'Sent':i.status, paymentRef: np<=0.01?'':i.paymentRef};
+    }));
+  } else if(kind==='expense'){
+    S.set(SK.EXP, S.get(SK.EXP,[]).map(e=>{
+      if(e.id!==ref) return e;
+      const net=expNetPayable(e); const np=Math.max(0,Math.min(net,expPaid(e)+delta));
+      const full = net-np<=0.01;
+      if(delta>0) return {...e, payStatus: full?'Paid':'Partial', paidAmount:+np.toFixed(2), reconciled:full, paidDate:t.date, paymentRef:t.refNo||''};
+      return {...e, payStatus: np<=0.01?'Pending':'Partial', paidAmount:+np.toFixed(2), reconciled:false, paymentRef: np<=0.01?'':e.paymentRef};
+    }));
+  }
+};
+
+/* The expandable "Link / categorise" panel under an unreconciled bank line */
+const BankLinkPanel = ({t, accounts, allTxns, onLinkDocs, onPostLedger, onTransfer, onQuickSale, onClose})=>{
+  const isCredit = t.type==='credit';
+  const [mode,setMode]=useState('docs');
+  const items = useMemo(()=>getOpenItems(t.type).map(o=>({...o,...scoreOpenItem(t,o)}))
+    .sort((a,b)=>b.score-a.score||(a.date||'').localeCompare(b.date||'')),[t.id]);
+  const [dq,setDq]=useState('');
+  const [sel,setSel]=useState(()=>{ const b=items[0]; return b && Math.abs(b.out-t.amount)<0.01 ? [b.ref] : []; });
+  const [shortMode,setShortMode]=useState('partial');   // when bank amount < selected documents
+  const [restKey,setRestKey]=useState('');
+  const [lk,setLk]=useState('');
+  const [remember,setRemember]=useState(false);
+  const [kw,setKw]=useState(()=>suggestKeyword(t.desc));
+  const [xferId,setXferId]=useState('');
+  const [qsCustomer,setQsCustomer]=useState('');
+  const [qsNotes,setQsNotes]=useState('');
+
+  const toks = dq.toLowerCase().split(/\s+/).filter(Boolean);
+  const shown = items.filter(o=>!toks.length || toks.every(w=>`${o.ref} ${o.docNo} ${o.party} ${o.extra} ${o.out}`.toLowerCase().includes(w)));
+  const chosen = items.filter(o=>sel.includes(o.ref));
+  const selOut = +chosen.reduce((s,o)=>s+o.out,0).toFixed(2);
+  const diff = +(t.amount-selOut).toFixed(2);
+  const short = chosen.length>0 && diff<-0.01, excess = chosen.length>0 && diff>0.01;
+  const restDefault = isCredit ? (excess?'CUSTOMER_ADVANCE':'TDS_RECEIVABLE') : (excess?'ADVANCES':'OTHER_INCOME');
+  const restEff = restKey||restDefault;
+  const toggle = ref => setSel(p=>p.includes(ref)?p.filter(x=>x!==ref):[...p,ref]);
+  const confirmDocs = ()=>{
+    if(!chosen.length){ toast.error('Tick at least one '+(isCredit?'invoice':'bill')+' to link'); return; }
+    const partial = short && shortMode==='partial';
+    const allocs = computeAllocs(chosen,t.amount,partial);
+    const needsRest = !partial && Math.abs(diff)>0.01;
+    onLinkDocs(t, chosen, allocs, needsRest?restEff:'');
+  };
+
+  const candidates = useMemo(()=>allTxns.filter(x=>x.id!==t.id && (x.acctId||'PRIMARY')!==(t.acctId||'PRIMARY') && !x.matched && x.type!==t.type
+      && Math.abs((parseFloat(x.amount)||0)-t.amount)<0.01 && daysApart(x.date,t.date)<=10)
+    .sort((a,b)=>daysApart(a.date,t.date)-daysApart(b.date,t.date)),[t.id,allTxns]);
+  const acctName = id => { const a=accounts.find(x=>x.id===(id||'PRIMARY')); return a?a.name:'Other account'; };
+
+  const ledgerTypes = isCredit ? ['income','liability','equity','asset','expense'] : ['expense','asset','liability','equity','income'];
+  const tabs = [['docs',isCredit?'Match invoices':'Match bills'],['ledger','Post to ledger'],['transfer','Transfer between my banks']].concat(isCredit?[['sale','New sale']]:[]);
+
+  return <div style={{background:'var(--card2)',padding:14}}>
+    <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12,alignItems:'center'}}>
+      {tabs.map(([k,l])=>(
+        <button key={k} onClick={()=>setMode(k)} style={{padding:'5px 12px',borderRadius:8,fontSize:12,fontWeight:mode===k?700:500,cursor:'pointer',
+          border:`2px solid ${mode===k?'var(--primary)':'var(--border2)'}`,background:mode===k?'var(--primary-bg)':'transparent',color:mode===k?'var(--primary2)':'var(--text2)'}}>{l}</button>
+      ))}
+      <div style={{flex:1}}/>
+      <button className="btn btn-sm btn-outline" onClick={onClose}>Close</button>
+    </div>
+
+    {mode==='docs'&&<>
+      <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:8}}>
+        Tick one or more {isCredit?'unpaid invoices':'unpaid bills'} this {fmt(t.amount)} {isCredit?'receipt':'payment'} settles. Best matches (amount, document no., party name, date) are on top.
+      </div>
+      <input className="field-input" style={{marginBottom:8,maxWidth:340}} placeholder={`Search ${isCredit?'invoice no., customer':'bill no., vendor, head'}, amount…`} value={dq} onChange={e=>setDq(e.target.value)}/>
+      {items.length===0?<div style={{fontSize:12,color:'var(--text3)',padding:'8px 0'}}>Nothing open to link — {isCredit?'every invoice is already paid.':'every bill is already paid.'} Use “Post to ledger” for an advance, charge or other entry.</div>:
+      <div style={{maxHeight:230,overflowY:'auto',border:'1px solid var(--border)',borderRadius:8,background:'var(--card)'}}>
+        {shown.length===0&&<div style={{padding:12,fontSize:12,color:'var(--text3)'}}>No documents match “{dq}”.</div>}
+        {shown.map(o=>(
+          <label key={o.ref} style={{display:'flex',gap:10,alignItems:'center',padding:'8px 12px',borderBottom:'1px solid var(--border)',cursor:'pointer',background:sel.includes(o.ref)?'var(--primary-bg)':'transparent'}}>
+            <input type="checkbox" checked={sel.includes(o.ref)} onChange={()=>toggle(o.ref)}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:600,fontSize:12.5}}>{o.docNo||o.ref} — {o.party}</div>
+              <div style={{fontSize:11,color:'var(--text3)'}}>{fmtDate?fmtDate(o.date):o.date}{o.extra?` · ${o.extra}`:''}{o.total-o.out>0.01?` · already paid ${fmt(o.total-o.out)} of ${fmt(o.total)}`:''}</div>
+            </div>
+            <div style={{display:'flex',gap:4,flexWrap:'wrap',justifyContent:'flex-end'}}>
+              {o.reasons.map(r=><span key={r} className="badge badge-green" style={{fontSize:9.5}}>{r}</span>)}
+            </div>
+            <div style={{fontWeight:700,fontSize:12.5,minWidth:90,textAlign:'right'}}>{fmt(o.out)}</div>
+          </label>
+        ))}
+      </div>}
+      {chosen.length>0&&<div style={{marginTop:10,padding:10,border:'1px solid var(--border)',borderRadius:8,background:'var(--card)',fontSize:12.5}}>
+        <div style={{display:'flex',justifyContent:'space-between'}}><span>Selected {isCredit?'invoices':'bills'} outstanding</span><b>{fmt(selOut)}</b></div>
+        <div style={{display:'flex',justifyContent:'space-between'}}><span>Bank {isCredit?'receipt':'payment'}</span><b>{fmt(t.amount)}</b></div>
+        <div style={{display:'flex',justifyContent:'space-between',fontWeight:700,color:Math.abs(diff)<0.01?'var(--green)':'var(--gold)'}}>
+          <span>{Math.abs(diff)<0.01?'✓ Exact — clears in full':short?'Short by':'Excess of'}</span>{Math.abs(diff)>=0.01&&<span>{fmt(Math.abs(diff))}</span>}
+        </div>
+        {short&&<div style={{marginTop:8}}>
+          <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:4}}>The bank amount is less than the documents. What should the {fmt(Math.abs(diff))} be?</div>
+          <label style={{display:'flex',gap:6,alignItems:'center',cursor:'pointer',marginBottom:3}}><input type="radio" checked={shortMode==='partial'} onChange={()=>setShortMode('partial')}/> Partial payment — leave the balance open (oldest first)</label>
+          <label style={{display:'flex',gap:6,alignItems:'center',cursor:'pointer'}}><input type="radio" checked={shortMode==='adjust'} onChange={()=>setShortMode('adjust')}/> Settle in full — post the difference to a ledger {isCredit?'(e.g. TDS deducted by customer, discount)':'(e.g. discount received)'}</label>
+        </div>}
+        {((short&&shortMode==='adjust')||excess)&&<div style={{marginTop:8}}>
+          <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:4}}>{excess?(isCredit?'Extra received — keep as customer advance, or post elsewhere:':'Extra paid — keep as advance to supplier, or post elsewhere:'):'Post the difference to:'}</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:6}}>
+            {(isCredit?[['TDS_RECEIVABLE','TDS receivable'],['CUSTOMER_ADVANCE','Customer advance']]:[['ADVANCES','Advance to supplier'],['OTHER_INCOME','Discount / other income']]).map(([k,l])=>(
+              <button key={k} className={'btn btn-sm '+(restEff===k?'btn-primary':'btn-outline')} onClick={()=>setRestKey(k)}>{l}</button>
+            ))}
+          </div>
+          <AccountSelect value={restEff} onChange={setRestKey} types={ledgerTypes} createType={isCredit?'income':'expense'}/>
+        </div>}
+        <div style={{marginTop:10}}><button className="btn btn-sm btn-primary" onClick={confirmDocs}>Confirm Link</button></div>
+      </div>}
+    </>}
+
+    {mode==='ledger'&&<>
+      <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:8}}>
+        Post this {isCredit?'receipt':'payment'} straight to a ledger — bank charges, interest, loan EMI, capital introduced, GST/TDS paid, or an advance. Type to search; type a new name to create the ledger.
+      </div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>
+        {(isCredit?[['CUSTOMER_ADVANCE','Customer advance'],['OTHER_INCOME','Other income'],['CAPITAL','Capital introduced']]:[['ADVANCES','Advance to supplier'],['FINANCE_COST','Finance cost / interest'],['TDS_PAYABLE','TDS deposited']]).map(([k,l])=>(
+          <button key={k} className={'btn btn-sm '+(lk===k?'btn-primary':'btn-outline')} onClick={()=>setLk(k)}>{l}</button>
+        ))}
+      </div>
+      <div style={{maxWidth:420}}><AccountSelect value={lk} onChange={setLk} types={ledgerTypes} createType={isCredit?'income':'expense'} placeholder="Choose the ledger this posts to…"/></div>
+      <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginTop:10}}>
+        <label style={{display:'flex',gap:6,alignItems:'center',cursor:'pointer',fontSize:12}}><input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/> Remember: whenever the narration contains</label>
+        <input className="field-input" style={{maxWidth:180,padding:'5px 9px',fontSize:12}} value={kw} onChange={e=>setKw(e.target.value)} disabled={!remember}/>
+        <span style={{fontSize:11,color:'var(--text3)'}}>→ post to this ledger automatically</span>
+      </div>
+      <div style={{marginTop:10}}><button className="btn btn-sm btn-primary" onClick={()=>onPostLedger(t,lk,remember?kw.trim():'')}>Post to Ledger</button></div>
+    </>}
+
+    {mode==='transfer'&&<>
+      <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:8}}>
+        Moving money between your own bank accounts? Pick the opposite leg in the other account (same amount, within 10 days). It posts once between the two bank ledgers — it is not income or expense.
+      </div>
+      {candidates.length===0?<div style={{fontSize:12,color:'var(--text3)'}}>No unreconciled {isCredit?'money-out':'money-in'} of {fmt(t.amount)} found in your other accounts. Import or add that account’s statement line first.</div>:
+      <div style={{border:'1px solid var(--border)',borderRadius:8,background:'var(--card)'}}>
+        {candidates.map(x=>(
+          <label key={x.id} style={{display:'flex',gap:10,alignItems:'center',padding:'8px 12px',borderBottom:'1px solid var(--border)',cursor:'pointer'}}>
+            <input type="radio" name={'xf'+t.id} checked={xferId===x.id} onChange={()=>setXferId(x.id)}/>
+            <div style={{flex:1}}><b style={{fontSize:12.5}}>{acctName(x.acctId)}</b><div style={{fontSize:11,color:'var(--text3)'}}>{fmtDate?fmtDate(x.date):x.date} · {x.desc}</div></div>
+            <b style={{fontSize:12.5}}>{fmt(x.amount)}</b>
+          </label>
+        ))}
+      </div>}
+      {candidates.length>0&&<div style={{marginTop:10}}><button className="btn btn-sm btn-primary" disabled={!xferId} onClick={()=>onTransfer(t,allTxns.find(x=>x.id===xferId))}>Link as Transfer</button></div>}
+    </>}
+
+    {mode==='sale'&&isCredit&&<>
+      <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:6}}>No matching invoice? Record this credit directly as a new Sale:</div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        <input className="field-input" style={{flex:'1 1 160px'}} placeholder="Customer name (optional)" value={qsCustomer} onChange={e=>setQsCustomer(e.target.value)}/>
+        <input className="field-input" style={{flex:'1 1 160px'}} placeholder="Notes (optional)" value={qsNotes} onChange={e=>setQsNotes(e.target.value)}/>
+        <button className="btn btn-sm btn-outline-primary" onClick={()=>onQuickSale(t,qsCustomer,qsNotes)}><Ic n="plus" s={12}/> Record as New Sale</button>
+      </div>
+    </>}
+  </div>;
+};
 
 const BankReconPage = ({inline=true, onClose, currentUser})=>{
   // Multi-account support: migrate any pre-existing single-account data (old SK.BANK_OB / unlabeled
@@ -8053,42 +8267,51 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
     return accts;
   });
   const [activeAcctId,setActiveAcctId]=useState(()=>accounts[0]?.id||'PRIMARY');
-  const [showAddAcct,setShowAddAcct]=useState(false);
-  const [newAcct,setNewAcct]=useState({name:'',bankName:'',accountNo:'',openingBalance:''});
+  const [acctForm,setAcctForm]=useState(null); // null | {mode:'add'|'edit', name, bankName, accountNo, openingBalance}
 
   const [allTxns,setAllTxns]=useState(()=>S.get(SK.BANK,[]));
   const txns = useMemo(()=>allTxns.filter(t=>(t.acctId||'PRIMARY')===activeAcctId),[allTxns,activeAcctId]);
   const [form,setForm]=useState(blankTxn());
   const [filter,setFilter]=useState('unmatched');
+  const [search,setSearch]=useState('');
   const [matchingId,setMatchingId]=useState(null);
-  const [pickedRef,setPickedRef]=useState('');
-  const [qsCustomer,setQsCustomer]=useState('');
-  const [qsNotes,setQsNotes]=useState('');
   const [editingOB,setEditingOB]=useState(false);
+  const [rules,setRules]=useState(()=>S.get(SK.BANK_RULES,[])||[]);
+  const [showRules,setShowRules]=useState(false);
   const fileRef=useRef();
 
   const activeAcct = accounts.find(a=>a.id===activeAcctId) || accounts[0];
   const openingBal = String(activeAcct?.openingBalance||0);
+  const acctName = id => (accounts.find(a=>a.id===(id||'PRIMARY'))||{}).name || 'Other account';
 
   const saveAccounts=(u)=>{setAccounts(u);S.set(SK.BANK_ACCTS,u);};
-  const setOpeningBal=(v)=>{
-    saveAccounts(accounts.map(a=>a.id===activeAcctId?{...a,openingBalance:parseFloat(v)||0}:a));
-  };
+  const setOpeningBal=(v)=>saveAccounts(accounts.map(a=>a.id===activeAcctId?{...a,openingBalance:parseFloat(v)||0}:a));
   const saveOpeningBal=()=>{ setEditingOB(false); toast.success('Opening balance saved'); };
+  // Always works on the latest stored list, so cross-account changes (transfers) can't go stale.
+  const commit=(fn)=>{ const next=fn(S.get(SK.BANK,[])); setAllTxns(next); S.set(SK.BANK,next); return next; };
+  const persist=(u)=>commit(all=>[...all.filter(t=>(t.acctId||'PRIMARY')!==activeAcctId), ...u]);
 
-  const addAccount=()=>{
-    if(!newAcct.name.trim()){toast.error('Account name is required');return;}
-    const acct={id:'ACC'+Date.now().toString(36),name:newAcct.name.trim(),bankName:newAcct.bankName.trim(),accountNo:newAcct.accountNo.trim(),openingBalance:parseFloat(newAcct.openingBalance)||0};
-    saveAccounts([...accounts,acct]);
-    logAudit('BANK_ACCOUNT_ADDED',`${acct.name}${acct.bankName?' — '+acct.bankName:''}`,currentUser);
-    setActiveAcctId(acct.id);
-    setNewAcct({name:'',bankName:'',accountNo:'',openingBalance:''});
-    setShowAddAcct(false);
-    toast.success('Bank account added');
+  const submitAcct=()=>{
+    const f=acctForm; if(!f) return;
+    if(!f.name.trim()){toast.error('Account name is required');return;}
+    if(f.mode==='add'){
+      const acct={id:'ACC'+Date.now().toString(36),name:f.name.trim(),bankName:f.bankName.trim(),accountNo:f.accountNo.trim(),openingBalance:parseFloat(f.openingBalance)||0};
+      saveAccounts([...accounts,acct]);
+      logAudit('BANK_ACCOUNT_ADDED',`${acct.name}${acct.bankName?' — '+acct.bankName:''}`,currentUser);
+      setActiveAcctId(acct.id);
+      toast.success('Bank account added — it now has its own ledger under Cash and Cash Equivalents');
+    } else {
+      saveAccounts(accounts.map(a=>a.id===activeAcctId?{...a,name:f.name.trim(),bankName:f.bankName.trim(),accountNo:f.accountNo.trim()}:a));
+      logAudit('BANK_ACCOUNT_EDITED',`${f.name.trim()}`,currentUser);
+      toast.success('Bank account updated');
+    }
+    setAcctForm(null);
   };
   const deleteAccount=()=>{
     if(accounts.length<=1){toast.error('You need at least one bank account');return;}
     if(allTxns.some(t=>(t.acctId||'PRIMARY')===activeAcctId)){toast.error('Delete or move this account\'s transactions first');return;}
+    const lk=bankLedgerKey(activeAcctId);
+    if(getAllLedgerLines().some(l=>l.account===lk && l.srcType!=='BANKOB')){toast.error('Journal vouchers or bill payments are posted to this account\'s ledger — it can\'t be removed.');return;}
     if(!window.confirm(`Delete "${activeAcct.name}"? This cannot be undone.`))return;
     const remaining=accounts.filter(a=>a.id!==activeAcctId);
     saveAccounts(remaining);
@@ -8096,31 +8319,38 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
     setActiveAcctId(remaining[0].id);
   };
 
-  // Running balance: opening balance + every credit − every debit, in chronological order.
-  // Balances are keyed by transaction id so they stay correct no matter how the table is filtered.
+  const sortedTxns = useMemo(()=>[...txns].sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id))),[txns]);
   const balanceById = useMemo(()=>{
-    const ob=parseFloat(openingBal)||0;
-    const chrono=[...txns].sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id)));
-    let bal=ob; const map={};
-    chrono.forEach(t=>{ bal += (t.type==='credit'?1:-1)*(parseFloat(t.amount)||0); map[t.id]=bal; });
+    let bal=parseFloat(openingBal)||0; const map={};
+    sortedTxns.forEach(t=>{ bal += (t.type==='credit'?1:-1)*(parseFloat(t.amount)||0); map[t.id]=bal; });
     return map;
-  },[txns,openingBal]);
-  const currentBalance = txns.length? balanceById[[...txns].sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id))).slice(-1)[0].id] : (parseFloat(openingBal)||0);
+  },[sortedTxns,openingBal]);
+  const currentBalance = sortedTxns.length? balanceById[sortedTxns[sortedTxns.length-1].id] : (parseFloat(openingBal)||0);
   const totalIn = txns.filter(t=>t.type==='credit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
   const totalOut = txns.filter(t=>t.type==='debit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+  const unmatchedIn = txns.filter(t=>!t.matched&&t.type==='credit');
+  const unmatchedOut = txns.filter(t=>!t.matched&&t.type==='debit');
 
-  const persist=(u)=>{ // u = the full updated txn list for the ACTIVE account only
-    const merged=[...allTxns.filter(t=>(t.acctId||'PRIMARY')!==activeAcctId), ...u];
-    setAllTxns(merged); S.set(SK.BANK,merged);
-  };
+  // ── Reconciliation check: bank statement vs register vs ledger ──
+  const stmtDate = activeAcct?.stmtDate || today();
+  const registerAsOf = sortedTxns.filter(t=>(t.date||'')<=stmtDate).reduce((b,t)=>b+(t.type==='credit'?1:-1)*(parseFloat(t.amount)||0), parseFloat(openingBal)||0);
+  const stmtBalNum = (activeAcct?.stmtBalance===undefined||activeAcct?.stmtBalance===''||activeAcct?.stmtBalance===null) ? null : parseFloat(activeAcct.stmtBalance);
+  const stmtDiff = stmtBalNum===null||isNaN(stmtBalNum) ? null : +(stmtBalNum-registerAsOf).toFixed(2);
+  const ledgerBal = useMemo(()=>{ const r=getTrialBalance('9999-12-31').find(x=>x.account===bankLedgerKey(activeAcctId)); return r?r.balance:0; },[allTxns,accounts,activeAcctId]);
+  const ledgerGap = +(ledgerBal-currentBalance).toFixed(2);
+  const setStmt=(patch)=>saveAccounts(accounts.map(a=>a.id===activeAcctId?{...a,...patch}:a));
 
   const addTxn=()=>{
     if(!form.desc||!form.amount){toast.error('Description and amount required');return;}
-    persist([...txns,{...form,amount:parseFloat(form.amount),acctId:activeAcctId}]);
+    const rec={...form,amount:parseFloat(form.amount),acctId:activeAcctId};
+    if(txns.some(t=>txnDupKey(t)===txnDupKey(rec)) && !window.confirm('A transaction with the same date, amount and reference/description already exists in this account. Add it anyway?')) return;
+    const rule=matchBankRule(rec,rules);
+    if(rule){ rec.matched=true; rec.matchedType='ledger'; rec.ledgerKey=rule.ledgerKey; rec.matchedRef=coaByKey(rule.ledgerKey).name; }
+    persist([...txns,rec]);
     setForm(blankTxn());
-    toast.success('Transaction added');
+    toast.success(rule?`Transaction added — auto-posted to ${coaByKey(rule.ledgerKey).name}`:'Transaction added');
   };
-  const delTxn=id=>{persist(txns.filter(t=>t.id!==id));};
+  const delTxn=id=>{ if(!window.confirm('Delete this bank transaction?'))return; persist(txns.filter(t=>t.id!==id)); };
 
   const importFile=(e)=>{
     const file=e.target.files?.[0];
@@ -8131,147 +8361,170 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
         const wb=XLSX.read(ev.target.result,{type:'binary'});
         const ws=wb.Sheets[wb.SheetNames[0]];
         const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-        // Expect columns: Date, Description, Amount, Type (credit/debit), Ref No — tolerant to header case
         const toISODate=v=>{
           if(v===undefined||v===null||v==='')return today();
-          if(typeof v==='number'){ // Excel date-serial (e.g. 45678) — convert to YYYY-MM-DD
+          if(typeof v==='number'){
             const dt=new Date(Math.round((v-25569)*86400*1000));
             return isNaN(dt)?today():dt.toISOString().split('T')[0];
           }
           if(v instanceof Date)return isNaN(v)?today():_iso(v);
           const s=String(v).trim();
-          // Handle common DD/MM/YYYY or DD-MM-YYYY text dates from bank exports
           const dmY=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
           if(dmY){const[,dd,mm,yy]=dmY;return`${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;}
           return s||today();
         };
         const imported=rows.map(r=>{
           const get=(...keys)=>keys.map(k=>r[k]).find(v=>v!==undefined&&v!=='');
-          const debitCol=get('Debit','debit');
-          const creditCol=get('Credit','credit');
+          const debitCol=get('Debit','debit','Withdrawal','Withdrawals','Withdrawal Amt.');
+          const creditCol=get('Credit','credit','Deposit','Deposits','Deposit Amt.');
           const amtCol=get('Amount','amount','AMOUNT');
           const typeCol=get('Type','type');
           let isDebit, rawAmt;
           if(debitCol!==undefined||creditCol!==undefined){
-            // Separate Debit / Credit columns
-            isDebit = debitCol!==undefined && parseFloat(debitCol||0)>0;
+            isDebit = debitCol!==undefined && parseFloat(String(debitCol).replace(/,/g,'')||0)>0;
             rawAmt = isDebit?debitCol:creditCol;
           } else if(amtCol!==undefined){
-            // Single Amount column — sign tells direction: negative = money out (debit)
-            const n = parseFloat(amtCol)||0;
-            isDebit = typeCol ? typeCol.toLowerCase()==='debit' : n<0;
+            const n = parseFloat(String(amtCol).replace(/,/g,''))||0;
+            isDebit = typeCol ? String(typeCol).toLowerCase()==='debit' : n<0;
             rawAmt = amtCol;
           } else {
-            isDebit = typeCol ? typeCol.toLowerCase()==='debit' : false;
+            isDebit = typeCol ? String(typeCol).toLowerCase()==='debit' : false;
             rawAmt = 0;
           }
           return {
             id:Date.now().toString()+Math.random().toString(36).slice(2,6),
-            date:toISODate(get('Date','date','DATE')),
-            desc:get('Description','description','Narration','narration')||'',
-            amount:Math.abs(parseFloat(rawAmt)||0),
+            date:toISODate(get('Date','date','DATE','Txn Date','Value Date')),
+            desc:get('Description','description','Narration','narration','Particulars')||'',
+            amount:Math.abs(parseFloat(String(rawAmt).replace(/,/g,''))||0),
             type:isDebit?'debit':'credit',
-            refNo:get('Ref No','RefNo','Reference','Chq/Ref No','UTR','Ref')||'',
+            refNo:String(get('Ref No','RefNo','Reference','Chq/Ref No','Chq./Ref.No.','UTR','Ref')||''),
             matched:false,matchedRef:'',matchedType:'',acctId:activeAcctId
           };
-        }).filter(t=>t.desc||t.amount);
+        }).filter(t=>(t.desc||t.amount)&&t.amount>0);
         if(imported.length===0){toast.error('No rows found — check the file has Date/Description/Amount columns');return;}
-        persist([...txns,...imported]);
-        toast.success(`Imported ${imported.length} transactions`);
+        // Duplicate protection: lines already in this account (same date, amount, ref/narration) are skipped,
+        // so re-importing an overlapping statement never double-counts.
+        const seen={}; txns.forEach(t=>{ const k=txnDupKey(t); seen[k]=(seen[k]||0)+1; });
+        const fresh=[]; let skipped=0, ruled=0;
+        imported.forEach(t=>{
+          const k=txnDupKey(t);
+          if(seen[k]>0){ seen[k]--; skipped++; return; }
+          const rule=matchBankRule(t,rules);
+          if(rule){ t.matched=true; t.matchedType='ledger'; t.ledgerKey=rule.ledgerKey; t.matchedRef=coaByKey(rule.ledgerKey).name; ruled++; }
+          fresh.push(t);
+        });
+        if(fresh.length===0){toast.info(`All ${skipped} rows were already imported — nothing new to add.`);if(fileRef.current)fileRef.current.value='';return;}
+        persist([...txns,...fresh]);
+        toast.success(`Imported ${fresh.length} transaction${fresh.length===1?'':'s'}${skipped?` · ${skipped} duplicate${skipped===1?'':'s'} skipped`:''}${ruled?` · ${ruled} auto-categorised by your rules`:''}`);
       }catch(err){toast.error('Could not read file: '+err.message);}
       if(fileRef.current)fileRef.current.value='';
     };
     reader.readAsBinaryString(file);
   };
 
-  // Every open item a transaction could be linked to. Credit (money in) → unpaid Sales Invoices.
-  // Debit (money out) → unpaid Purchases/Expenses. ALL open items are shown (not just exact-amount
-  // matches), closest amount first, since bank amounts rarely tie out to the paisa.
-  const optionsFor=(t)=>{
-    if(t.type==='credit'){
-      return S.get(SK.INV,[]).filter(i=>(i.docType==='TAX INVOICE'||i.docType==='NON GST INVOICE'||i.docType==='DEBIT NOTE')&&i.status!=='Paid'&&i.status!=='Draft')
-        .map(i=>({ref:i.invNo,amt:Math.abs(getGrand(i)),label:`${i.invNo} — ${i.billTo?.name||'Unknown'} — ${fmt(Math.abs(getGrand(i)))}`,kind:'invoice'}))
-        .sort((a,b)=>Math.abs(a.amt-t.amount)-Math.abs(b.amt-t.amount));
-    }
-    return S.get(SK.EXP,[]).filter(e=>e.payStatus!=='Paid')
-      .map(e=>({ref:e.id,amt:parseFloat(e.total)||0,label:`${e.billNo?e.billNo+' — ':''}${e.vendor||'Unknown Vendor'} — ${e.category||''} — ${fmt(parseFloat(e.total)||0)}`,kind:'expense'}))
-      .sort((a,b)=>Math.abs(a.amt-t.amount)-Math.abs(b.amt-t.amount));
+  /* ── linking actions ── */
+  const linkDocs=(t,chosen,allocs,restKey)=>{
+    const applied=+allocs.reduce((s,a)=>s+a.amt,0).toFixed(2);
+    commit(all=>all.map(x=>x.id===t.id?{...x,matched:true,matchedType:chosen[0].kind,
+      matchedRef:chosen.length>1?`${chosen[0].docNo||chosen[0].ref} +${chosen.length-1} more`:(chosen[0].docNo||chosen[0].ref),
+      allocs,restKey:restKey||'',ledgerKey:''}:x));
+    allocs.forEach(a=>adjustDocPaid(a.kind,a.ref,a.amt,t));
+    const isInv=chosen[0].kind==='invoice';
+    logAudit(isInv?'INVOICE_MARKED_PAID':'EXPENSE_MARKED_PAID',`${allocs.map(a=>a.ref).join(', ')} settled by bank transaction${t.refNo?' (ref '+t.refNo+')':''} — ${fmt(applied)} applied${Math.abs(t.amount-applied)>0.01?', difference '+fmt(Math.abs(t.amount-applied))+' → '+coaByKey(restKey||'').name:''}`,currentUser);
+    setMatchingId(null);
+    toast.success(allocs.every(a=>{const o=chosen.find(c=>c.ref===a.ref);return o&&a.amt>=o.out-0.01;})?'Linked and marked paid!':'Linked — partial payment recorded, balance stays open');
   };
-
-  // Scans every unmatched transaction in this account and auto-links any that has exactly ONE
-  // open invoice/expense whose amount matches to the paisa — the safe, unambiguous case only.
-  // Anything with zero or multiple exact matches is left for the user to review manually.
-  const autoMatchAll=()=>{
-    const candidates = txns.filter(t=>!t.matched).map(t=>{
-      const opts=optionsFor(t).filter(o=>Math.abs(o.amt-t.amount)<0.01);
-      return {t,exact:opts};
-    }).filter(x=>x.exact.length===1);
-    if(candidates.length===0){toast.info('No unambiguous exact-amount matches found. Link the rest manually.');return;}
-    if(!window.confirm(`Found ${candidates.length} transaction(s) with exactly one matching open invoice/expense at the same amount. Link them all now?`))return;
-    candidates.forEach(({t,exact})=>doMatch(t,exact[0]));
-    toast.success(`Auto-matched ${candidates.length} transaction(s)`);
+  const postLedger=(t,ledgerKey,keyword)=>{
+    if(!ledgerKey){toast.error('Choose a ledger first');return;}
+    if(coaByKey(ledgerKey).groupOnly){toast.error('Pick a specific ledger, not the parent group');return;}
+    commit(all=>all.map(x=>x.id===t.id?{...x,matched:true,matchedType:'ledger',ledgerKey,matchedRef:coaByKey(ledgerKey).name,allocs:undefined,restKey:''}:x));
+    logAudit('BANK_TXN_POSTED_TO_LEDGER',`${t.desc||'Bank line'} (${fmt(t.amount)}) → ${coaByKey(ledgerKey).name}`,currentUser);
+    if(keyword){
+      const nr=[...rules.filter(r=>!(r.keyword.toLowerCase()===keyword.toLowerCase()&&r.type===t.type)),{id:'R'+Date.now().toString(36),keyword,type:t.type,ledgerKey}];
+      setRules(nr); S.set(SK.BANK_RULES,nr);
+      toast.success(`Posted — and “${keyword}” will auto-post to ${coaByKey(ledgerKey).name} from now on`);
+    } else toast.success(`Posted to ${coaByKey(ledgerKey).name}`);
+    setMatchingId(null);
   };
-
-  const doMatch=(t,cand)=>{
-    if(!cand){toast.error('Pick something to link this transaction to');return;}
-    const updatedTxns=txns.map(x=>x.id===t.id?{...x,matched:true,matchedRef:cand.ref,matchedType:cand.kind}:x);
-    persist(updatedTxns);
-    if(cand.kind==='invoice'){
-      const invs=S.get(SK.INV,[]).map(i=>i.invNo===cand.ref?{...i,status:'Paid',paidDate:t.date,paymentRef:t.refNo||''}:i);
-      S.set(SK.INV,invs);
-      logAudit('INVOICE_MARKED_PAID',`${cand.ref} matched to bank transaction${t.refNo?' (ref '+t.refNo+')':''}`,currentUser);
-    } else {
-      const exps=S.get(SK.EXP,[]).map(e=>e.id===cand.ref?{...e,payStatus:'Paid',paidAmount:e.total,reconciled:true,paidDate:t.date,paymentRef:t.refNo||''}:e);
-      S.set(SK.EXP,exps);
-      logAudit('EXPENSE_MARKED_PAID',`${cand.ref} matched to bank transaction${t.refNo?' (ref '+t.refNo+')':''}`,currentUser);
-    }
-    setMatchingId(null);setPickedRef('');
-    toast.success('Linked and marked paid!');
+  const linkTransfer=(t,partner)=>{
+    if(!partner){toast.error('Pick the matching transaction in the other account');return;}
+    commit(all=>all.map(x=>x.id===t.id?{...x,matched:true,matchedType:'transfer',matchedRef:partner.id}:x.id===partner.id?{...x,matched:true,matchedType:'transfer',matchedRef:t.id}:x));
+    logAudit('BANK_TRANSFER_LINKED',`${fmt(t.amount)} between ${acctName(t.acctId)} and ${acctName(partner.acctId)}`,currentUser);
+    setMatchingId(null);
+    toast.success('Linked as an inter-bank transfer — no income/expense booked');
   };
-
-  // Money-in transaction with no matching invoice — record it directly as a lightweight Sale
-  // (shows up in the Sales section) rather than forcing it to sit unlinked or go to Expenses.
-  const createQuickSale=(t)=>{
+  const createQuickSale=(t,customer,notes)=>{
     const qs={
       id:'QS-'+Date.now().toString()+Math.random().toString(36).slice(2,5),
-      date:t.date,
-      customer:qsCustomer.trim()||'Unknown / Walk-in',
-      desc:t.desc||qsNotes||'Bank credit',
-      notes:qsNotes.trim(),
-      amount:t.amount,
-      refNo:t.refNo||'',
-      voucherNo:nextVoucherNo(),
-      txnRefNo:nextTxnRefNo(t.date),
-      source:'bank',
-      createdBy:currentUser?.username||currentUser?.name||'',
-      createdAt:new Date().toISOString()
+      date:t.date, customer:(customer||'').trim()||'Unknown / Walk-in',
+      desc:t.desc||notes||'Bank credit', notes:(notes||'').trim(), amount:t.amount, refNo:t.refNo||'',
+      voucherNo:nextVoucherNo(), txnRefNo:nextTxnRefNo(t.date), source:'bank',
+      createdBy:currentUser?.username||currentUser?.name||'', createdAt:new Date().toISOString()
     };
     S.set(SK.QSALE,[...S.get(SK.QSALE,[]),qs]);
-    const updatedTxns=txns.map(x=>x.id===t.id?{...x,matched:true,matchedRef:qs.id,matchedType:'quicksale'}:x);
-    persist(updatedTxns);
+    commit(all=>all.map(x=>x.id===t.id?{...x,matched:true,matchedRef:qs.id,matchedType:'quicksale'}:x));
     logAudit('QUICK_SALE_CREATED',`${qs.id} created from bank credit${t.refNo?' (ref '+t.refNo+')':''} — ${fmt(qs.amount)}`,currentUser);
-    setMatchingId(null);setPickedRef('');setQsCustomer('');setQsNotes('');
+    setMatchingId(null);
     toast.success('Recorded as a new Sale');
   };
-
   const unlink=(t)=>{
-    const updatedTxns=txns.map(x=>x.id===t.id?{...x,matched:false,matchedRef:'',matchedType:''}:x);
-    persist(updatedTxns);
-    if(t.matchedType==='invoice'){
-      const invs=S.get(SK.INV,[]).map(i=>i.invNo===t.matchedRef?{...i,status:'Sent',paymentRef:''}:i);
-      S.set(SK.INV,invs);
-    } else if(t.matchedType==='expense'){
-      const exps=S.get(SK.EXP,[]).map(e=>e.id===t.matchedRef?{...e,payStatus:'Pending',reconciled:false,paymentRef:''}:e);
-      S.set(SK.EXP,exps);
-    } else if(t.matchedType==='quicksale'){
-      // The quick sale record only exists because of this link — remove it too
-      S.set(SK.QSALE,S.get(SK.QSALE,[]).filter(q=>q.id!==t.matchedRef));
+    const clear={matched:false,matchedRef:'',matchedType:'',allocs:undefined,restKey:'',ledgerKey:''};
+    if(t.matchedType==='transfer'){
+      commit(all=>all.map(x=>(x.id===t.id||x.id===t.matchedRef)?{...x,...clear}:x));
+    } else {
+      commit(all=>all.map(x=>x.id===t.id?{...x,...clear}:x));
+      if(t.matchedType==='invoice'||t.matchedType==='expense'){
+        if(Array.isArray(t.allocs)&&t.allocs.length) t.allocs.forEach(a=>adjustDocPaid(a.kind,a.ref,-a.amt,t));
+        else adjustDocPaid(t.matchedType,t.matchedRef,-1e12,t);
+      } else if(t.matchedType==='quicksale'){
+        S.set(SK.QSALE,S.get(SK.QSALE,[]).filter(q=>q.id!==t.matchedRef));
+      }
     }
     toast.info('Unlinked');
   };
 
-  const filtered = txns.filter(t=>filter==='all'||(filter==='matched'?t.matched:!t.matched))
-    .sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id)));
+  // Auto-match: links a line only when it is unambiguous — exactly one open document has the same amount,
+  // or several do but exactly one of them also shows its document no. / party name in the narration.
+  const autoMatchAll=()=>{
+    const cands=[];
+    txns.filter(t=>!t.matched).forEach(t=>{
+      const exact=getOpenItems(t.type).filter(o=>Math.abs(o.out-t.amount)<0.01).map(o=>({...o,...scoreOpenItem(t,o)}));
+      let pick=null;
+      if(exact.length===1) pick=exact[0];
+      else if(exact.length>1){ const strong=exact.filter(o=>o.reasons.includes('Doc no. in narration')||o.reasons.includes('Name match')); if(strong.length===1) pick=strong[0]; }
+      if(pick) cands.push({t,pick});
+    });
+    // never use one document twice in the same run
+    const used=new Set(); const final=cands.filter(({pick})=>{ if(used.has(pick.ref)) return false; used.add(pick.ref); return true; });
+    if(final.length===0){toast.info('No unambiguous matches found. Link the rest manually — the panel ranks the best suggestions for you.');return;}
+    if(!window.confirm(`Found ${final.length} transaction(s) that match exactly one open invoice/bill (same amount, confirmed by document no. or party name where several share the amount). Link them all now?`))return;
+    final.forEach(({t,pick})=>linkDocs(t,[pick],[{kind:pick.kind,ref:pick.ref,amt:pick.out}],''));
+    toast.success(`Auto-matched ${final.length} transaction(s)`);
+  };
+  const applyRulesNow=()=>{
+    const hits=txns.filter(t=>!t.matched&&matchBankRule(t,rules));
+    if(!hits.length){toast.info(rules.length?'No unreconciled lines match your rules.':'You have no rules yet — post a line to a ledger and tick “Remember”.');return;}
+    commit(all=>all.map(x=>{ if(x.matched||(x.acctId||'PRIMARY')!==activeAcctId) return x; const r=matchBankRule(x,rules); return r?{...x,matched:true,matchedType:'ledger',ledgerKey:r.ledgerKey,matchedRef:coaByKey(r.ledgerKey).name}:x; }));
+    toast.success(`${hits.length} line(s) posted by your rules`);
+  };
+  const deleteRule=id=>{ const nr=rules.filter(r=>r.id!==id); setRules(nr); S.set(SK.BANK_RULES,nr); };
+
+  const q=search.trim().toLowerCase();
+  const filtered = sortedTxns.filter(t=>(filter==='all'||(filter==='matched'?t.matched:!t.matched))
+    && (!q || `${t.desc} ${t.refNo} ${t.amount} ${t.matchedRef||''}`.toLowerCase().includes(q)));
+  const statusLabel = t=>{
+    if(!t.matched) return null;
+    if(t.matchedType==='quicksale') return `New Sale: ${t.matchedRef}`;
+    if(t.matchedType==='ledger') return `Posted: ${t.matchedRef}`;
+    if(t.matchedType==='transfer'){ const p=allTxns.find(x=>x.id===t.matchedRef); return `Transfer ⇄ ${p?acctName(p.acctId):'other bank'}`; }
+    const applied=Array.isArray(t.allocs)?t.allocs.reduce((s,a)=>s+a.amt,0):t.amount;
+    return `Linked: ${t.matchedRef}${Math.abs(applied-t.amount)>0.01?' (+ difference)':''}`;
+  };
+  const acctOptions = accounts.map(a=>{
+    const bal=allTxns.filter(t=>(t.acctId||'PRIMARY')===a.id).reduce((b,t)=>b+(t.type==='credit'?1:-1)*(parseFloat(t.amount)||0),parseFloat(a.openingBalance)||0);
+    return {value:a.id,label:`${a.name}${a.bankName?` — ${a.bankName}`:''}${a.accountNo?` (••${String(a.accountNo).slice(-4)})`:''}`,sub:`Balance ${fmt(bal)} · ledger: ${bankLedgerName(a)}`,keywords:`${a.bankName} ${a.accountNo}`};
+  });
+  const upAF=(k)=>(e)=>setAcctForm(p=>({...p,[k]:e.target.value}));
 
   return <div className={inline?"inline-card":"overlay"}>
     <div className={inline?"inline-card-inner":"modal"}>
@@ -8279,26 +8532,26 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
       <div className="modal-body">
 
         {/* Bank account selector */}
-        <div style={{display:'flex',gap:8,marginBottom:14,alignItems:'center',flexWrap:'wrap'}}>
+        <div style={{display:'flex',gap:8,marginBottom:6,alignItems:'center',flexWrap:'wrap'}}>
           <Ic n="bank" s={15}/>
-          <select className="field-input" style={{maxWidth:260,fontWeight:600}} value={activeAcctId} onChange={e=>setActiveAcctId(e.target.value)}>
-            {accounts.map(a=><option key={a.id} value={a.id}>{a.name}{a.bankName?` — ${a.bankName}`:''}{a.accountNo?` (••${a.accountNo.slice(-4)})`:''}</option>)}
-          </select>
-          <button className="btn btn-sm btn-outline-primary" onClick={()=>setShowAddAcct(s=>!s)}><Ic n="plus" s={12}/> Add Account</button>
-          {accounts.length>1&&<button className="btn btn-sm btn-outline" style={{borderColor:'var(--red)',color:'var(--red)'}} onClick={deleteAccount}><Ic n="trash" s={11}/> Remove This Account</button>}
+          <div style={{width:300,maxWidth:'100%'}}><SearchSelect value={activeAcctId} onChange={setActiveAcctId} options={acctOptions} style={{fontWeight:600}} placeholder="Select bank account…"/></div>
+          <button className="btn btn-sm btn-outline-primary" onClick={()=>setAcctForm({mode:'add',name:'',bankName:'',accountNo:'',openingBalance:''})}><Ic n="plus" s={12}/> Add Account</button>
+          <button className="btn btn-sm btn-outline" onClick={()=>setAcctForm({mode:'edit',name:activeAcct.name||'',bankName:activeAcct.bankName||'',accountNo:activeAcct.accountNo||'',openingBalance:''})}>Edit</button>
+          {accounts.length>1&&<button className="btn btn-sm btn-outline" style={{borderColor:'var(--red)',color:'var(--red)'}} onClick={deleteAccount}><Ic n="trash" s={11}/> Remove</button>}
         </div>
-        {showAddAcct&&(
+        <div style={{fontSize:11,color:'var(--text3)',marginBottom:12}}>Posts to its own ledger: <b>{bankLedgerName(activeAcct)}</b> — a sub-ledger of Cash and Cash Equivalents (see Chart of Accounts).</div>
+        {acctForm&&(
           <div className="card" style={{marginBottom:14}}>
-            <div style={{fontWeight:700,marginBottom:8,fontSize:13}}>New Bank Account</div>
+            <div style={{fontWeight:700,marginBottom:8,fontSize:13}}>{acctForm.mode==='add'?'New Bank Account':'Edit Bank Account'}</div>
             <div className="g4">
-              <div className="field"><label className="field-label">Account Name</label><input className="field-input" value={newAcct.name} onChange={e=>setNewAcct(p=>({...p,name:e.target.value}))} placeholder="e.g. HDFC Current A/c"/></div>
-              <div className="field"><label className="field-label">Bank Name</label><input className="field-input" value={newAcct.bankName} onChange={e=>setNewAcct(p=>({...p,bankName:e.target.value}))} placeholder="Optional"/></div>
-              <div className="field"><label className="field-label">Account No.</label><input className="field-input" value={newAcct.accountNo} onChange={e=>setNewAcct(p=>({...p,accountNo:e.target.value}))} placeholder="Optional"/></div>
-              <div className="field"><label className="field-label">Opening Balance (₹)</label><input type="number" className="field-input" value={newAcct.openingBalance} onChange={e=>setNewAcct(p=>({...p,openingBalance:e.target.value}))} placeholder="0.00"/></div>
+              <div className="field"><label className="field-label">Account Name</label><input className="field-input" value={acctForm.name} onChange={upAF('name')} placeholder="e.g. HDFC Current A/c"/></div>
+              <div className="field"><label className="field-label">Bank Name</label><input className="field-input" value={acctForm.bankName} onChange={upAF('bankName')} placeholder="Optional"/></div>
+              <div className="field"><label className="field-label">Account No.</label><input className="field-input" value={acctForm.accountNo} onChange={upAF('accountNo')} placeholder="Optional"/></div>
+              {acctForm.mode==='add'&&<div className="field"><label className="field-label">Opening Balance (₹)</label><input type="number" className="field-input" value={acctForm.openingBalance} onChange={upAF('openingBalance')} placeholder="0.00"/></div>}
             </div>
             <div style={{display:'flex',gap:8,marginTop:8}}>
-              <button className="btn btn-primary btn-sm" onClick={addAccount}>Add Account</button>
-              <button className="btn btn-outline btn-sm" onClick={()=>setShowAddAcct(false)}>Cancel</button>
+              <button className="btn btn-primary btn-sm" onClick={submitAcct}>{acctForm.mode==='add'?'Add Account':'Save'}</button>
+              <button className="btn btn-outline btn-sm" onClick={()=>setAcctForm(null)}>Cancel</button>
             </div>
           </div>
         )}
@@ -8321,13 +8574,35 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
           <div className="stat-card" style={{borderLeft:'3px solid var(--primary)'}}><div className="stat-val" style={{fontSize:16,color:'var(--primary2)'}}>{fmt(currentBalance)}</div><div className="stat-lbl">Current Bank Balance</div></div>
         </div>
 
+        {/* Reconciliation check */}
+        <div className="card" style={{marginBottom:16}}>
+          <div style={{fontWeight:700,marginBottom:8,fontSize:13}}>Reconciliation Check — {activeAcct?.name}</div>
+          <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'flex-end',marginBottom:10}}>
+            <div className="field" style={{width:200}}><label className="field-label">Closing balance per bank statement (₹)</label>
+              <input type="number" className="field-input" value={activeAcct?.stmtBalance??''} onChange={e=>setStmt({stmtBalance:e.target.value})} placeholder="From your bank statement"/></div>
+            <div className="field" style={{width:160}}><label className="field-label">Statement date</label>
+              <input type="date" className="field-input" value={activeAcct?.stmtDate||''} onChange={e=>setStmt({stmtDate:e.target.value})}/></div>
+            {stmtDiff!==null&&<div style={{padding:'8px 14px',borderRadius:9,fontWeight:700,fontSize:13,background:Math.abs(stmtDiff)<0.01?'rgba(34,197,94,.12)':'rgba(245,158,11,.14)',color:Math.abs(stmtDiff)<0.01?'var(--green)':'var(--gold)'}}>
+              {Math.abs(stmtDiff)<0.01?'✓ Statement agrees with your bank records':`Difference ${fmt(Math.abs(stmtDiff))} — ${stmtDiff>0?'statement is higher: a credit may be missing':'statement is lower: a debit may be missing'}`}
+            </div>}
+          </div>
+          <div className="g4">
+            <div><div style={{fontSize:11,color:'var(--text3)'}}>Bank records as at {fmtDate?fmtDate(stmtDate):stmtDate}</div><b>{fmt(registerAsOf)}</b></div>
+            <div><div style={{fontSize:11,color:'var(--text3)'}}>Ledger balance (books)</div><b>{fmt(ledgerBal)}</b></div>
+            <div><div style={{fontSize:11,color:'var(--text3)'}}>Not yet reconciled — money in</div><b style={{color:unmatchedIn.length?'var(--gold)':'inherit'}}>{unmatchedIn.length} · {fmt(unmatchedIn.reduce((s,t)=>s+t.amount,0))}</b></div>
+            <div><div style={{fontSize:11,color:'var(--text3)'}}>Not yet reconciled — money out</div><b style={{color:unmatchedOut.length?'var(--gold)':'inherit'}}>{unmatchedOut.length} · {fmt(unmatchedOut.reduce((s,t)=>s+t.amount,0))}</b></div>
+          </div>
+          {Math.abs(ledgerGap)>0.01&&<div style={{fontSize:11.5,color:'var(--gold)',marginTop:8}}>The ledger differs from the bank records by {fmt(Math.abs(ledgerGap))} — usually a journal voucher or a bill payment (“Paid From” this bank) posted outside the statement. Open this ledger in Chart of Accounts to see it.</div>}
+          {(unmatchedIn.length+unmatchedOut.length)>0&&<div style={{fontSize:11.5,color:'var(--text3)',marginTop:6}}>Unreconciled lines sit in the Suspense ledger until you link or post them, so nothing is lost — but they are not yet in the right account.</div>}
+        </div>
+
         <div className="card" style={{marginBottom:16}}>
           <div style={{fontWeight:700,marginBottom:10,fontSize:13}}>Add Transaction</div>
           <div className="g4">
             <div className="field"><label className="field-label">Date</label><input type="date" className="field-input" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></div>
             <div className="field"><label className="field-label">Description</label><input className="field-input" value={form.desc} onChange={e=>setForm(p=>({...p,desc:e.target.value}))} placeholder="e.g. NEFT from ABC Corp"/></div>
             <div className="field"><label className="field-label">Amount (₹)</label><input type="number" className="field-input" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))} placeholder="0.00"/></div>
-            <div className="field"><label className="field-label">Type</label><select className="field-input" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}><option value="credit">Credit (money in)</option><option value="debit">Debit (money out)</option></select></div>
+            <div className="field"><label className="field-label">Type</label><SearchSelect value={form.type} onChange={v=>setForm(p=>({...p,type:v}))} options={[{value:'credit',label:'Credit (money in)'},{value:'debit',label:'Debit (money out)'}]}/></div>
           </div>
           <div className="field" style={{marginTop:8,maxWidth:260}}><label className="field-label">Transaction Ref No. / UTR</label><input className="field-input" value={form.refNo} onChange={e=>setForm(p=>({...p,refNo:e.target.value}))} placeholder="Optional"/></div>
           <div style={{display:'flex',gap:10,marginTop:8}}>
@@ -8335,19 +8610,33 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
             <input type="file" ref={fileRef} accept=".csv,.xlsx,.xls" style={{display:'none'}} onChange={importFile}/>
             <button className="btn btn-outline-primary" onClick={()=>fileRef.current?.click()}><Ic n="upload" s={13}/> Import Excel/CSV</button>
           </div>
-          <div style={{fontSize:11,color:'var(--text3)',marginTop:6}}>Import expects columns like Date, Description, Amount (or separate Debit/Credit columns) and optionally a Ref No/UTR column, exported from your bank's statement.</div>
+          <div style={{fontSize:11,color:'var(--text3)',marginTop:6}}>Import expects columns like Date, Description, Amount (or separate Debit/Credit or Withdrawal/Deposit columns) and optionally a Ref No/UTR column. Lines already imported are skipped automatically, so overlapping statements are safe.</div>
         </div>
 
         <div style={{display:'flex',gap:8,marginBottom:12,alignItems:'center',flexWrap:'wrap'}}>
-          {[['unmatched','Unmatched'],['matched','Matched'],['all','All']].map(([k,l])=>(
+          {[['unmatched','Unmatched',txns.filter(t=>!t.matched).length],['matched','Matched',txns.filter(t=>t.matched).length],['all','All',txns.length]].map(([k,l,n])=>(
             <button key={k} onClick={()=>setFilter(k)}
               style={{padding:'6px 14px',borderRadius:8,fontSize:12,fontWeight:filter===k?700:500,cursor:'pointer',
                 border:`2px solid ${filter===k?'var(--primary)':'var(--border2)'}`,
-                background:filter===k?'var(--primary-bg)':'transparent',color:filter===k?'var(--primary2)':'var(--text2)'}}>{l}</button>
+                background:filter===k?'var(--primary-bg)':'transparent',color:filter===k?'var(--primary2)':'var(--text2)'}}>{l} ({n})</button>
           ))}
+          <input className="field-input" style={{maxWidth:230}} placeholder="Search narration, ref, amount…" value={search} onChange={e=>setSearch(e.target.value)}/>
           <div style={{flex:1}}/>
-          <button className="btn btn-sm btn-outline-primary" onClick={autoMatchAll}><Ic n="check" s={12}/> Auto-Match Exact Amounts</button>
+          <button className="btn btn-sm btn-outline" onClick={()=>setShowRules(s=>!s)}>Rules ({rules.length})</button>
+          <button className="btn btn-sm btn-outline-primary" onClick={applyRulesNow}><Ic n="check" s={12}/> Apply Rules</button>
+          <button className="btn btn-sm btn-outline-primary" onClick={autoMatchAll}><Ic n="check" s={12}/> Smart Auto-Match</button>
         </div>
+        {showRules&&<div className="card" style={{marginBottom:12}}>
+          <div style={{fontWeight:700,fontSize:13,marginBottom:6}}>Auto-categorisation rules</div>
+          {rules.length===0?<div style={{fontSize:12,color:'var(--text3)'}}>No rules yet. When you “Post to ledger”, tick “Remember” and every future statement line with that narration posts itself.</div>:
+          rules.map(r=>(
+            <div key={r.id} style={{display:'flex',gap:10,alignItems:'center',padding:'5px 0',borderBottom:'1px solid var(--border)',fontSize:12.5}}>
+              <span className={`badge ${r.type==='credit'?'badge-green':'badge-red'}`}>{r.type==='credit'?'Money in':'Money out'}</span>
+              <span style={{flex:1}}>narration contains <b>“{r.keyword}”</b> → <b>{coaByKey(r.ledgerKey).name}</b></span>
+              <button className="close-btn" onClick={()=>deleteRule(r.id)}><Ic n="x" s={13}/></button>
+            </div>
+          ))}
+        </div>}
 
         {filtered.length===0?(
           <div style={{textAlign:'center',padding:'40px',color:'var(--text3)'}}>No transactions here yet.</div>
@@ -8367,54 +8656,22 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
                       <td><span className={`badge ${t.type==='credit'?'badge-green':'badge-red'}`}>{t.type==='credit'?'Money In':'Money Out'}</span></td>
                       <td style={{textAlign:'right',fontWeight:700,color:t.type==='credit'?'var(--green)':'var(--red)'}}>{t.type==='credit'?'+':'-'}{fmt(t.amount)}</td>
                       <td style={{textAlign:'right',color:'var(--text3)',fontSize:12}}>{fmt(balanceById[t.id])}</td>
-                      <td>{t.matched?<span className="badge badge-green">{t.matchedType==='quicksale'?`New Sale: ${t.matchedRef}`:`Linked: ${t.matchedRef}`}</span>:<span className="badge badge-gold">Unmatched</span>}</td>
+                      <td>{t.matched?<span className="badge badge-green">{statusLabel(t)}</span>:<span className="badge badge-gold">Unmatched</span>}</td>
                       <td>
                         {t.matched?(
                           <button className="btn btn-sm btn-outline" onClick={()=>unlink(t)}>Unlink</button>
                         ):(
                           <div style={{display:'flex',gap:5}}>
-                            <button className="btn btn-sm btn-outline-primary" onClick={()=>{
-                              const opening=matchingId!==t.id;
-                              setMatchingId(opening?t.id:null);
-                              setPickedRef(opening?(optionsFor(t)[0]?.ref||''):'');
-                            }}>Link</button>
+                            <button className="btn btn-sm btn-outline-primary" onClick={()=>setMatchingId(matchingId===t.id?null:t.id)}>Link</button>
                             <button className="btn btn-sm btn-danger btn-icon" onClick={()=>delTxn(t.id)}><Ic n="trash" s={11}/></button>
                           </div>
                         )}
                       </td>
                     </tr>
-                    {matchingId===t.id&&(()=>{
-                      const opts=optionsFor(t);
-                      return <tr>
-                        <td colSpan={8} style={{background:'var(--card2)',padding:14}}>
-                          <div style={{fontSize:11,color:'var(--text3)',marginBottom:6}}>
-                            {t.type==='credit'?'Link this credit to an unpaid Sales Invoice:':'Link this debit to an unpaid Purchase / Expense:'}
-                          </div>
-                          {opts.length===0?
-                            <div style={{fontSize:12,color:'var(--text3)'}}>Nothing open to link — {t.type==='credit'?'all invoices are already paid.':'all purchases are already paid.'}</div>
-                            :<div style={{display:'flex',gap:8}}>
-                              <select className="field-input" style={{flex:1}} value={pickedRef} onChange={e=>setPickedRef(e.target.value)}>
-                                <option value="">Select {t.type==='credit'?'invoice':'purchase / expense'}…</option>
-                                {opts.map((o,i)=><option key={o.ref} value={o.ref}>{Math.abs(o.amt-t.amount)<0.01?'✓ Exact match — ':i===0?'⭐ Closest match — ':''}{o.label}</option>)}
-                              </select>
-                              <button className="btn btn-sm btn-primary" onClick={()=>doMatch(t,opts.find(o=>o.ref===pickedRef))}>Confirm Link</button>
-                            </div>}
-                          {t.type==='credit'&&<>
-                            <div style={{display:'flex',alignItems:'center',gap:8,margin:'10px 0'}}>
-                              <div style={{flex:1,height:1,background:'var(--border2)'}}/>
-                              <span style={{fontSize:11,color:'var(--text3)'}}>OR</span>
-                              <div style={{flex:1,height:1,background:'var(--border2)'}}/>
-                            </div>
-                            <div style={{fontSize:11,color:'var(--text3)',marginBottom:6}}>No matching invoice? Record this credit directly as a new Sale:</div>
-                            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                              <input className="field-input" style={{flex:'1 1 160px'}} placeholder="Customer name (optional)" value={qsCustomer} onChange={e=>setQsCustomer(e.target.value)}/>
-                              <input className="field-input" style={{flex:'1 1 160px'}} placeholder="Notes (optional)" value={qsNotes} onChange={e=>setQsNotes(e.target.value)}/>
-                              <button className="btn btn-sm btn-outline-primary" onClick={()=>createQuickSale(t)}><Ic n="plus" s={12}/> Record as New Sale</button>
-                            </div>
-                          </>}
-                        </td>
-                      </tr>;
-                    })()}
+                    {matchingId===t.id&&!t.matched&&<tr><td colSpan={8} style={{padding:0}}>
+                      <BankLinkPanel key={t.id} t={t} accounts={accounts} allTxns={allTxns}
+                        onLinkDocs={linkDocs} onPostLedger={postLedger} onTransfer={linkTransfer} onQuickSale={createQuickSale} onClose={()=>setMatchingId(null)}/>
+                    </td></tr>}
                   </React.Fragment>
                 ))}
               </tbody>
@@ -8425,6 +8682,7 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
     </div>
   </div>;
 };
+
 
 /* ══════════════════════════════════════════════════════════════
    ⭐ FEATURE: SALES SECTION — combined view of all Sales Invoices
@@ -8655,10 +8913,12 @@ const COA = [
   {key:'INVESTMENTS',        name:'Non-Current Investments',                      type:'asset',     group:'Non-Current Assets',   scheduleGroup:'Non-Current Investments'},
   {key:'INVENTORY',          name:'Inventories',                                  type:'asset',     group:'Current Assets',       scheduleGroup:'Inventories'},
   {key:'TRADE_RECEIVABLE',   name:'Trade Receivables',                            type:'asset',     group:'Current Assets',       scheduleGroup:'Trade Receivables'},
-  {key:'BANK',               name:'Cash and Cash Equivalents',                    type:'asset',     group:'Current Assets',       scheduleGroup:'Cash and Cash Equivalents'},
+  {key:'BANK',               name:'Cash and Cash Equivalents',                    type:'asset',     group:'Current Assets',       scheduleGroup:'Cash and Cash Equivalents', groupOnly:true},
+  {key:'CASH_IN_HAND',       name:'Cash in Hand',                                 type:'asset',     group:'Current Assets',       scheduleGroup:'Cash and Cash Equivalents', parent:'BANK'},
   {key:'INPUT_GST',          name:'Balances with Govt. Authorities (Input GST)',  type:'asset',     group:'Current Assets',       scheduleGroup:'Balances with Govt. Authorities'},
   {key:'ADVANCES',           name:'Short-term Loans & Advances',                  type:'asset',     group:'Current Assets',       scheduleGroup:'Short-term Loans & Advances'},
   {key:'PREPAID_EXP',        name:'Prepaid Expenses',                             type:'asset',     group:'Current Assets',       scheduleGroup:'Prepaid Expenses'},
+  {key:'TDS_RECEIVABLE',     name:'TDS Receivable (deducted by customers)',       type:'asset',     group:'Current Assets',       scheduleGroup:'Balances with Govt. Authorities'},
   {key:'SUSPENSE_OUT',       name:'Unidentified Bank Payments (Suspense)',        type:'asset',     group:'Current Assets',       scheduleGroup:'Other Current Assets'},
   {key:'CAPITAL',            name:"Owner's Capital / Share Capital",              type:'equity',    group:'Equity',               scheduleGroup:'Equity'},
   {key:'RETAINED_EARNINGS',  name:'Reserves & Surplus (Retained Earnings)',       type:'equity',    group:'Equity',               scheduleGroup:'Equity', computed:true},
@@ -8670,6 +8930,7 @@ const COA = [
   {key:'TDS_PAYABLE',        name:'TDS Payable (Duties & Taxes)',                 type:'liability', group:'Current Liabilities', scheduleGroup:'Duties and Taxes'},
   {key:'ST_PROVISION',       name:'Short-term Provisions',                        type:'liability', group:'Current Liabilities', scheduleGroup:'Short-term Provisions'},
   {key:'SUSPENSE_IN',        name:'Unidentified Bank Receipts (Suspense)',        type:'liability', group:'Current Liabilities', scheduleGroup:'Other Current Liabilities'},
+  {key:'CUSTOMER_ADVANCE',    name:'Advances from Customers',                      type:'liability', group:'Current Liabilities', scheduleGroup:'Other Current Liabilities'},
   {key:'OTHER_CURRENT_LIAB', name:'Other Current Liabilities',                    type:'liability', group:'Current Liabilities', scheduleGroup:'Other Current Liabilities'},
   {key:'SALES',              name:'Revenue from Operations (Sales)',              type:'income',    group:'Income',   scheduleGroup:'Revenue from Operations'},
   {key:'OTHER_INCOME',       name:'Other Income',                                 type:'income',    group:'Income',   scheduleGroup:'Other Income'},
@@ -8697,22 +8958,53 @@ const GROUP_OPTIONS = {
   expense:   ['Expenses'],
 };
 
+/* ── Bank accounts become real SUB-LEDGERS of "Cash and Cash Equivalents" ──
+   Every bank account added in Bank Reconciliation automatically gets its own ledger
+   (key BANK_<id>) under the parent, so postings, the Trial Balance and the Balance Sheet can
+   tell your HDFC account from your ICICI account — while the Balance Sheet still rolls them up
+   into one "Cash and Cash Equivalents" caption. */
+const bankLedgerKey = id => 'BANK_'+String(id||'PRIMARY');
+const getBankAccounts = () => {
+  const a = S.get(SK.BANK_ACCTS,[]);
+  if(a && a.length) return a;
+  return [{id:'PRIMARY', name:'Primary Account', bankName:'', accountNo:'', openingBalance:parseFloat(S.get(SK.BANK_OB,0))||0}];
+};
+const bankLedgerName = a => `Bank — ${a.name}${a.bankName?' ('+a.bankName+')':''}${a.accountNo?' ••'+String(a.accountNo).slice(-4):''}`;
+const getBankLedgers = () => getBankAccounts().map(a=>({key:bankLedgerKey(a.id), name:bankLedgerName(a), type:'asset', group:'Current Assets', scheduleGroup:'Cash and Cash Equivalents', parent:'BANK', derived:true, bankAcctId:a.id}));
 const getCustomAccounts = () => S.get(SK.COA_CUSTOM,[]);
-const getAllAccounts = () => [...COA, ...getCustomAccounts()];
+const getAllAccounts = () => [...COA, ...getBankLedgers(), ...getCustomAccounts()];
 const coaByKey = key => getAllAccounts().find(a=>a.key===key) || {key, name:key, type:'asset', group:'Other', scheduleGroup:'Other'};
+// Ledgers money can be paid from / received into: every sub-ledger under Cash & Cash Equivalents
+const getPaymentLedgers = () => getAllAccounts().filter(a=>a.parent==='BANK');
 
-/* Creates a brand-new ledger account the user can post to from Journal Vouchers or map a
-   Purchase category to. Returns the generated key. */
-const createLedgerAccount = ({name, type, group, scheduleGroup}) => {
+const DEFAULT_CAPTION = {asset:'Other Current Assets', liability:'Other Current Liabilities', equity:'Equity', income:'Other Income', expense:'Other Expenses'};
+
+/* Creates a brand-new ledger the user can post to. If `parent` is given it becomes a SUB-LEDGER:
+   it inherits the parent's type / group / statement caption so it rolls up correctly. */
+const createLedgerAccount = ({name, type, group, scheduleGroup, parent}) => {
+  const all = getAllAccounts();
+  const par = parent ? all.find(a=>a.key===parent) : null;
+  const t = par ? par.type : (type||'expense');
+  const g = par ? par.group : (group||GROUP_OPTIONS[t][0]);
+  const sg = par ? par.scheduleGroup : (scheduleGroup||DEFAULT_CAPTION[t]||name.trim());
   const slug = (name||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,24) || 'ACC';
   const key = 'CUST_' + slug + '_' + Date.now().toString(36).slice(-4);
-  const rec = {key, name:name.trim(), type, group, scheduleGroup: scheduleGroup||name.trim(), custom:true, createdAt:new Date().toISOString()};
+  const rec = {key, name:name.trim(), type:t, group:g, scheduleGroup:sg, custom:true, createdAt:new Date().toISOString()};
+  if(par) rec.parent = par.key;
   S.set(SK.COA_CUSTOM, [...getCustomAccounts(), rec]);
   return key;
 };
+const updateLedgerAccount = (key, patch) => {
+  S.set(SK.COA_CUSTOM, getCustomAccounts().map(a=>a.key===key?{...a,...patch}:a));
+};
 const deleteLedgerAccount = (key) => {
+  if(getAllAccounts().some(a=>a.parent===key)) return {ok:false, reason:'This ledger has sub-ledgers under it — move or delete them first.'};
   const inUse = getAllLedgerLines().some(l=>l.account===key);
   if(inUse) return {ok:false, reason:'This ledger already has transactions posted to it — it can\'t be deleted.'};
+  const usedByBill = S.get(SK.EXP,[]).some(e=>e.expenseAccountKey===key);
+  if(usedByBill) return {ok:false, reason:'Purchase bills still point to this expense head — it can\'t be deleted.'};
+  const usedByRule = (S.get(SK.BANK_RULES,[])||[]).some(r=>r.ledgerKey===key);
+  if(usedByRule) return {ok:false, reason:'A bank auto-categorisation rule posts to this ledger — remove the rule first.'};
   S.set(SK.COA_CUSTOM, getCustomAccounts().filter(a=>a.key!==key));
   return {ok:true};
 };
@@ -8761,7 +9053,7 @@ const OPENING_DATE = '1900-01-01'; // pseudo-date: opening balances always count
    drift out of sync. Each entry is a balanced {date, narration, srcType, srcId, lines:[{account,debit,credit}]}. */
 // Human-readable document type shown in the "Receipt / Payment / Journal / Invoice / Bill" column
 // of every ledger — one label per srcType, with BANKTXN overridden per-transaction (Receipt vs Payment).
-const GL_DOC_TYPE_LABEL = {INV:'Invoice', QSALE:'Invoice', EXP:'Bill', STOCKOB:'Journal', BANKOB:'Journal', COGS:'Journal', JV:'Journal', BANKTXN:'Receipt'};
+const GL_DOC_TYPE_LABEL = {INV:'Invoice', QSALE:'Invoice', EXP:'Bill', STOCKOB:'Journal', BANKOB:'Journal', COGS:'Journal', JV:'Journal', BANKTXN:'Receipt', EXPPAY:'Payment'};
 const buildAutoJournal = () => {
   const entries=[];
   const add=(date,narration,srcType,srcId,lines,voucherNo,meta={})=>{
@@ -8845,35 +9137,97 @@ const buildAutoJournal = () => {
   });
 
   // Bank accounts' opening balances
-  S.get(SK.BANK_ACCTS,[]).forEach(acc=>{
+  getBankAccounts().forEach(acc=>{
     const ob=parseFloat(acc.openingBalance)||0;
     if(Math.abs(ob)<=0.004) return;
     const obVoucher = 'OPEN-'+String(acc.id).replace(/\s+/g,'').slice(0,8).toUpperCase();
-    if(ob>=0) add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'BANK',debit:ob,credit:0},{account:'CAPITAL',debit:0,credit:ob}], obVoucher, {docNo:acc.name, category:'Opening Balance'});
-    else add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'CAPITAL',debit:-ob,credit:0},{account:'BANK',debit:0,credit:-ob}], obVoucher, {docNo:acc.name, category:'Opening Balance'});
+    if(ob>=0) add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:bankLedgerKey(acc.id),debit:ob,credit:0},{account:'CAPITAL',debit:0,credit:ob}], obVoucher, {docNo:acc.name, category:'Opening Balance'});
+    else add(OPENING_DATE, `Opening balance — ${acc.name}`, 'BANKOB', acc.id, [{account:'CAPITAL',debit:-ob,credit:0},{account:bankLedgerKey(acc.id),debit:0,credit:-ob}], obVoucher, {docNo:acc.name, category:'Opening Balance'});
   });
 
-  // Every bank transaction — the cash side of a collection or a payment. It inherits the SAME
-  // Voucher No. as the invoice/expense it's settling, so the whole lifecycle of one transaction
-  // (raised → paid) is traceable under a single number, not a fresh one per leg.
-  S.get(SK.BANK,[]).forEach(t=>{
+  // Every bank transaction posts to ITS OWN bank sub-ledger (BANK_<account id>), so each bank
+  // account has a true ledger balance. The other side depends on how it was reconciled:
+  //   • linked to invoices / bills  → Trade Receivable / Trade Payable (supports partial payments,
+  //     several documents at once, and any short/excess amount sent to a chosen ledger — TDS
+  //     deducted by a customer, an advance, a discount…)
+  //   • posted straight to a ledger → that ledger (bank charges, interest, loan EMI, capital…)
+  //   • inter-bank transfer         → the other bank's sub-ledger (posted once, on the debit leg)
+  //   • not yet reconciled          → the Suspense ledger, so nothing silently disappears.
+  const bankTxnsAll = S.get(SK.BANK,[]);
+  const txnById = {}; bankTxnsAll.forEach(t=>{ txnById[t.id]=t; });
+  const bankAcctName = id => { const a=getBankAccounts().find(x=>x.id===id); return a?a.name:id; };
+  bankTxnsAll.forEach(t=>{
     const amt=parseFloat(t.amount)||0; if(!amt) return;
+    const acctId = t.acctId||'PRIMARY';
+    const bk = bankLedgerKey(acctId);
+    const isCredit = t.type==='credit';
+    const allocs = Array.isArray(t.allocs) ? t.allocs.filter(a=>(parseFloat(a.amt)||0)>0.004) : [];
+    const docKind = allocs.length ? allocs[0].kind : t.matchedType;
+    const docRef  = allocs.length ? allocs[0].ref  : t.matchedRef;
     let settleVoucher = '', settleTxnRef = '';
-    if(t.matchedType==='invoice'){ settleVoucher = invByNo[t.matchedRef]?.voucherNo||''; settleTxnRef = invByNo[t.matchedRef]?.txnRefNo||''; }
-    else if(t.matchedType==='quicksale'){ settleVoucher = qsById[t.matchedRef]?.voucherNo||''; settleTxnRef = qsById[t.matchedRef]?.txnRefNo||''; }
-    else if(t.matchedType==='expense'){ settleVoucher = expById[t.matchedRef]?.voucherNo||''; settleTxnRef = expById[t.matchedRef]?.txnRefNo||''; }
-    const matchCategory = t.matchedType==='invoice'?'Invoice Receipt':t.matchedType==='quicksale'?'Quick Sale Receipt':t.matchedType==='expense'?'Bill Payment':(t.type==='credit'?'Unmatched Receipt':'Unmatched Payment');
-    if(t.type==='credit'){
-      const contra = (t.matchedType==='invoice'||t.matchedType==='quicksale') ? 'TRADE_RECEIVABLE' : 'SUSPENSE_IN';
-      add(t.date, `Receipt — ${t.desc||'Bank credit'}${t.matchedRef?' ('+t.matchedRef+')':''}`, 'BANKTXN', t.id, [
-        {account:'BANK',debit:amt,credit:0}, {account:contra,debit:0,credit:amt},
-      ], settleVoucher, {txnRefNo:settleTxnRef, docNo:t.matchedRef||'', category:matchCategory, docType:'Receipt'});
-    } else {
-      const contra = t.matchedType==='expense' ? 'TRADE_PAYABLE' : 'SUSPENSE_OUT';
-      add(t.date, `Payment — ${t.desc||'Bank debit'}${t.matchedRef?' ('+t.matchedRef+')':''}`, 'BANKTXN', t.id, [
-        {account:contra,debit:amt,credit:0}, {account:'BANK',debit:0,credit:amt},
-      ], settleVoucher, {txnRefNo:settleTxnRef, docNo:t.matchedRef||'', category:matchCategory, docType:'Payment'});
+    if(docKind==='invoice'){ settleVoucher = invByNo[docRef]?.voucherNo||''; settleTxnRef = invByNo[docRef]?.txnRefNo||''; }
+    else if(docKind==='quicksale'){ settleVoucher = qsById[docRef]?.voucherNo||''; settleTxnRef = qsById[docRef]?.txnRefNo||''; }
+    else if(docKind==='expense'){ settleVoucher = expById[docRef]?.voucherNo||''; settleTxnRef = expById[docRef]?.txnRefNo||''; }
+
+    // ── Inter-bank transfer: one balanced entry, posted from the DEBIT (money-out) leg ──
+    if(t.matchedType==='transfer'){
+      const partner = txnById[t.matchedRef];
+      if(partner && (partner.acctId||'PRIMARY')!==acctId){
+        if(!isCredit){
+          add(t.date, `Transfer to ${bankAcctName(partner.acctId||'PRIMARY')} — ${t.desc||'Inter-bank transfer'}`, 'BANKTXN', t.id, [
+            {account:bankLedgerKey(partner.acctId||'PRIMARY'),debit:amt,credit:0}, {account:bk,debit:0,credit:amt},
+          ], '', {docNo:'', category:'Inter-bank Transfer', docType:'Transfer'});
+        }
+        return; // the credit leg is already covered by the debit leg
+      }
+      // partner missing → falls through and is treated as unreconciled
     }
+
+    const partyKey = isCredit ? 'TRADE_RECEIVABLE' : 'TRADE_PAYABLE';
+    const lines=[ isCredit ? {account:bk,debit:amt,credit:0} : {account:bk,debit:0,credit:amt} ];
+    let category = isCredit?'Unmatched Receipt':'Unmatched Payment';
+    if(t.matchedType==='ledger' && t.ledgerKey){
+      lines.push(isCredit ? {account:t.ledgerKey,debit:0,credit:amt} : {account:t.ledgerKey,debit:amt,credit:0});
+      category = 'Posted to '+coaByKey(t.ledgerKey).name;
+    } else if(allocs.length){
+      const A = +allocs.reduce((s,a)=>s+(parseFloat(a.amt)||0),0).toFixed(2);
+      lines.push(isCredit ? {account:partyKey,debit:0,credit:A} : {account:partyKey,debit:A,credit:0});
+      const d = +(amt-A).toFixed(2); // + = bank amount exceeds documents, − = bank amount is short
+      if(Math.abs(d)>0.004){
+        const rk = t.restKey || (isCredit ? (d>0?'CUSTOMER_ADVANCE':'TDS_RECEIVABLE') : (d>0?'ADVANCES':'OTHER_INCOME'));
+        const creditSide = isCredit ? d>0 : d<0;
+        lines.push(creditSide ? {account:rk,debit:0,credit:Math.abs(d)} : {account:rk,debit:Math.abs(d),credit:0});
+      }
+      category = docKind==='expense' ? 'Bill Payment' : 'Invoice Receipt';
+    } else if(docKind==='invoice'||docKind==='quicksale'||docKind==='expense'){
+      // older single-link records: the whole bank amount settles the linked document
+      lines.push(isCredit ? {account:partyKey,debit:0,credit:amt} : {account:partyKey,debit:amt,credit:0});
+      category = docKind==='invoice'?'Invoice Receipt':docKind==='quicksale'?'Quick Sale Receipt':'Bill Payment';
+    } else {
+      const sus = isCredit ? 'SUSPENSE_IN' : 'SUSPENSE_OUT';
+      lines.push(isCredit ? {account:sus,debit:0,credit:amt} : {account:sus,debit:amt,credit:0});
+    }
+    add(t.date, `${isCredit?'Receipt':'Payment'} — ${t.desc||(isCredit?'Bank credit':'Bank debit')}${t.matchedRef?' ('+t.matchedRef+')':''}`, 'BANKTXN', t.id, lines,
+      settleVoucher, {txnRefNo:settleTxnRef, docNo:(allocs.length?allocs.map(a=>a.ref).join(', '):(t.matchedRef||'')), category, docType:isCredit?'Receipt':'Payment'});
+  });
+
+  // Payments typed straight onto a purchase bill (paid in cash, or from a bank outside the statement).
+  // Posted only when the bill names the ledger it was paid from, and only for the part NOT already
+  // settled by a reconciled bank transaction — so the same payment can never be counted twice.
+  const bankSettledExp = {};
+  bankTxnsAll.forEach(t=>{
+    if(t.type!=='debit') return;
+    if(Array.isArray(t.allocs)&&t.allocs.length){ t.allocs.forEach(a=>{ if(a.kind==='expense') bankSettledExp[a.ref]=(bankSettledExp[a.ref]||0)+(parseFloat(a.amt)||0); }); }
+    else if(t.matched && t.matchedType==='expense') bankSettledExp[t.matchedRef]=Infinity;
+  });
+  S.get(SK.EXP,[]).forEach(exp=>{
+    if(!exp.paidFromKey) return;
+    const paid = expPaid(exp); if(paid<=0.004) return;
+    const direct = +(paid - Math.min(paid, bankSettledExp[exp.id]||0)).toFixed(2);
+    if(direct<=0.004) return;
+    add(exp.paidDate||exp.billDate||exp.date, `Payment — ${exp.vendor||'Vendor'} (${exp.billNo||exp.id})`, 'EXPPAY', exp.id, [
+      {account:'TRADE_PAYABLE',debit:direct,credit:0}, {account:exp.paidFromKey,debit:0,credit:direct},
+    ], exp.voucherNo, {txnRefNo:exp.txnRefNo, docNo:exp.billNo||exp.id, category:'Bill Payment (direct)', docType:'Payment'});
   });
 
   // Cost of Goods Sold — recognised against Inventory the moment stock actually goes out for a sale.
@@ -8958,12 +9312,12 @@ const getPLAccrual = (from,to) => {
 /* P&L — Cash / Receipts-and-Payments basis: counts only actual money movement in the range.
    (Companies Act statements must be accrual — this basis is offered only in the Normal/internal view.) */
 const getPLCash = (from,to) => {
-  const txns = S.get(SK.BANK,[]).filter(t=>(t.date||'')>=from && (t.date||'')<=to);
+  const txns = S.get(SK.BANK,[]).filter(t=>(t.date||'')>=from && (t.date||'')<=to && t.matchedType!=='transfer');
   const received = txns.filter(t=>t.type==='credit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
   const paid     = txns.filter(t=>t.type==='debit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
   let manualIn=0, manualOut=0;
   getManualJournal().filter(e=>(e.date||'')>=from && (e.date||'')<=to && (e.reportingMethod||'both')!=='accrual')
-    .forEach(e=>(e.lines||[]).forEach(l=>{ if(l.account==='BANK'){ manualIn+=l.debit||0; manualOut+=l.credit||0; }}));
+    .forEach(e=>(e.lines||[]).forEach(l=>{ if(l.account==='BANK'||coaByKey(l.account).parent==='BANK'){ manualIn+=l.debit||0; manualOut+=l.credit||0; }}));
   const income=+(received+manualIn).toFixed(2), expense=+(paid+manualOut).toFixed(2);
   return {income, expense, net:+(income-expense).toFixed(2)};
 };
@@ -9169,9 +9523,10 @@ const ExportBar = ({onExport, from, to, onFromChange, onToChange, showDateFilter
 // Plain (non-hook) computation so it can also be run in a loop across every account at once,
 // for the Full General Ledger Dump — the memoised hook below just wraps this for the normal
 // single-account ledger views.
-const computeLedgerData = (account, fromDate, toDate, allLines) => {
+const computeLedgerData = (account, fromDate, toDate, allLines, withChildren=false) => {
   const source = allLines || getAllLedgerLines();
-  const all = source.filter(l=>l.account===account).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const keys = withChildren ? [account, ...descendantKeys(account)] : [account];
+  const all = source.filter(l=>keys.includes(l.account)).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const before = all.filter(l=>(l.date||'')<fromDate);
   const inRange = all.filter(l=>(l.date||'')>=fromDate && (l.date||'')<=toDate);
   const acc = coaByKey(account);
@@ -9181,7 +9536,7 @@ const computeLedgerData = (account, fromDate, toDate, allLines) => {
   const rows = inRange.map(l=>{ bal += natural*(l.debit-l.credit); return {...l, running:bal}; });
   return {opening, rows, closing:bal};
 };
-const useLedgerData = (account, fromDate, toDate) => useMemo(()=>computeLedgerData(account, fromDate, toDate),[account,fromDate,toDate]);
+const useLedgerData = (account, fromDate, toDate, withChildren=false) => useMemo(()=>computeLedgerData(account, fromDate, toDate, null, withChildren),[account,fromDate,toDate,withChildren]);
 
 // Shared header row + column count for the full ledger column set — used by every ledger view
 // (single-account LedgerTable below AND the Full GL Dump) so the layout can never drift apart.
@@ -9214,8 +9569,8 @@ const LedgerBodyRow = ({r})=>(
 );
 const ledgerExportRow = r => [fmtDate(r.date), coaByKey(r.account).name, r.voucherNo||'', r.txnRefNo||'', r.docType||'Journal', r.docNo||'', r.category||'', r.narration, r.debit?fmtN(r.debit):'', r.credit?fmtN(r.credit):'', fmtN(r.running)];
 
-const LedgerTable = ({account, fromDate, toDate})=>{
-  const {opening, rows, closing} = useLedgerData(account, fromDate, toDate);
+const LedgerTable = ({account, fromDate, toDate, withChildren=false})=>{
+  const {opening, rows, closing} = useLedgerData(account, fromDate, toDate, withChildren);
   const accName = coaByKey(account).name;
   const doExport = (fmt)=>{
     const headers=LEDGER_COLS;
@@ -9260,115 +9615,369 @@ const Breadcrumb = ({items})=>(
   </div>
 );
 
-/* Small shared control for picking any Chart-of-Accounts account, grouped by type */
-const AccountSelect = ({value,onChange,style})=>{
-  const groups = [['asset','Assets'],['liability','Liabilities'],['equity','Equity'],['income','Income'],['expense','Expenses']];
-  const all = getAllAccounts();
-  return <select className="field-input" style={style} value={value} onChange={e=>onChange(e.target.value)}>
-    <option value="">Select account…</option>
-    {groups.map(([t,label])=>(
-      <optgroup key={t} label={label}>
-        {all.filter(a=>a.type===t).map(a=><option key={a.key} value={a.key}>{a.name}{a.custom?' (custom)':''}</option>)}
-      </optgroup>
-    ))}
-  </select>;
+/* ══════════════════════════════════════════════════════════════
+   SearchSelect — a drop-in replacement for <select> that you can OPEN AND TYPE INTO.
+   Type any part of a name (several words work: "hdfc cur"), use ↑ ↓ Enter, or just focus
+   the box and start typing. options = [{value,label,sub?,group?,indent?,disabled?,badge?,keywords?}].
+   Pass onCreate(typedText) to offer "+ Create “…”" when nothing matches exactly.
+   ══════════════════════════════════════════════════════════════ */
+const SearchSelect = ({value, onChange, options=[], placeholder='Select…', style, disabled=false, onCreate, emptyText='No matches', minPopWidth=280, clearable=false})=>{
+  const [open,setOpen]=useState(false);
+  const [q,setQ]=useState('');
+  const [hi,setHi]=useState(0);
+  const [pos,setPos]=useState(null);
+  const btnRef=useRef(null), popRef=useRef(null), listRef=useRef(null), inpRef=useRef(null);
+  const sel = options.find(o=>o.value===value);
+  const filtered = useMemo(()=>{
+    const toks=q.toLowerCase().split(/\s+/).filter(Boolean);
+    if(!toks.length) return options;
+    return options.filter(o=>{
+      const hay=`${o.label} ${o.sub||''} ${o.keywords||''} ${o.group||''}`.toLowerCase();
+      return toks.every(t=>hay.includes(t));
+    });
+  },[q,options]);
+  const canCreate = !!onCreate && q.trim().length>0 && !options.some(o=>String(o.label).toLowerCase()===q.trim().toLowerCase());
+  const total = filtered.length + (canCreate?1:0);
+  const firstEnabled = (list)=>{ const i=list.findIndex(o=>!o.disabled); return i<0?0:i; };
+  const place=()=>{
+    if(!btnRef.current) return;
+    const r=btnRef.current.getBoundingClientRect();
+    const below=window.innerHeight-r.bottom, above=r.top;
+    const up = below<260 && above>below;
+    const width=Math.max(r.width,minPopWidth);
+    setPos({left:Math.max(8,Math.min(r.left,window.innerWidth-width-8)), width,
+      top: up?undefined:r.bottom+4, bottom: up?window.innerHeight-r.top+4:undefined,
+      maxH: Math.max(170,Math.min(360,(up?above:below)-16))});
+  };
+  const openPop=(initial='')=>{
+    if(disabled) return;
+    place(); setQ(initial); setOpen(true);
+  };
+  useEffect(()=>{ setHi(firstEnabled(filtered)); },[q,open]);
+  useEffect(()=>{
+    if(!open) return;
+    const onDoc=e=>{ if(btnRef.current?.contains(e.target)||popRef.current?.contains(e.target)) return; setOpen(false); };
+    const onWin=e=>{ if(e&&e.target&&popRef.current&&popRef.current.contains(e.target)) return; place(); };
+    document.addEventListener('mousedown',onDoc);
+    window.addEventListener('resize',onWin);
+    window.addEventListener('scroll',onWin,true);
+    const tm=setTimeout(()=>inpRef.current&&inpRef.current.focus(),0);
+    return ()=>{ clearTimeout(tm); document.removeEventListener('mousedown',onDoc); window.removeEventListener('resize',onWin); window.removeEventListener('scroll',onWin,true); };
+  },[open]);
+  useEffect(()=>{
+    if(!open||!listRef.current) return;
+    const el=listRef.current.querySelector('[data-i="'+hi+'"]');
+    if(el&&el.scrollIntoView) el.scrollIntoView({block:'nearest'});
+  },[hi,open]);
+  const pick=(o)=>{ if(!o||o.disabled) return; onChange(o.value); setOpen(false); };
+  const doCreate=()=>{ const t=q.trim(); setOpen(false); if(t&&onCreate) onCreate(t); };
+  const move=(dir)=>{
+    if(!total) return;
+    let i=hi;
+    for(let n=0;n<total;n++){
+      i=(i+dir+total)%total;
+      if(i>=filtered.length || !filtered[i].disabled) break;
+    }
+    setHi(i);
+  };
+  const onInpKey=e=>{
+    if(e.key==='ArrowDown'){e.preventDefault();move(1);}
+    else if(e.key==='ArrowUp'){e.preventDefault();move(-1);}
+    else if(e.key==='Enter'){e.preventDefault(); if(hi<filtered.length) pick(filtered[hi]); else if(canCreate) doCreate();}
+    else if(e.key==='Escape'){e.preventDefault();setOpen(false);btnRef.current&&btnRef.current.focus();}
+    else if(e.key==='Tab'){setOpen(false);}
+  };
+  const onBtnKey=e=>{
+    if(disabled) return;
+    if(e.key==='Enter'||e.key===' '||e.key==='ArrowDown'){ e.preventDefault(); openPop(); }
+    else if(e.key.length===1 && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); openPop(e.key); }
+  };
+  let lastGroup=null;
+  return <>
+    <div ref={btnRef} tabIndex={disabled?-1:0} className="field-input ss-btn" style={{...(style||{}),opacity:disabled?0.6:1}}
+      onClick={()=>open?setOpen(false):openPop()} onKeyDown={onBtnKey}>
+      <span className={'ss-val'+(sel?'':' ss-ph')}>{sel?sel.label:(value?String(value):placeholder)}</span>
+      {clearable&&sel&&value!==''&&!disabled&&<span title="Clear" style={{color:'var(--text3)',padding:'0 2px'}} onClick={e=>{e.stopPropagation();onChange('');}}>×</span>}
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,opacity:.6}}><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    {open&&pos&&ReactDOM.createPortal(
+      <div ref={popRef} className="ss-pop" style={{left:pos.left,width:pos.width,top:pos.top,bottom:pos.bottom,maxHeight:pos.maxH}}>
+        <div className="ss-search">
+          <input ref={inpRef} className="field-input" style={{padding:'7px 10px',fontSize:12.5}} value={q} onChange={e=>setQ(e.target.value)} onKeyDown={onInpKey}
+            placeholder={onCreate?'Type to search, or type a new name to add…':'Type to search…'}/>
+        </div>
+        <div className="ss-list" ref={listRef}>
+          {filtered.length===0&&!canCreate&&<div style={{padding:'14px 12px',fontSize:12,color:'var(--text3)'}}>{emptyText}</div>}
+          {filtered.map((o,i)=>{
+            const hdr = o.group && o.group!==lastGroup ? <div key={'g'+i} className="ss-grp">{o.group}</div> : null;
+            lastGroup = o.group||lastGroup;
+            return <React.Fragment key={String(o.value)+'_'+i}>
+              {hdr}
+              <div data-i={i} className={'ss-opt'+(i===hi?' hi':'')+(o.value===value?' sel':'')+(o.disabled?' dis':'')}
+                style={{paddingLeft:12+(o.indent||0)*16}} onMouseEnter={()=>!o.disabled&&setHi(i)} onClick={()=>pick(o)}>
+                <div style={{minWidth:0}}>
+                  <div className="ss-lbl">{o.indent>0?'└ ':''}{o.label}</div>
+                  {o.sub&&<div className="ss-sub">{o.sub}</div>}
+                </div>
+                {o.badge&&<span className="ss-badge">{o.badge}</span>}
+              </div>
+            </React.Fragment>;
+          })}
+          {canCreate&&<div data-i={filtered.length} className={'ss-opt ss-create'+(hi===filtered.length?' hi':'')} onMouseEnter={()=>setHi(filtered.length)} onClick={doCreate}>+ Create “{q.trim()}”</div>}
+        </div>
+      </div>, document.body)}
+  </>;
+};
+const simpleOptions = (list)=>list.map(x=>typeof x==='object'?x:{value:x,label:String(x)});
+
+/* ── Ledger hierarchy helpers (parent → sub-ledger) ── */
+const ACCOUNT_TYPE_GROUPS = [['asset','Assets'],['liability','Liabilities'],['equity','Equity'],['income','Income'],['expense','Expenses']];
+// Flat list in tree order: [{acc, depth}] — parents first, each followed by its sub-ledgers.
+const accountTree = (all=getAllAccounts())=>{
+  const keys=new Set(all.map(a=>a.key));
+  const byParent={};
+  all.forEach(a=>{ const p=(a.parent&&keys.has(a.parent)&&a.parent!==a.key)?a.parent:''; (byParent[p]=byParent[p]||[]).push(a); });
+  const out=[]; const seen=new Set();
+  const walk=(p,depth)=>(byParent[p]||[]).forEach(a=>{ if(seen.has(a.key))return; seen.add(a.key); out.push({acc:a,depth}); walk(a.key,depth+1); });
+  walk('',0);
+  return out;
+};
+const descendantKeys = (key, all=getAllAccounts())=>{
+  const out=[]; const st=[key];
+  while(st.length){ const k=st.pop(); all.forEach(c=>{ if(c.parent===k && !out.includes(c.key)){ out.push(c.key); st.push(c.key); } }); }
+  return out;
+};
+const ledgerPathName = (key)=>{
+  const all=getAllAccounts(); const a=all.find(x=>x.key===key); if(!a) return key;
+  const p=a.parent?all.find(x=>x.key===a.parent):null;
+  return p?`${p.name} › ${a.name}`:a.name;
+};
+// Options for a SearchSelect over the Chart of Accounts. types = which account types, in what order.
+// forParent=true lets "group-only" parents (e.g. Cash and Cash Equivalents) be chosen as a parent.
+const buildAccountOptions = (types, {forParent=false, excludeKeys=[], onlyPostableBanks=false}={})=>{
+  const all=getAllAccounts();
+  const tree=accountTree(all);
+  const order = types&&types.length ? types : ACCOUNT_TYPE_GROUPS.map(g=>g[0]);
+  const out=[];
+  order.forEach(t=>{
+    const label=(ACCOUNT_TYPE_GROUPS.find(g=>g[0]===t)||[t,t])[1];
+    tree.filter(n=>n.acc.type===t && !excludeKeys.includes(n.acc.key) && !(forParent&&(n.acc.computed||n.acc.derived))).forEach(({acc,depth})=>{
+      const parent=acc.parent?all.find(x=>x.key===acc.parent):null;
+      out.push({value:acc.key,label:acc.name,group:label,indent:depth,
+        disabled: !forParent && !!acc.groupOnly,
+        sub: acc.groupOnly&&!forParent ? 'Parent — choose a specific bank / cash ledger below' : (parent?`Sub-ledger of ${parent.name}`:acc.scheduleGroup),
+        badge: acc.derived?'bank a/c':(acc.custom?'custom':''),
+        keywords:`${acc.scheduleGroup||''} ${parent?parent.name:''} ${label}`});
+    });
+  });
+  return out;
 };
 
-/* ══ Chart of Accounts — structure view + custom ledger creation + Purchase-category mapping ══ */
-const blankNewLedger = ()=>({name:'',type:'expense',group:GROUP_OPTIONS.expense[0],scheduleGroup:SCHEDULE_CAPTIONS.expense[0],customCaption:false,customCaptionText:''});
+/* Searchable picker for any Chart-of-Accounts ledger. Sub-ledgers are indented under their parent;
+   group-only parents (Cash and Cash Equivalents) are shown but not selectable, so a posting can
+   never land on the vague parent when you meant a specific bank. Pass createType to let people
+   type a brand-new ledger name straight from the dropdown. */
+const AccountSelect = ({value,onChange,style,types,createType,createParent,placeholder='Select account…',forParent=false,excludeKeys,clearable=false})=>{
+  const [,setTick]=useState(0);
+  const options = buildAccountOptions(types,{forParent,excludeKeys:excludeKeys||[]});
+  const create = createType ? (name)=>{
+    const key=createLedgerAccount({name, type:createType, parent:createParent||''});
+    toast.success(`Ledger "${name}" created`);
+    setTick(x=>x+1);
+    onChange(key);
+  } : undefined;
+  return <SearchSelect value={value} onChange={onChange} options={options} style={style} placeholder={placeholder} onCreate={create} clearable={clearable}/>;
+};
+
+/* ══ Chart of Accounts — parent → sub-ledger tree, live balances, custom ledgers, expense-head mapping ══ */
+const blankNewLedger = ()=>({name:'',type:'expense',group:GROUP_OPTIONS.expense[0],scheduleGroup:SCHEDULE_CAPTIONS.expense[0],customCaption:false,customCaptionText:'',parent:''});
 const ChartOfAccountsPage = ({inline=true, isAdmin, currentUser})=>{
   const [map,setMap]=useState(S.get(SK.ACCMAP,{}));
-  const [customAccs,setCustomAccs]=useState(getCustomAccounts());
+  const [tick,setTick]=useState(0);
   const [adding,setAdding]=useState(false);
+  const [editKey,setEditKey]=useState(null);
   const [nl,setNl]=useState(blankNewLedger());
   const [drillAccount,setDrillAccount]=useState(null);
+  const [q,setQ]=useState('');
+  const refresh=()=>setTick(x=>x+1);
+
+  const allAccs = useMemo(()=>getAllAccounts(),[tick]);
+  const tree = useMemo(()=>accountTree(allAccs),[allAccs]);
+  // Closing balance of every ledger today, shown the natural way round (Dr for assets/expenses, Cr for the rest)
+  const tbMap = useMemo(()=>{ const m={}; getTrialBalance('9999-12-31').forEach(r=>{ m[r.account]=r.balance; }); return m; },[tick]);
+  const naturalBal = (a)=>{ const b=tbMap[a.key]||0; return (a.type==='asset'||a.type==='expense')?b:-b; };
+  const rollupBal = (a)=>[a.key,...descendantKeys(a.key,allAccs)].reduce((s,k)=>{ const x=allAccs.find(z=>z.key===k); return s+(x?naturalBal(x):0); },0);
+  const suspense = +((tbMap.SUSPENSE_OUT||0) + (-(tbMap.SUSPENSE_IN||0))).toFixed(2);
+  const suspenseCount = S.get(SK.BANK,[]).filter(t=>!t.matched).length;
 
   const cats = useMemo(()=>{
-    const s=new Set();
-    S.get(SK.EXP,[]).forEach(e=>{ if(e.category) s.add(e.category); });
-    return [...s].sort();
-  },[]);
-  const groups = [['asset','Assets'],['liability','Liabilities'],['equity','Equity'],['income','Income'],['expense','Expenses']];
+    const m={};
+    S.get(SK.EXP,[]).forEach(e=>{ if(e.category){ const k=e.category; if(!m[k]) m[k]={name:k,count:0,total:0}; m[k].count++; m[k].total+=parseFloat(e.total)||0; } });
+    return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name));
+  },[tick]);
   const updateMap=(cat,accKey)=>{
     setExpenseAccountMap(cat,accKey);
     setMap(S.get(SK.ACCMAP,{}));
     logAudit('EXPENSE_ACCOUNT_MAPPING_UPDATED',`"${cat}" → ${coaByKey(accKey).name}`,currentUser);
     toast.success(`"${cat}" now posts to ${coaByKey(accKey).name}`);
   };
+  // Mapping only guides bills that have no Expense Head of their own — "Apply" stamps it onto the existing bills.
+  const applyToBills=(cat)=>{
+    const key=(map[cat.toLowerCase().trim()])||guessExpenseAccount(cat);
+    const canEditFrozen = isSuperAdmin(currentUser?.email);
+    let changed=0, skipped=0;
+    const updated=S.get(SK.EXP,[]).map(e=>{
+      if(e.category!==cat || e.expenseAccountKey===key) return e;
+      if(!canEditFrozen && isExpenseFrozen(e)){ skipped++; return e; }
+      changed++; return {...e,expenseAccountKey:key};
+    });
+    if(!changed){ toast.info(skipped?`${skipped} bill(s) are in frozen periods and were left as they are.`:'All bills in this category already post to that ledger.'); return; }
+    if(!window.confirm(`Re-point ${changed} bill(s) in "${cat}" to ${coaByKey(key).name}? Their journal entries will move to that ledger.`)) return;
+    S.set(SK.EXP,updated);
+    logAudit('EXPENSE_ACCOUNT_MAPPING_APPLIED',`"${cat}" → ${coaByKey(key).name} on ${changed} bill(s)`,currentUser);
+    toast.success(`${changed} bill(s) now post to ${coaByKey(key).name}${skipped?` · ${skipped} frozen bill(s) skipped`:''}`);
+    refresh();
+  };
+  const autoMapByName=()=>{
+    const exp=allAccs.filter(a=>a.type==='expense'); let n=0; const cur={...S.get(SK.ACCMAP,{})};
+    cats.forEach(c=>{
+      const k=c.name.toLowerCase().trim(); if(cur[k]) return;
+      const hit=exp.find(a=>a.name.toLowerCase().trim()===k) || exp.find(a=>a.name.toLowerCase().includes(k)||k.includes(a.name.toLowerCase()));
+      if(hit){ cur[k]=hit.key; n++; }
+    });
+    if(!n){ toast.info('Nothing left to map by name — map the rest from the list below.'); return; }
+    S.set(SK.ACCMAP,cur); setMap(cur);
+    logAudit('EXPENSE_ACCOUNT_MAPPING_UPDATED',`Auto-mapped ${n} categories by name`,currentUser);
+    toast.success(`Mapped ${n} categor${n===1?'y':'ies'} to the ledger with the same name`);
+  };
 
+  const parentAcc = nl.parent ? allAccs.find(a=>a.key===nl.parent) : null;
   const upNl = (k,v) => setNl(p=>{
     const next={...p,[k]:v};
-    if(k==='type'){ next.group=GROUP_OPTIONS[v][0]; next.scheduleGroup=SCHEDULE_CAPTIONS[v][0]; next.customCaption=false; }
+    if(k==='type'){ next.group=GROUP_OPTIONS[v][0]; next.scheduleGroup=SCHEDULE_CAPTIONS[v][0]; next.customCaption=false; next.parent=''; }
     return next;
   });
-  const saveNewLedger = () => {
+  const pickParent = (key)=>{
+    const par=allAccs.find(a=>a.key===key);
+    if(!par){ setNl(p=>({...p,parent:''})); return; }
+    setNl(p=>({...p,parent:key,type:par.type,group:par.group,scheduleGroup:par.scheduleGroup,customCaption:false}));
+  };
+  const startAdd=(parentKey='')=>{
+    const base=blankNewLedger(); setEditKey(null); setNl(base); setAdding(true);
+    if(parentKey){ const par=allAccs.find(a=>a.key===parentKey); if(par) setNl({...base,parent:parentKey,type:par.type,group:par.group,scheduleGroup:par.scheduleGroup}); }
+    setTimeout(()=>window.scrollTo&&window.scrollTo({top:0,behavior:'smooth'}),0);
+  };
+  const startEdit=(a)=>{
+    setAdding(true); setEditKey(a.key);
+    setNl({name:a.name,type:a.type,group:a.group,scheduleGroup:a.scheduleGroup,customCaption:false,customCaptionText:'',parent:a.parent||''});
+  };
+  const cancelForm=()=>{ setNl(blankNewLedger()); setAdding(false); setEditKey(null); };
+  const saveLedger = () => {
     if(!nl.name.trim()){toast.error('Give the ledger a name');return;}
+    const dup=allAccs.find(a=>a.key!==editKey && a.name.trim().toLowerCase()===nl.name.trim().toLowerCase());
+    if(dup){toast.error(`A ledger called "${dup.name}" already exists`);return;}
     const scheduleGroup = nl.customCaption ? (nl.customCaptionText.trim()||nl.name.trim()) : nl.scheduleGroup;
-    const key = createLedgerAccount({name:nl.name, type:nl.type, group:nl.group, scheduleGroup});
-    setCustomAccs(getCustomAccounts());
-    logAudit('LEDGER_CREATED',`${nl.name} (${nl.type}) under "${scheduleGroup}"`,currentUser);
-    toast.success(`Ledger "${nl.name}" created — it's now available in every account picker`);
-    setNl(blankNewLedger()); setAdding(false);
+    if(editKey){
+      if(nl.parent){
+        if(nl.parent===editKey || descendantKeys(editKey,allAccs).includes(nl.parent)){toast.error('A ledger cannot sit under itself or its own sub-ledgers');return;}
+      }
+      const patch={name:nl.name.trim(),scheduleGroup};
+      if(nl.parent){ patch.parent=nl.parent; patch.group=parentAcc.group; patch.scheduleGroup=parentAcc.scheduleGroup; } else { patch.parent=''; patch.group=nl.group; }
+      updateLedgerAccount(editKey,patch);
+      // keep the label on existing bills in step with the renamed expense head (amounts/postings unchanged)
+      S.set(SK.EXP,S.get(SK.EXP,[]).map(e=>e.expenseAccountKey===editKey?{...e,category:nl.name.trim()}:e));
+      logAudit('LEDGER_EDITED',`${nl.name}${nl.parent?' (under '+parentAcc.name+')':''}`,currentUser);
+      toast.success('Ledger updated');
+    } else {
+      createLedgerAccount({name:nl.name, type:nl.type, group:nl.group, scheduleGroup, parent:nl.parent});
+      logAudit('LEDGER_CREATED',`${nl.name} (${nl.type})${nl.parent?' under '+parentAcc.name:' under "'+scheduleGroup+'"'}`,currentUser);
+      toast.success(`Ledger "${nl.name}" created — it's now available in every account picker`);
+    }
+    cancelForm(); refresh();
   };
   const removeLedger = (key,name) => {
     if(!isAdmin){toast.error('Only Admin can delete ledger accounts');return;}
     if(!window.confirm(`Delete the "${name}" ledger?`)) return;
     const r = deleteLedgerAccount(key);
     if(!r.ok){toast.error(r.reason);return;}
-    setCustomAccs(getCustomAccounts());
     logAudit('LEDGER_DELETED',`${name}`,currentUser);
-    toast.info('Ledger deleted');
+    toast.info('Ledger deleted'); refresh();
   };
 
-  const doExportCOA = (fmt) => {
-    const headers=['Type','Ledger Account','Statement Caption','Custom?'];
-    const rows = getAllAccounts().map(a=>[a.type, a.name, a.scheduleGroup||'', a.custom?'Yes':'No']);
-    exportTableAs(fmt, `ChartOfAccounts_${today()}`, 'Chart of Accounts', headers, rows);
+  const doExportCOA = (fmtType) => {
+    const headers=['Type','Ledger Account','Parent Ledger','Statement Caption','Closing Balance (incl. sub-ledgers)','Custom?'];
+    const rows = tree.map(({acc})=>[acc.type, acc.name, acc.parent?(allAccs.find(x=>x.key===acc.parent)||{}).name||'':'', acc.scheduleGroup||'', fmtN(rollupBal(acc)), acc.custom?'Yes':'No']);
+    exportTableAs(fmtType, `ChartOfAccounts_${today()}`, 'Chart of Accounts', headers, rows);
   };
 
   if(drillAccount){
+    const hasKids = allAccs.some(a=>a.parent===drillAccount);
     return <div className={inline?"inline-card":"overlay"}>
       <div className={inline?"inline-card-inner":"modal"}>
         <div className="modal-body">
-          <Breadcrumb items={[{label:'Chart of Accounts', onClick:()=>setDrillAccount(null)}, {label:coaByKey(drillAccount).name}]}/>
-          <LedgerTable account={drillAccount} fromDate={`${getFY()-5}-04-01`} toDate={today()}/>
+          <Breadcrumb items={[{label:'Chart of Accounts', onClick:()=>setDrillAccount(null)}, ...(coaByKey(drillAccount).parent?[{label:coaByKey(coaByKey(drillAccount).parent).name, onClick:()=>setDrillAccount(coaByKey(drillAccount).parent)}]:[]), {label:coaByKey(drillAccount).name}]}/>
+          {hasKids&&<div style={{fontSize:12,color:'var(--text3)',marginBottom:10}}>Showing this ledger together with all its sub-ledgers — the “Chart of Accounts” column on each line tells you which sub-ledger it was posted to.</div>}
+          <LedgerTable account={drillAccount} fromDate={`${getFY()-5}-04-01`} toDate={today()} withChildren/>
         </div>
       </div>
     </div>;
   }
 
+  // search: show matches plus their parents
+  const ql=q.trim().toLowerCase();
+  const visibleKeys = (()=>{
+    if(!ql) return null;
+    const set=new Set();
+    allAccs.forEach(a=>{
+      if(`${a.name} ${a.scheduleGroup||''} ${a.type}`.toLowerCase().includes(ql)){
+        let cur=a; let guard=0;
+        while(cur && guard++<10){ set.add(cur.key); cur=cur.parent?allAccs.find(x=>x.key===cur.parent):null; }
+      }
+    });
+    return set;
+  })();
+  const mappableOptions = buildAccountOptions(['expense','asset','liability','equity','income']);
+
   return <div className={inline?"inline-card":"overlay"}>
     <div className={inline?"inline-card-inner":"modal"}>
       <div className="modal-body">
         <div className="alert" style={{background:'rgba(79,111,232,0.06)',border:'1px solid rgba(79,111,232,0.2)',marginBottom:16,borderRadius:10,fontSize:12}}>
-          Standard accounts are posted to automatically by your Invoices, Purchases and Bank Reconciliation. Click any ledger below to see every transaction posted to it. Need a ledger that doesn't exist yet (a new expense head, a deposit account, etc.)? Create it below — it'll show up in every account picker, including Journal Vouchers and category mapping.
+          Ledgers are arranged <b>parent → sub-ledger</b>. Every bank account you add in Bank Reconciliation automatically appears under <b>Cash and Cash Equivalents</b> as its own ledger, and you can add more sub-ledgers (a petty-cash box, a wallet, “Travel › Fuel”…) with <b>+ Sub</b>. Click any ledger to see every transaction posted to it — a parent shows its sub-ledgers’ transactions too.
         </div>
+        {Math.abs(suspense)>0.01&&<div className="alert" style={{background:'rgba(245,158,11,0.10)',border:'1px solid rgba(245,158,11,0.35)',marginBottom:16,borderRadius:10,fontSize:12}}>
+          <b>{fmt(Math.abs(suspense))}</b> is sitting in the Suspense ledgers because {suspenseCount} bank line(s) are not yet reconciled. Open <b>Bank Reconciliation</b> and link or post them so they land in the right ledger.
+        </div>}
 
-        <div style={{display:'flex',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:20}}>
-          {!adding?<button className="btn btn-primary" onClick={()=>setAdding(true)}>+ New Ledger Account</button>:<span/>}
+        <div style={{display:'flex',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:12}}>
+          {!adding&&<button className="btn btn-primary" onClick={()=>startAdd()}>+ New Ledger Account</button>}
+          <input className="field-input" style={{maxWidth:260}} placeholder="Search ledgers…" value={q} onChange={e=>setQ(e.target.value)}/>
+          <div style={{flex:1}}/>
           <ExportBar onExport={doExportCOA} label="Export Chart of Accounts"/>
         </div>
 
         {adding&&(
           <div className="card" style={{padding:16,marginBottom:16}}>
+            <div style={{fontWeight:700,fontSize:13.5,marginBottom:10}}>{editKey?'Edit Ledger':(parentAcc?`New sub-ledger under ${parentAcc.name}`:'New Ledger Account')}</div>
             <div style={{display:'flex',gap:10,marginBottom:10,flexWrap:'wrap'}}>
               <div className="field" style={{flex:1,minWidth:200}}><label className="field-label">Ledger Name</label><input className="field-input" value={nl.name} onChange={e=>upNl('name',e.target.value)} placeholder="e.g. Printing & Stationery"/></div>
+              <div className="field" style={{minWidth:240}}><label className="field-label">Parent Ledger (optional — makes this a sub-ledger)</label>
+                <SearchSelect value={nl.parent} onChange={pickParent} clearable placeholder="None — top-level ledger"
+                  options={buildAccountOptions(editKey?[nl.type]:null,{forParent:true,excludeKeys:editKey?[editKey,...descendantKeys(editKey,allAccs)]:[]})}/>
+              </div>
+            </div>
+            <div style={{display:'flex',gap:10,marginBottom:10,flexWrap:'wrap'}}>
               <div className="field"><label className="field-label">Type</label>
-                <select className="field-input" value={nl.type} onChange={e=>upNl('type',e.target.value)}>
-                  <option value="asset">Asset</option><option value="liability">Liability</option><option value="equity">Equity</option><option value="income">Income</option><option value="expense">Expense</option>
-                </select>
+                <SearchSelect value={nl.type} onChange={v=>upNl('type',v)} disabled={!!parentAcc||!!editKey}
+                  options={[{value:'asset',label:'Asset'},{value:'liability',label:'Liability'},{value:'equity',label:'Equity'},{value:'income',label:'Income'},{value:'expense',label:'Expense'}]}/>
               </div>
               <div className="field"><label className="field-label">Group</label>
-                <select className="field-input" value={nl.group} onChange={e=>setNl(p=>({...p,group:e.target.value}))}>
-                  {GROUP_OPTIONS[nl.type].map(g=><option key={g} value={g}>{g}</option>)}
-                </select>
+                <SearchSelect value={nl.group} onChange={v=>setNl(p=>({...p,group:v}))} disabled={!!parentAcc} options={simpleOptions(GROUP_OPTIONS[nl.type])}/>
               </div>
-              <div className="field"><label className="field-label">Statement Caption</label>
-                {!nl.customCaption?(
-                  <select className="field-input" value={nl.scheduleGroup} onChange={e=>e.target.value==='__new__'?setNl(p=>({...p,customCaption:true})):setNl(p=>({...p,scheduleGroup:e.target.value}))}>
-                    {SCHEDULE_CAPTIONS[nl.type].map(c=><option key={c} value={c}>{c}</option>)}
-                    <option value="__new__">+ New caption…</option>
-                  </select>
+              <div className="field" style={{minWidth:230}}><label className="field-label">Statement Caption</label>
+                {parentAcc?<div className="field-input" style={{opacity:.7}}>{parentAcc.scheduleGroup} (from parent)</div>:
+                !nl.customCaption?(
+                  <SearchSelect value={nl.scheduleGroup} onChange={v=>v==='__new__'?setNl(p=>({...p,customCaption:true})):setNl(p=>({...p,scheduleGroup:v}))}
+                    options={[...simpleOptions(SCHEDULE_CAPTIONS[nl.type]),{value:'__new__',label:'+ New caption…'}]}/>
                 ):(
                   <div style={{display:'flex',gap:6}}>
                     <input className="field-input" value={nl.customCaptionText} onChange={e=>setNl(p=>({...p,customCaptionText:e.target.value}))} placeholder="New caption name"/>
@@ -9377,43 +9986,67 @@ const ChartOfAccountsPage = ({inline=true, isAdmin, currentUser})=>{
                 )}
               </div>
             </div>
-            <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:10}}>Ledgers sharing the same Statement Caption are grouped together on the Financial Statements — click the caption there to see the individual ledgers, then click a ledger to see its transactions.</div>
+            <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:10}}>{parentAcc?'A sub-ledger takes its type, group and statement caption from its parent, so it rolls up into the parent on the Financial Statements.':'Ledgers sharing the same Statement Caption are grouped together on the Financial Statements — click the caption there to see the individual ledgers.'}</div>
             <div style={{display:'flex',gap:8}}>
-              <button className="btn btn-primary" onClick={saveNewLedger}>Create Ledger</button>
-              <button className="btn btn-outline" onClick={()=>{setNl(blankNewLedger());setAdding(false);}}>Cancel</button>
+              <button className="btn btn-primary" onClick={saveLedger}>{editKey?'Save Changes':'Create Ledger'}</button>
+              <button className="btn btn-outline" onClick={cancelForm}>Cancel</button>
             </div>
           </div>
         )}
 
-        {groups.map(([t,label])=>(
-          <div key={t} className="dt-wrap" style={{marginBottom:16}}>
+        {ACCOUNT_TYPE_GROUPS.map(([t,label])=>{
+          const rows=tree.filter(n=>n.acc.type===t && (!visibleKeys||visibleKeys.has(n.acc.key)));
+          if(!rows.length) return null;
+          return <div key={t} className="dt-wrap" style={{marginBottom:16}}>
             <table className="dt" style={{width:'100%'}}>
-              <thead><tr><th colSpan={3}>{label}</th></tr></thead>
+              <thead><tr><th>{label}</th><th>Statement Caption</th><th style={{textAlign:'right'}}>Balance</th><th style={{width:150}}/></tr></thead>
               <tbody>
-                {getAllAccounts().filter(a=>a.type===t).map(a=>(
-                  <tr key={a.key}>
-                    <td style={{cursor:'pointer',color:'var(--primary2)',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:'3px'}} onClick={()=>setDrillAccount(a.key)}>{a.name}{a.custom&&<span style={{fontSize:10,color:'var(--gold)',marginLeft:6}}>custom</span>}</td>
+                {rows.map(({acc:a,depth})=>{
+                  const kids=allAccs.some(x=>x.parent===a.key);
+                  const bal=kids?rollupBal(a):naturalBal(a);
+                  return <tr key={a.key}>
+                    <td style={{paddingLeft:12+depth*22}}>
+                      <span style={{cursor:'pointer',color:'var(--primary2)',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:'3px',fontWeight:kids?700:500}} onClick={()=>setDrillAccount(a.key)}>{depth>0?'└ ':''}{a.name}</span>
+                      {a.custom&&<span style={{fontSize:10,color:'var(--gold)',marginLeft:6}}>custom</span>}
+                      {a.derived&&<span style={{fontSize:10,color:'var(--primary2)',marginLeft:6}}>bank account · auto</span>}
+                      {a.groupOnly&&<span style={{fontSize:10,color:'var(--text3)',marginLeft:6}}>parent — post to a sub-ledger</span>}
+                    </td>
                     <td style={{color:'var(--text3)',fontSize:11.5}}>{a.scheduleGroup}</td>
-                    <td style={{textAlign:'right',width:36}}>{a.custom&&<button className="close-btn" onClick={()=>removeLedger(a.key,a.name)}><Ic n="x" s={13}/></button>}</td>
-                  </tr>
-                ))}
+                    <td style={{textAlign:'right',fontWeight:kids?700:500}}>{Math.abs(bal)<0.005?'—':fmt(bal)}{kids&&<span style={{fontSize:9.5,color:'var(--text3)',marginLeft:4}}>incl. sub</span>}</td>
+                    <td style={{textAlign:'right',whiteSpace:'nowrap'}}>
+                      {!a.derived&&!a.computed&&<button className="btn btn-sm btn-outline" style={{padding:'2px 8px',fontSize:11,marginRight:4}} onClick={()=>startAdd(a.key)}>+ Sub</button>}
+                      {a.custom&&<button className="btn btn-sm btn-outline" style={{padding:'2px 8px',fontSize:11,marginRight:4}} onClick={()=>startEdit(a)}>Edit</button>}
+                      {a.custom&&<button className="close-btn" onClick={()=>removeLedger(a.key,a.name)}><Ic n="x" s={13}/></button>}
+                    </td>
+                  </tr>;
+                })}
               </tbody>
             </table>
-          </div>
-        ))}
+          </div>;
+        })}
+        {visibleKeys&&visibleKeys.size===0&&<div style={{textAlign:'center',color:'var(--text3)',padding:20}}>No ledger matches “{q}”.</div>}
 
+        <div style={{display:'flex',alignItems:'center',gap:10,margin:'22px 0 8px',flexWrap:'wrap'}}>
+          <div style={{fontWeight:700,fontSize:13.5}}>Purchase / Expense Category → Ledger mapping</div>
+          <div style={{flex:1}}/>
+          <button className="btn btn-sm btn-outline-primary" onClick={autoMapByName}>Auto-map by name</button>
+        </div>
+        <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:8}}>A bill saved with an Expense Head always posts to that head. This mapping decides where free-typed or older categories post — use <b>Apply to bills</b> to re-point bills already saved.</div>
         <div className="dt-wrap">
           <table className="dt" style={{width:'100%'}}>
-            <thead><tr><th>Purchase / Expense Category (as typed on bills)</th><th>Posts to Ledger Account</th></tr></thead>
+            <thead><tr><th>Category (as typed on bills)</th><th>Bills</th><th style={{minWidth:280}}>Posts to Ledger Account</th><th style={{width:130}}/></tr></thead>
             <tbody>
               {cats.length===0?(
-                <tr><td colSpan={2} style={{color:'var(--text3)',textAlign:'center'}}>No categorised purchase bills yet</td></tr>
-              ):cats.map(cat=>(
-                <tr key={cat}>
-                  <td>{cat}</td>
-                  <td><AccountSelect value={map[cat.toLowerCase().trim()]||guessExpenseAccount(cat)} onChange={v=>updateMap(cat,v)}/></td>
-                </tr>
-              ))}
+                <tr><td colSpan={4} style={{color:'var(--text3)',textAlign:'center'}}>No categorised purchase bills yet</td></tr>
+              ):cats.map(c=>{
+                const mapped = !!map[c.name.toLowerCase().trim()];
+                return <tr key={c.name}>
+                  <td>{c.name}{!mapped&&<span style={{fontSize:10,color:'var(--gold)',marginLeft:6}}>auto-guess</span>}</td>
+                  <td style={{fontSize:12,color:'var(--text3)'}}>{c.count} · {fmt(c.total)}</td>
+                  <td><SearchSelect value={map[c.name.toLowerCase().trim()]||guessExpenseAccount(c.name)} onChange={v=>updateMap(c.name,v)} options={mappableOptions}/></td>
+                  <td><button className="btn btn-sm btn-outline" onClick={()=>applyToBills(c.name)}>Apply to bills</button></td>
+                </tr>;
+              })}
             </tbody>
           </table>
         </div>
@@ -9445,6 +10078,12 @@ const JV_TEMPLATES = [
   {key:'prepaid_amort', label:'Prepaid Expense — monthly amortisation', narration:'Amortisation of prepaid — for the month',
    lines:[{account:'OTHER_EXP',desc:'This month\'s share of the prepaid expense (change to the right ledger, e.g. Rent)'},{account:'PREPAID_EXP',desc:'Reducing the prepaid balance'}],
    help:'Debit the actual Expense (Rent, Insurance, etc.), Credit Prepaid Expenses. Post this once per period until the Prepaid balance reaches zero — that\'s what actually recognises the cost.'},
+  {key:'adv_supplier', label:'Adjust advance paid to a supplier against a bill', narration:'Advance adjusted against bill —',
+   lines:[{account:'TRADE_PAYABLE',desc:'Bill settled by advance'},{account:'ADVANCES',desc:'Advance to supplier adjusted'}],
+   help:'Debit Trade Payables, Credit Short-term Loans & Advances (where an advance given to a supplier is recorded). Use when a supplier bill is cleared against money you paid earlier in advance.'},
+  {key:'adv_customer', label:'Adjust advance from a customer against an invoice', narration:'Advance adjusted against invoice —',
+   lines:[{account:'CUSTOMER_ADVANCE',desc:'Advance from customer adjusted'},{account:'TRADE_RECEIVABLE',desc:'Invoice settled by advance'}],
+   help:'Debit Advances from Customers, Credit Trade Receivables. Use when an invoice is cleared against money the customer paid earlier in advance.'},
 ];
 
 const JournalVouchersPage = ({inline=true, currentUser})=>{
@@ -9481,7 +10120,7 @@ const JournalVouchersPage = ({inline=true, currentUser})=>{
   const delLine=(i)=>setLines(p=>p.length>2?p.filter((_,idx)=>idx!==i):p);
   const applyTemplate=(t)=>{
     setNarration(t.narration);
-    setLines(t.lines.map(l=>({account:l.account, desc:l.desc, debit:'', credit:''})));
+    setLines(t.lines.map(l=>({account:l.account==='BANK'?((getPaymentLedgers()[0]||{}).key||'CASH_IN_HAND'):l.account, desc:l.desc, debit:'', credit:''})));
     setShowTemplates(false);
     toast.info(t.help);
   };
@@ -9494,6 +10133,8 @@ const JournalVouchersPage = ({inline=true, currentUser})=>{
     if(reverseOn && reverseDate<=date){toast.error('Reverse date must be after the entry date');return;}
     const validLines = lines.filter(l=>l.account && (parseFloat(l.debit)||parseFloat(l.credit)));
     if(validLines.length<2){toast.error('A journal entry needs at least two lines');return;}
+    const parentLine = validLines.find(l=>coaByKey(l.account).groupOnly);
+    if(parentLine){toast.error('"'+coaByKey(parentLine.account).name+'" is a parent group — pick the specific bank / cash ledger under it');return;}
     const d=+validLines.reduce((s,l)=>s+(parseFloat(l.debit)||0),0).toFixed(2);
     const c=+validLines.reduce((s,l)=>s+(parseFloat(l.credit)||0),0).toFixed(2);
     if(Math.abs(d-c)>0.01){toast.error(`Debit (${fmt(d)}) and Credit (${fmt(c)}) must be equal`);return;}
@@ -9711,6 +10352,7 @@ const FullGLTable = ({fromDate, toDate})=>{
 const GeneralLedgerPage = ({inline=true})=>{
   const [account,setAccount]=useState('BANK');
   const [fullDump,setFullDump]=useState(false);
+  const [inclSub,setInclSub]=useState(true);
   const fyStart = `${getFY()}-04-01`;
   const [fromDate,setFromDate]=useState(fyStart);
   const [toDate,setToDate]=useState(today());
@@ -9725,8 +10367,11 @@ const GeneralLedgerPage = ({inline=true})=>{
           <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:12.5,fontWeight:600,marginBottom:8}}>
             <input type="checkbox" checked={fullDump} onChange={e=>setFullDump(e.target.checked)}/> Full GL Dump (all accounts)
           </label>
+          {!fullDump&&<label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:12.5,fontWeight:600,marginBottom:8}}>
+            <input type="checkbox" checked={inclSub} onChange={e=>setInclSub(e.target.checked)}/> Include sub-ledgers
+          </label>}
         </div>
-        {fullDump?<FullGLTable fromDate={fromDate} toDate={toDate}/>:<LedgerTable account={account} fromDate={fromDate} toDate={toDate}/>}
+        {fullDump?<FullGLTable fromDate={fromDate} toDate={toDate}/>:<LedgerTable account={account} fromDate={fromDate} toDate={toDate} withChildren={inclSub}/>}
       </div>
     </div>
   </div>;
