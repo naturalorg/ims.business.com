@@ -761,6 +761,80 @@ div:has(>table){overflow-x:auto;max-width:100%}
 .content-header{flex-wrap:wrap;gap:12px}
 @media(max-width:900px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* ═════ TOP BAR v2 — white header only (sidebar logo block untouched) ═════ */
+.topbar{position:sticky;overflow:visible!important}
+.topbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;pointer-events:none;
+  background:linear-gradient(90deg,#4F6FE8 0%,#8B5CF6 45%,rgba(139,92,246,0) 100%);opacity:.85}
+[data-theme="light"] .topbar{background:linear-gradient(180deg,#ffffff 0%,#FAFAFF 100%);box-shadow:0 2px 14px rgba(59,87,201,0.08)}
+[data-theme="dark"] .topbar{background:linear-gradient(180deg,#0C1017 0%,#0A0D13 100%)}
+.tb2-company{display:flex;align-items:center;gap:10px;padding:0 18px 0 20px;flex-shrink:0;min-width:0;max-width:260px;align-self:center;
+  height:42px;margin-left:10px;border-radius:12px;border:1px solid;transition:all .18s}
+[data-theme="light"] .tb2-company{border-color:#E4E1FF;background:#F7F6FF}
+[data-theme="dark"] .tb2-company{border-color:#21262D;background:#12161D}
+.tb2-company{padding:0 14px 0 8px}
+.tb2-company-info{min-width:0;overflow:hidden}
+.tb2-company-name{font-family:'Sora',sans-serif;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25;color:var(--text)}
+.tb2-company-gstin{font-family:monospace;font-size:9.5px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text3)}
+.tb2-page{display:flex;flex-direction:column;justify-content:center;padding:0 22px 0 22px;min-width:0;flex-shrink:1;overflow:hidden}
+.tb2-crumb{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
+.tb2-crumb svg{opacity:.5}
+.tb2-crumb-now{display:none}
+.tb2-title{font-family:'Sora',sans-serif;font-size:17px;font-weight:800;letter-spacing:-.2px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.tb2-center{flex:1;display:flex;justify-content:center;align-items:center;padding:0 14px;min-width:0}
+.tb2-search{display:flex;align-items:center;gap:8px;width:100%;max-width:400px;height:38px;padding:0 10px 0 12px;border-radius:11px;border:1px solid;color:var(--text3);transition:all .18s}
+[data-theme="light"] .tb2-search{background:#F4F3FF;border-color:#E4E1FF}
+[data-theme="dark"] .tb2-search{background:#12161D;border-color:#21262D}
+.tb2-search:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,111,232,.16)}
+[data-theme="light"] .tb2-search:focus-within{background:#fff}
+.tb2-search input{flex:1;min-width:0;background:transparent;border:none;outline:none;font-size:12.5px;color:var(--text);font-family:inherit}
+.tb2-search input::placeholder{color:var(--text3)}
+.tb2-search kbd{font-size:9.5px;font-family:inherit;font-weight:700;padding:2px 6px;border-radius:5px;border:1px solid var(--border2);color:var(--text3);white-space:nowrap}
+.tb2-clear{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:none;cursor:pointer;background:var(--border2);color:var(--text2)}
+.tb2-right{display:flex;align-items:center;gap:9px;padding:0 18px 0 6px;flex-shrink:0}
+.tb2-new{display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border:none;border-radius:11px;cursor:pointer;color:#fff;font-weight:700;font-size:12.5px;font-family:inherit;
+  background:var(--accent-grad);box-shadow:0 4px 14px rgba(79,111,232,.35);transition:transform .15s,box-shadow .15s}
+.tb2-new:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(79,111,232,.45)}
+.tb2-chip{display:flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:9px;font-size:11.5px;font-weight:700;white-space:nowrap;border:1px solid;color:var(--text2)}
+[data-theme="light"] .tb2-chip{background:#F7F6FF;border-color:#E4E1FF}
+[data-theme="dark"] .tb2-chip{background:#12161D;border-color:#21262D}
+.tb2-sync{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;white-space:nowrap}
+.tb2-sync.ok{color:#17A673}.tb2-sync.off{color:#E69A12}
+.tb2-sync-dot{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 22%,transparent)}
+.tb2-sync.ok .tb2-sync-dot{animation:tb2pulse 2.4s ease-in-out infinite}
+@keyframes tb2pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,currentColor 0%,transparent)}}
+.tb2-divider{width:1px;height:26px;background:var(--border2);margin:0 2px}
+.tb2-icon{position:relative;width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid;color:var(--text2);transition:all .18s;flex-shrink:0}
+[data-theme="light"] .tb2-icon{border-color:#E4E1FF;background:#fff}
+[data-theme="dark"] .tb2-icon{border-color:#21262D;background:#12161D}
+.tb2-icon:hover{color:var(--primary2);border-color:var(--primary)}
+.tb2-icon.alert{color:var(--red);border-color:rgba(241,73,92,.35)}
+.tb2-badge{position:absolute;top:-6px;right:-6px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font-size:9.5px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg,#fff)}
+.tb2-user{display:flex;align-items:center;gap:9px;height:40px;padding:0 10px 0 4px;border-radius:22px;border:1px solid;cursor:pointer;color:var(--text3);transition:all .18s}
+[data-theme="light"] .tb2-user{background:#F7F6FF;border-color:#E4E1FF}
+[data-theme="dark"] .tb2-user{background:#12161D;border-color:#21262D}
+.tb2-user:hover,.tb2-user.open{border-color:var(--primary)}
+.tb2-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-grad);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;box-shadow:0 0 0 2px rgba(79,111,232,.3)}
+.tb2-user-name{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.tb2-role{display:inline-block;margin-top:1px;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:1px 6px;border-radius:5px;background:rgba(79,111,232,.14);color:var(--primary2)}
+.tb2-menu-wrap{position:relative}
+.tb2-menu{position:absolute;top:calc(100% + 10px);z-index:400;border-radius:13px;border:1px solid var(--border2);background:var(--card);box-shadow:0 16px 40px rgba(10,8,40,.22);padding:6px;animation:tb2in .14s ease-out}
+@keyframes tb2in{from{opacity:0;transform:translateY(-4px)}}
+.tb2-menu-head{padding:8px 10px 6px;font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--text3)}
+.tb2-menu-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer;color:var(--text)}
+.tb2-menu-item:hover{background:var(--primary-bg)}
+.tb2-menu-item.danger{color:var(--red)}
+.tb2-menu-ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--card2);color:var(--primary2);flex-shrink:0}
+.tb2-menu-item.danger .tb2-menu-ic{color:var(--red)}
+.tb2-menu-t{font-size:12.5px;font-weight:600}.tb2-menu-s{font-size:10.5px;color:var(--text3)}
+.tb2-menu-sep{height:1px;background:var(--border);margin:5px 4px}
+@media(max-width:1280px){.tb2-hide-md{display:none!important}}
+@media(max-width:1100px){.tb2-company-info{display:none}.tb2-company{padding:0 8px}.tb2-center{max-width:200px}}
+@media(max-width:900px){
+  .tb2-company,.tb2-center{display:none}
+  .tb2-page{flex:1;padding:0 10px}.tb2-title{font-size:15px}.tb2-crumb{display:none}
+  .tb2-hide-sm{display:none!important}.tb2-right{padding:0 10px;gap:7px}.tb2-user{padding:0 6px 0 4px}
+}
 </style>
 </head>
 <body>
@@ -769,7 +843,7 @@ div:has(>table){overflow-x:auto;max-width:100%}
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ── CONSTANTS ── */
-const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series', STOCK:'ip_stock', BANK:'ip_bank', QSALE:'ip_quicksales', BANK_OB:'ip_bank_ob', BANK_ACCTS:'ip_bank_accounts', QUOTE:'ip_quotations', DC:'ip_delivery_challans', RECUR:'ip_recurring', JOURNAL:'ip_journal', ACCMAP:'ip_acc_map', POLICIES:'ip_policies', COA_CUSTOM:'ip_coa_custom', REFSEQ:'ip_ref_seq', TXNREFSEQ:'ip_txn_ref_seq', SHOW_TERMS:'ip_show_terms', BANK_RULES:'ip_bank_rules' };
+const SK = { CO:'ip_co', HSN:'ip_hsn', INV:'ip_inv', TERMS:'ip_terms', PO_TERMS:'ip_po_terms', CTR:'ip_ctr', USERS:'ip_users', THEME:'ip_theme', CUST:'ip_customers', FOLDER:'ip_folder', AUDIT:'ip_audit', EXP:'ip_expenses', PO:'ip_po', PRODUCTS:'ip_products', WA:'ip_wa', FREEZE:'ip_freeze', SERIES:'ip_series', STOCK:'ip_stock', BANK:'ip_bank', QSALE:'ip_quicksales', BANK_OB:'ip_bank_ob', BANK_ACCTS:'ip_bank_accounts', QUOTE:'ip_quotations', DC:'ip_delivery_challans', RECUR:'ip_recurring', JOURNAL:'ip_journal', ACCMAP:'ip_acc_map', POLICIES:'ip_policies', COA_CUSTOM:'ip_coa_custom', REFSEQ:'ip_ref_seq', TXNREFSEQ:'ip_txn_ref_seq', SHOW_TERMS:'ip_show_terms', BANK_RULES:'ip_bank_rules', FA:'ip_fixed_assets', RJV:'ip_recurring_jv', ADV_APPS:'ip_adv_apps', BUDGET:'ip_budget', FXR:'ip_fx_rates' };
 
 // Audit log display metadata — maps every action code to its Module column + Action column + badge color.
 // Colors are grouped by verb so Added/Created=green, Edited/Updated=blue, Deleted=red, everything else=amber/teal.
@@ -1783,6 +1857,7 @@ const amountInWordsIN = amt => {
 
 const makePDF = (inv, co, terms) => {
   try {
+  inv = fcView(inv);   // foreign-currency invoices print in their own currency with the ₹ equivalent
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:'mm', format:'a4' });
 
@@ -2001,11 +2076,12 @@ const makePDF = (inv, co, terms) => {
       rows.push({label:'Credits Remaining',val:fmtN(Math.max(grand-used,0)),bold:true,big:true,rupee:true,size:8});
     }
   }
+  if(inv.__cur){ rows.forEach(r=>{ if(r.rupee){ r.rupee=false; r.val=inv.__cur+' '+r.val; } }); rows.push({label:'In INR @ '+inv.__rate,val:fmtN(inv.__inr),bold:true,rupee:true,size:8}); }
   const rowH=r=>r.big?6.2:4.8;
   const rowsH=rows.reduce((s,r)=>s+rowH(r),0)+3;
 
   const leftX=L+PAD, leftW=SPLIT-L-2*PAD;
-  const inWords=amountInWordsIN(grand);
+  const inWords=inv.__cur?amountInWordsFC(grand,inv.__cur):amountInWordsIN(grand);
   const noteTxt=(inv.notes&&String(inv.notes).trim())||(isCN?'':'Thanks for your business.');
   const pm=co.paymentMode||'netbanking';
   const showBank=!isCN&&(pm==='netbanking'||pm==='both');
@@ -3934,7 +4010,7 @@ const HistoryModal = ({onClose,onLoad,currentUser,inline=false,searchQuery=''})=
 };
 
 /* ── SHARED ITEM ROW — used by both Invoice and PO ── */
-const ItemRow = ({row, idx, onChange, onDelete, hsnList, gstType, descOnly=false})=>{
+const ItemRow = ({row, idx, onChange, onDelete, hsnList, gstType, descOnly=false, cur='INR'})=>{
   const [showHsnDrop,  setShowHsnDrop]  = useState(false);
   const [showDescDrop, setShowDescDrop] = useState(false);
   const [hsnQ,  setHsnQ]  = useState(row.hsnCode||'');
@@ -4078,9 +4154,9 @@ const ItemRow = ({row, idx, onChange, onDelete, hsnList, gstType, descOnly=false
           {TAX_RATES.map(r=><option key={r} value={r}>{r}%</option>)}
         </select>
       </td>
-      <td className="p-num" style={{minWidth:100}}>{fmt(row.taxable||0)}</td>
+      <td className="p-num" style={{minWidth:100}}>{fmtC(row.taxable||0,cur)}</td>
       <td style={{minWidth:130,fontSize:10,color:'var(--text3)',textAlign:'center',whiteSpace:'nowrap'}}>{taxLabel}</td>
-      <td className="p-total" style={{minWidth:100}}>{fmt(row.total||0)}</td>
+      <td className="p-total" style={{minWidth:100}}>{fmtC(row.total||0,cur)}</td>
     </>}
     {descOnly&&
       <td className="p-total" style={{minWidth:110}}>
@@ -5276,7 +5352,8 @@ const newInvoice = (user,docType)=>({invNo:genInvNo(docType||'TAX INVOICE'),date
 });
 
 const InvoiceForm = ({currentUser,initial,onSave})=>{
-  const [inv,setInv]=useState(()=>initial||newInvoice(currentUser));
+  const [inv,setInv]=useState(()=>initial?unwrapFcInvoice(initial):newInvoice(currentUser));
+  const fmtX = n=>fmtC(n, inv.currency);
   const co=S.get(SK.CO,{});
   const hsnList=S.get(SK.HSN,[]);
   const [showCustModal,setShowCustModal]=useState(false);
@@ -5387,7 +5464,14 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
     const grandVal = isCN ? -Math.abs(computedGrand) : Math.abs(computedGrand);
     // Always store GSTIN in uppercase
     const cleanBillTo = {...inv.billTo, gstin:(inv.billTo?.gstin||'').toUpperCase()};
-    const toSave = {...inv, grand: grandVal, billTo: cleanBillTo, voucherNo: inv.voucherNo||nextVoucherNo(), txnRefNo: inv.txnRefNo||nextTxnRefNo(inv.date)};
+    let toSave = {...inv, grand: grandVal, billTo: cleanBillTo, voucherNo: inv.voucherNo||nextVoucherNo(), txnRefNo: inv.txnRefNo||nextTxnRefNo(inv.date)};
+    const _cur = inv.currency||'INR';
+    if(_cur!=='INR'){
+      const _rt = parseFloat(inv.exchRate)||0;
+      if(_rt<=0){ toast.error('Enter the exchange rate (₹ per 1 '+_cur+')'); return; }
+      toSave = toBaseInvoice(toSave, _rt);          // ledger, GST and reports are kept in ₹; the original is preserved in .fc
+      saveFxRate(_cur,_rt,inv.date);
+    } else if(toSave.fc){ const {fc:_fc,...restInv}=toSave; toSave={...restInv,currency:'INR',exchRate:''}; }
     const invs=S.get(SK.INV,[]);
     const ex=invs.findIndex(i=>i.invNo===inv.invNo);
     let updated;
@@ -5637,6 +5721,14 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
           <input className="field-input" value={inv.poNo||''} onChange={upF('poNo')} placeholder="PO-001 (optional)"/>
         </div>
       </div>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'flex-end',marginTop:12,padding:'10px 12px',border:'1px dashed var(--border2)',borderRadius:10}}>
+        <div className="field" style={{marginBottom:0,minWidth:200}}><label className="field-label">Invoice currency</label>
+          <select className="field-input" value={inv.currency||'INR'} onChange={e=>{const c=e.target.value; const sv=getFxRates()[c]; setInv(p=>({...p,currency:c,exchRate:c==='INR'?'':(p.exchRate||(sv?sv.rate:''))}));}}>
+            {FX_CURRENCIES.map(c=><option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}</select></div>
+        {inv.currency&&inv.currency!=='INR'&&<div className="field" style={{marginBottom:0,minWidth:170}}><label className="field-label">Exchange rate (₹ per 1 {inv.currency})</label>
+          <input type="number" className="field-input" value={inv.exchRate||''} onChange={e=>setInv(p=>({...p,exchRate:e.target.value}))} placeholder="e.g. 83.50"/></div>}
+        {inv.currency&&inv.currency!=='INR'&&<div style={{fontSize:11.5,color:'var(--text3)',flex:1,minWidth:230}}>Enter item rates in <b>{inv.currency}</b>. Your books stay in ₹ at this rate; when the customer pays, the difference is booked as exchange gain / loss automatically.</div>}
+      </div>
       <div className="field" style={{marginTop:12,marginBottom:0}}>
         <label className="field-label">Subject</label>
         <input className="field-input" value={inv.subject||''} onChange={upF('subject')} placeholder="e.g. EST/2025-26/0130 Dt.22-05-2025 — Project name (optional, prints on PDF)"/>
@@ -5837,7 +5929,7 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
             </thead>
             <tbody>
               {inv.items.map((row,i)=>(
-                <ProductRow key={i} row={row} idx={i} onChange={updateItem} onDelete={deleteItem} hsnList={hsnList} gstType={gstType}/>
+                <ProductRow key={i} row={row} idx={i} onChange={updateItem} onDelete={deleteItem} hsnList={hsnList} gstType={gstType} cur={inv.currency||'INR'}/>
               ))}
             </tbody>
             <tfoot>
@@ -5875,36 +5967,37 @@ const InvoiceForm = ({currentUser,initial,onSave})=>{
         <div className="tax-box" style={{marginBottom:10}}>
           {inv.docType==='NON GST INVOICE'?(
             <>
-              <div className="tax-row"><span className="tax-label">Total (No GST)</span><span className="tax-val">{fmt(inv.grand)}</span></div>
+              <div className="tax-row"><span className="tax-label">Total (No GST)</span><span className="tax-val">{fmtX(inv.grand)}</span></div>
               <div className="tax-row" style={{padding:'5px 16px',background:'rgba(107,33,168,0.06)',borderRadius:4}}>
                 <span style={{fontSize:11,color:'#6B21A8'}}><Ic n="info" s={14}/> Non-GST — no tax applied</span>
               </div>
               <div className="tax-row total-row" style={{padding:'7px 16px'}}>
                 <span className="tax-label">Grand Total</span>
-                <span className="tax-val">{fmt(inv.grand)}</span>
+                <span className="tax-val">{fmtX(inv.grand)}</span>
               </div>
             </>
           ):(
             <>
-              <div className="tax-row"><span className="tax-label">Sub Total (Taxable)</span><span className="tax-val">{fmt(inv.subtotal)}</span></div>
+              <div className="tax-row"><span className="tax-label">Sub Total (Taxable)</span><span className="tax-val">{fmtX(inv.subtotal)}</span></div>
               {Object.entries(inv.taxBreakdown||{}).filter(([,a])=>a>0).flatMap(([rate,amt])=>
                 gstType==='INTRA'?[
-                  <div key={`c${rate}`} className="tax-row"><span className="tax-label">CGST @ {parseFloat(rate)/2}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt/2)}</span></div>,
-                  <div key={`s${rate}`} className="tax-row"><span className="tax-label">SGST @ {parseFloat(rate)/2}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt/2)}</span></div>
+                  <div key={`c${rate}`} className="tax-row"><span className="tax-label">CGST @ {parseFloat(rate)/2}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmtX(amt/2)}</span></div>,
+                  <div key={`s${rate}`} className="tax-row"><span className="tax-label">SGST @ {parseFloat(rate)/2}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmtX(amt/2)}</span></div>
                 ]:[
-                  <div key={`i${rate}`} className="tax-row"><span className="tax-label">IGST @ {rate}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmt(amt)}</span></div>
+                  <div key={`i${rate}`} className="tax-row"><span className="tax-label">IGST @ {rate}%</span><span className="tax-val" style={{color:'var(--text2)'}}>{fmtX(amt)}</span></div>
                 ]
               )}
-              <div className="tax-row"><span className="tax-label">Total Tax</span><span className="tax-val">{fmt(inv.totalGST)}</span></div>
-              {inv.roundOff!==0&&<div className="tax-row"><span className="tax-label">Round Off</span><span className="tax-val" style={{fontSize:12,color:'var(--text3)'}}>{inv.roundOff>0?'+':''}{fmt(Math.abs(inv.roundOff))}</span></div>}
+              <div className="tax-row"><span className="tax-label">Total Tax</span><span className="tax-val">{fmtX(inv.totalGST)}</span></div>
+              {inv.roundOff!==0&&<div className="tax-row"><span className="tax-label">Round Off</span><span className="tax-val" style={{fontSize:12,color:'var(--text3)'}}>{inv.roundOff>0?'+':''}{fmtX(Math.abs(inv.roundOff))}</span></div>}
               <div className="tax-row total-row" style={{padding:'7px 16px'}}>
                 <span className="tax-label">Grand Total</span>
-                <span className="tax-val">{fmt(inv.grand)}</span>
+                <span className="tax-val">{fmtX(inv.grand)}</span>
               </div>
             </>
           )}
         </div>
-        <div className="amt-words">{numberToWords(inv.grand)}</div>
+        {inv.currency&&inv.currency!=='INR'&&<div style={{fontSize:12,color:'var(--text2)',margin:'0 0 6px 4px'}}>≈ {fmt(r2((parseFloat(inv.grand)||0)*(parseFloat(inv.exchRate)||0)))} at ₹{inv.exchRate||'—'} per {inv.currency}</div>}
+        <div className="amt-words">{(inv.currency&&inv.currency!=='INR')?amountInWordsFC(inv.grand,inv.currency):numberToWords(inv.grand)}</div>
       </div>
     </div>
 
@@ -7771,7 +7864,7 @@ const AgingReportPage = ({inline=true, onClose, initialTab})=>{
         gstin:(inv.billTo&&inv.billTo.gstin)||'', docNo:inv.invNo, date:inv.date, dueDate,
         gross, paid, due, daysOverdue, bucket:bucketFor(daysOverdue), status:inv.status||'',
         docType:inv.docType};
-    }).filter(b=>b.due>0.01),[invs,asOn]);
+    }).filter(b=>b.due>0.01).concat(creditNoteAgingRows(asOn)),[invs,asOn,S.get(SK.BANK,[]),S.get(SK.ADV_APPS,[])]);
 
   /* ── TRADE PAYABLES — money we owe suppliers ── */
   const apBills = useMemo(()=>exps.map(e=>{
@@ -7861,7 +7954,7 @@ const AgingReportPage = ({inline=true, onClose, initialTab})=>{
             <tr style={{borderBottom:'1px solid var(--border)',cursor:'pointer'}} onClick={()=>setExpandedParty(open?null:p.party)}>
               <td style={{...td,fontWeight:600}}>{p.party}
                 {p.gstin&&<div style={{fontSize:10,color:'var(--text3)',fontFamily:'monospace'}}>{p.gstin}</div>}</td>
-              {AGING_BUCKETS.map(b=><td key={b.key} style={{...tdR,color:bucketColor(b.key,p[b.key])}}>{p[b.key]>0?fmt(p[b.key]):'—'}</td>)}
+              {AGING_BUCKETS.map(b=><td key={b.key} style={{...tdR,color:bucketColor(b.key,p[b.key])}}>{Math.abs(p[b.key])>0.004?fmt(p[b.key]):'—'}</td>)}
               <td style={{...tdR,fontWeight:700,color:'var(--primary2)'}}>{fmt(p.total)}</td>
               <td style={{...tdC,color:'var(--text3)'}}>{p.bills.length}</td>
             </tr>
@@ -7974,7 +8067,7 @@ const AgingReportPage = ({inline=true, onClose, initialTab})=>{
               const net=arBuckets[b.key]-apBuckets[b.key];
               return <tr key={b.key} style={{borderBottom:'1px solid var(--border)'}}>
                 <td style={{...td,fontWeight:600}}>{b.label}</td>
-                <td style={{...tdR,color:arBuckets[b.key]>0?'var(--green)':'var(--text3)'}}>{arBuckets[b.key]>0?fmt(arBuckets[b.key]):'—'}</td>
+                <td style={{...tdR,color:Math.abs(arBuckets[b.key])>0.004?'var(--green)':'var(--text3)'}}>{Math.abs(arBuckets[b.key])>0.004?fmt(arBuckets[b.key]):'—'}</td>
                 <td style={{...tdR,color:apBuckets[b.key]>0?'var(--red)':'var(--text3)'}}>{apBuckets[b.key]>0?fmt(apBuckets[b.key]):'—'}</td>
                 <td style={{...tdR,fontWeight:700,color:net>=0?'var(--blue)':'var(--gold)'}}>{fmt(net)}</td>
               </tr>;})}</tbody>
@@ -8061,7 +8154,8 @@ const getOpenItems = (type)=>{
   if(type==='credit'){
     return S.get(SK.INV,[]).filter(i=>(i.docType==='TAX INVOICE'||i.docType==='NON GST INVOICE'||i.docType==='DEBIT NOTE')&&i.status!=='Paid'&&i.status!=='Draft'&&i.status!=='Cancelled')
       .map(i=>{ const total=Math.abs(getGrand(i)); const out=+(total-invPaid(i)).toFixed(2);
-        return {kind:'invoice',ref:i.invNo,party:i.billTo?.name||'Unknown',total,out,date:i.date,due:i.dueDate||i.date,docNo:i.invNo,extra:''}; })
+        return {kind:'invoice',ref:i.invNo,party:i.billTo?.name||'Unknown',total,out,date:i.date,due:i.dueDate||i.date,docNo:i.invNo,extra:'',
+          ...(isFxInv(i)?{cur:i.currency,rate:parseFloat(i.exchRate)||1,fcOut:+(out/(parseFloat(i.exchRate)||1)).toFixed(2),extra:i.currency+' invoice @ '+i.exchRate}:{})}; })
       .filter(o=>o.out>0.01);
   }
   return S.get(SK.EXP,[]).filter(e=>e.payStatus!=='Paid')
@@ -8112,11 +8206,14 @@ const adjustDocPaid = (kind, ref, delta, t)=>{
 };
 
 /* The expandable "Link / categorise" panel under an unreconciled bank line */
-const BankLinkPanel = ({t, accounts, allTxns, onLinkDocs, onPostLedger, onTransfer, onQuickSale, onClose})=>{
+const BankLinkPanel = ({t, accounts, allTxns, onLinkDocs, onPostLedger, onTransfer, onQuickSale, onSupplierRefund, onClose})=>{
   const isCredit = t.type==='credit';
   const [mode,setMode]=useState('docs');
-  const items = useMemo(()=>getOpenItems(t.type).map(o=>({...o,...scoreOpenItem(t,o)}))
-    .sort((a,b)=>b.score-a.score||(a.date||'').localeCompare(b.date||'')),[t.id]);
+  const items = useMemo(()=>(mode==='refund'?getOpenCreditNotes():getOpenItems(t.type)).map(o=>({...o,...scoreOpenItem(t,o)}))
+    .sort((a,b)=>b.score-a.score||(a.date||'').localeCompare(b.date||'')),[t.id,mode]);
+  const [fcAmt,setFcAmt]=useState('');
+  const [advParty,setAdvParty]=useState('');
+  const [sv,setSv]=useState(''); const [svLedger,setSvLedger]=useState('TRADE_PAYABLE');
   const [dq,setDq]=useState('');
   const [sel,setSel]=useState(()=>{ const b=items[0]; return b && Math.abs(b.out-t.amount)<0.01 ? [b.ref] : []; });
   const [shortMode,setShortMode]=useState('partial');   // when bank amount < selected documents
@@ -8134,15 +8231,20 @@ const BankLinkPanel = ({t, accounts, allTxns, onLinkDocs, onPostLedger, onTransf
   const selOut = +chosen.reduce((s,o)=>s+o.out,0).toFixed(2);
   const diff = +(t.amount-selOut).toFixed(2);
   const short = chosen.length>0 && diff<-0.01, excess = chosen.length>0 && diff>0.01;
-  const restDefault = isCredit ? (excess?'CUSTOMER_ADVANCE':'TDS_RECEIVABLE') : (excess?'ADVANCES':'OTHER_INCOME');
+  const fxAny = chosen.some(o=>o.cur); const fxOne = chosen.length===1 && !!chosen[0].cur;
+  const restDefault = fxAny ? 'FX' : mode==='refund' ? (excess?'OTHER_EXP':'OTHER_INCOME') : isCredit ? (excess?'CUSTOMER_ADVANCE':'TDS_RECEIVABLE') : (excess?'ADVANCES':'OTHER_INCOME');
   const restEff = restKey||restDefault;
   const toggle = ref => setSel(p=>p.includes(ref)?p.filter(x=>x!==ref):[...p,ref]);
   const confirmDocs = ()=>{
     if(!chosen.length){ toast.error('Tick at least one '+(isCredit?'invoice':'bill')+' to link'); return; }
     const partial = short && shortMode==='partial';
-    const allocs = computeAllocs(chosen,t.amount,partial);
-    const needsRest = !partial && Math.abs(diff)>0.01;
-    onLinkDocs(t, chosen, allocs, needsRest?restEff:'');
+    let allocs = computeAllocs(chosen,t.amount,partial);
+    let needsRest = !partial && Math.abs(diff)>0.01; let restOut = restEff;
+    if(partial && fxOne && parseFloat(fcAmt)>0){   // part-payment of a foreign-currency invoice: settle that many units at the booking rate
+      const a=Math.min(chosen[0].out, +(parseFloat(fcAmt)*chosen[0].rate).toFixed(2));
+      allocs=[{kind:'invoice',ref:chosen[0].ref,amt:a}]; needsRest=Math.abs(t.amount-a)>0.01; restOut='FX';
+    }
+    onLinkDocs(t, chosen, allocs, needsRest?restOut:'');
   };
 
   const candidates = useMemo(()=>allTxns.filter(x=>x.id!==t.id && (x.acctId||'PRIMARY')!==(t.acctId||'PRIMARY') && !x.matched && x.type!==t.type
@@ -8151,24 +8253,24 @@ const BankLinkPanel = ({t, accounts, allTxns, onLinkDocs, onPostLedger, onTransf
   const acctName = id => { const a=accounts.find(x=>x.id===(id||'PRIMARY')); return a?a.name:'Other account'; };
 
   const ledgerTypes = isCredit ? ['income','liability','equity','asset','expense'] : ['expense','asset','liability','equity','income'];
-  const tabs = [['docs',isCredit?'Match invoices':'Match bills'],['ledger','Post to ledger'],['transfer','Transfer between my banks']].concat(isCredit?[['sale','New sale']]:[]);
+  const tabs = [['docs',isCredit?'Match invoices':'Match bills'],['ledger','Post to ledger'],['transfer','Transfer between my banks']].concat(isCredit?[['sale','New sale'],['suprefund','Supplier refund']]:[['refund','Refund to customer']]);
 
   return <div style={{background:'var(--card2)',padding:14}}>
     <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12,alignItems:'center'}}>
       {tabs.map(([k,l])=>(
-        <button key={k} onClick={()=>setMode(k)} style={{padding:'5px 12px',borderRadius:8,fontSize:12,fontWeight:mode===k?700:500,cursor:'pointer',
+        <button key={k} onClick={()=>{setMode(k);setSel([]);}} style={{padding:'5px 12px',borderRadius:8,fontSize:12,fontWeight:mode===k?700:500,cursor:'pointer',
           border:`2px solid ${mode===k?'var(--primary)':'var(--border2)'}`,background:mode===k?'var(--primary-bg)':'transparent',color:mode===k?'var(--primary2)':'var(--text2)'}}>{l}</button>
       ))}
       <div style={{flex:1}}/>
       <button className="btn btn-sm btn-outline" onClick={onClose}>Close</button>
     </div>
 
-    {mode==='docs'&&<>
+    {(mode==='docs'||mode==='refund')&&<>
       <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:8}}>
-        Tick one or more {isCredit?'unpaid invoices':'unpaid bills'} this {fmt(t.amount)} {isCredit?'receipt':'payment'} settles. Best matches (amount, document no., party name, date) are on top.
+        {mode==='refund'?<>Money going out to a customer? Tick the <b>credit note(s)</b> this {fmt(t.amount)} refund settles — it posts Dr Receivables / Cr Bank so the credit note is cleared.</>:<>Tick one or more {isCredit?'unpaid invoices':'unpaid bills'} this {fmt(t.amount)} {isCredit?'receipt':'payment'} settles.</>} Best matches (amount, document no., party name, date) are on top.
       </div>
       <input className="field-input" style={{marginBottom:8,maxWidth:340}} placeholder={`Search ${isCredit?'invoice no., customer':'bill no., vendor, head'}, amount…`} value={dq} onChange={e=>setDq(e.target.value)}/>
-      {items.length===0?<div style={{fontSize:12,color:'var(--text3)',padding:'8px 0'}}>Nothing open to link — {isCredit?'every invoice is already paid.':'every bill is already paid.'} Use “Post to ledger” for an advance, charge or other entry.</div>:
+      {items.length===0?<div style={{fontSize:12,color:'var(--text3)',padding:'8px 0'}}>{mode==='refund'?'No credit notes are waiting for a refund.':<>Nothing open to link — {isCredit?'every invoice is already paid.':'every bill is already paid.'} Use “Post to ledger” for an advance, charge or other entry.</>}</div>:
       <div style={{maxHeight:230,overflowY:'auto',border:'1px solid var(--border)',borderRadius:8,background:'var(--card)'}}>
         {shown.length===0&&<div style={{padding:12,fontSize:12,color:'var(--text3)'}}>No documents match “{dq}”.</div>}
         {shown.map(o=>(
@@ -8186,7 +8288,7 @@ const BankLinkPanel = ({t, accounts, allTxns, onLinkDocs, onPostLedger, onTransf
         ))}
       </div>}
       {chosen.length>0&&<div style={{marginTop:10,padding:10,border:'1px solid var(--border)',borderRadius:8,background:'var(--card)',fontSize:12.5}}>
-        <div style={{display:'flex',justifyContent:'space-between'}}><span>Selected {isCredit?'invoices':'bills'} outstanding</span><b>{fmt(selOut)}</b></div>
+        <div style={{display:'flex',justifyContent:'space-between'}}><span>Selected {mode==='refund'?'credit notes':isCredit?'invoices':'bills'} outstanding</span><b>{fmt(selOut)}</b></div>
         <div style={{display:'flex',justifyContent:'space-between'}}><span>Bank {isCredit?'receipt':'payment'}</span><b>{fmt(t.amount)}</b></div>
         <div style={{display:'flex',justifyContent:'space-between',fontWeight:700,color:Math.abs(diff)<0.01?'var(--green)':'var(--gold)'}}>
           <span>{Math.abs(diff)<0.01?'✓ Exact — clears in full':short?'Short by':'Excess of'}</span>{Math.abs(diff)>=0.01&&<span>{fmt(Math.abs(diff))}</span>}
@@ -8199,12 +8301,14 @@ const BankLinkPanel = ({t, accounts, allTxns, onLinkDocs, onPostLedger, onTransf
         {((short&&shortMode==='adjust')||excess)&&<div style={{marginTop:8}}>
           <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:4}}>{excess?(isCredit?'Extra received — keep as customer advance, or post elsewhere:':'Extra paid — keep as advance to supplier, or post elsewhere:'):'Post the difference to:'}</div>
           <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:6}}>
-            {(isCredit?[['TDS_RECEIVABLE','TDS receivable'],['CUSTOMER_ADVANCE','Customer advance']]:[['ADVANCES','Advance to supplier'],['OTHER_INCOME','Discount / other income']]).map(([k,l])=>(
+            {[...(fxAny?[['FX','Exchange gain / loss']]:[]),...(mode==='refund'?[['OTHER_EXP','Refund charges / other expense'],['OTHER_INCOME','Amount retained / other income']]:isCredit?[['TDS_RECEIVABLE','TDS receivable'],['CUSTOMER_ADVANCE','Customer advance']]:[['ADVANCES','Advance to supplier'],['OTHER_INCOME','Discount / other income']])].map(([k,l])=>(
               <button key={k} className={'btn btn-sm '+(restEff===k?'btn-primary':'btn-outline')} onClick={()=>setRestKey(k)}>{l}</button>
             ))}
           </div>
-          <AccountSelect value={restEff} onChange={setRestKey} types={ledgerTypes} createType={isCredit?'income':'expense'}/>
+          {restEff!=='FX'?<AccountSelect value={restEff} onChange={setRestKey} types={ledgerTypes} createType={isCredit?'income':'expense'}/>:<div style={{fontSize:11.5,color:'var(--text3)'}}>The difference between the ₹ received and the ₹ booked is posted to Foreign Exchange {diff>0?'Gain':'Loss'}.</div>}
         </div>}
+        {fxOne&&short&&shortMode==='partial'&&<div style={{marginTop:8,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}><span style={{fontSize:12}}>Foreign amount being settled ({chosen[0].cur})</span><input type="number" className="field-input" style={{width:120,padding:'5px 8px'}} placeholder={String(+(t.amount/chosen[0].rate).toFixed(2))} value={fcAmt} onChange={e=>setFcAmt(e.target.value)}/><span style={{fontSize:11,color:'var(--text3)'}}>booked at ₹{chosen[0].rate}; any difference becomes exchange gain/loss</span></div>}
+        {fxOne&&!short&&<div style={{marginTop:6,fontSize:11.5,color:'var(--text3)'}}>Outstanding {fmtC(chosen[0].fcOut,chosen[0].cur)} · effective rate received ₹{(t.amount/chosen[0].fcOut).toFixed(4)} vs booked ₹{chosen[0].rate}</div>}
         <div style={{marginTop:10}}><button className="btn btn-sm btn-primary" onClick={confirmDocs}>Confirm Link</button></div>
       </div>}
     </>}
@@ -8219,12 +8323,13 @@ const BankLinkPanel = ({t, accounts, allTxns, onLinkDocs, onPostLedger, onTransf
         ))}
       </div>
       <div style={{maxWidth:420}}><AccountSelect value={lk} onChange={setLk} types={ledgerTypes} createType={isCredit?'income':'expense'} placeholder="Choose the ledger this posts to…"/></div>
+      {(lk==='CUSTOMER_ADVANCE'||lk==='ADVANCES')&&<div style={{maxWidth:420,marginTop:8}}><input className="field-input" placeholder={lk==='ADVANCES'?'Which supplier is this advance for? (so it can be applied to their bill later)':'Which customer is this advance from? (so it can be applied to their invoice later)'} value={advParty} onChange={e=>setAdvParty(e.target.value)}/></div>}
       <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginTop:10}}>
         <label style={{display:'flex',gap:6,alignItems:'center',cursor:'pointer',fontSize:12}}><input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/> Remember: whenever the narration contains</label>
         <input className="field-input" style={{maxWidth:180,padding:'5px 9px',fontSize:12}} value={kw} onChange={e=>setKw(e.target.value)} disabled={!remember}/>
         <span style={{fontSize:11,color:'var(--text3)'}}>→ post to this ledger automatically</span>
       </div>
-      <div style={{marginTop:10}}><button className="btn btn-sm btn-primary" onClick={()=>onPostLedger(t,lk,remember?kw.trim():'')}>Post to Ledger</button></div>
+      <div style={{marginTop:10}}><button className="btn btn-sm btn-primary" onClick={()=>onPostLedger(t,lk,remember?kw.trim():'',advParty.trim())}>Post to Ledger</button></div>
     </>}
 
     {mode==='transfer'&&<>
@@ -8242,6 +8347,17 @@ const BankLinkPanel = ({t, accounts, allTxns, onLinkDocs, onPostLedger, onTransf
         ))}
       </div>}
       {candidates.length>0&&<div style={{marginTop:10}}><button className="btn btn-sm btn-primary" disabled={!xferId} onClick={()=>onTransfer(t,allTxns.find(x=>x.id===xferId))}>Link as Transfer</button></div>}
+    </>}
+
+    {mode==='suprefund'&&isCredit&&<>
+      <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:8}}>A supplier returned money (refund of an overpayment, returned goods, or an advance you had paid)? Record it here — it posts Dr Bank / Cr the supplier’s account.</div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+        <input className="field-input" list={'sv'+t.id} style={{flex:'1 1 220px'}} placeholder="Supplier name" value={sv} onChange={e=>setSv(e.target.value)}/>
+        <datalist id={'sv'+t.id}>{[...new Set((S.get(SK.EXP,[])||[]).map(e=>e.vendor).filter(Boolean))].map(n=><option key={n} value={n}/>)}</datalist>
+        <select className="field-input" style={{flex:'1 1 240px'}} value={svLedger} onChange={e=>setSvLedger(e.target.value)}>
+          <option value="TRADE_PAYABLE">Reduce amount payable (returns / overpayment)</option><option value="ADVANCES">Refund of advance paid to supplier</option></select>
+        <button className="btn btn-sm btn-primary" onClick={()=>onSupplierRefund(t,sv,svLedger)}>Record supplier refund</button>
+      </div>
     </>}
 
     {mode==='sale'&&isCredit&&<>
@@ -8350,7 +8466,7 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
     setForm(blankTxn());
     toast.success(rule?`Transaction added — auto-posted to ${coaByKey(rule.ledgerKey).name}`:'Transaction added');
   };
-  const delTxn=id=>{ if(!window.confirm('Delete this bank transaction?'))return; persist(txns.filter(t=>t.id!==id)); };
+  const delTxn=id=>{ if(hasAdvanceApps(id)){toast.error('This advance has been applied to invoices/bills — reverse those first (Accounting → Advance Application).');return;} if(!window.confirm('Delete this bank transaction?'))return; persist(txns.filter(t=>t.id!==id)); };
 
   const importFile=(e)=>{
     const file=e.target.files?.[0];
@@ -8434,10 +8550,10 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
     setMatchingId(null);
     toast.success(allocs.every(a=>{const o=chosen.find(c=>c.ref===a.ref);return o&&a.amt>=o.out-0.01;})?'Linked and marked paid!':'Linked — partial payment recorded, balance stays open');
   };
-  const postLedger=(t,ledgerKey,keyword)=>{
+  const postLedger=(t,ledgerKey,keyword,party)=>{
     if(!ledgerKey){toast.error('Choose a ledger first');return;}
     if(coaByKey(ledgerKey).groupOnly){toast.error('Pick a specific ledger, not the parent group');return;}
-    commit(all=>all.map(x=>x.id===t.id?{...x,matched:true,matchedType:'ledger',ledgerKey,matchedRef:coaByKey(ledgerKey).name,allocs:undefined,restKey:''}:x));
+    commit(all=>all.map(x=>x.id===t.id?{...x,matched:true,matchedType:'ledger',ledgerKey,matchedRef:coaByKey(ledgerKey).name,allocs:undefined,restKey:'',advParty:party||''}:x));
     logAudit('BANK_TXN_POSTED_TO_LEDGER',`${t.desc||'Bank line'} (${fmt(t.amount)}) → ${coaByKey(ledgerKey).name}`,currentUser);
     if(keyword){
       const nr=[...rules.filter(r=>!(r.keyword.toLowerCase()===keyword.toLowerCase()&&r.type===t.type)),{id:'R'+Date.now().toString(36),keyword,type:t.type,ledgerKey}];
@@ -8445,6 +8561,12 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
       toast.success(`Posted — and “${keyword}” will auto-post to ${coaByKey(ledgerKey).name} from now on`);
     } else toast.success(`Posted to ${coaByKey(ledgerKey).name}`);
     setMatchingId(null);
+  };
+  const supplierRefund=(t,vendor,ledger)=>{
+    if(!(vendor||'').trim()){toast.error('Enter the supplier name');return;}
+    commit(all=>all.map(x=>x.id===t.id?{...x,matched:true,matchedType:'suprefund',matchedRef:vendor.trim(),allocs:[{kind:'suprefund',ref:vendor.trim(),amt:t.amount}],restKey:'',ledgerKey:'',refundLedger:ledger||'TRADE_PAYABLE'}:x));
+    logAudit('SUPPLIER_REFUND_RECORDED',`${fmt(t.amount)} received from ${vendor.trim()}`,currentUser);
+    setMatchingId(null); toast.success('Supplier refund recorded');
   };
   const linkTransfer=(t,partner)=>{
     if(!partner){toast.error('Pick the matching transaction in the other account');return;}
@@ -8468,7 +8590,8 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
     toast.success('Recorded as a new Sale');
   };
   const unlink=(t)=>{
-    const clear={matched:false,matchedRef:'',matchedType:'',allocs:undefined,restKey:'',ledgerKey:''};
+    if(hasAdvanceApps(t.id)){toast.error('This advance has been applied to invoices/bills — reverse those under Accounting → Advance Application first.');return;}
+    const clear={matched:false,matchedRef:'',matchedType:'',allocs:undefined,restKey:'',ledgerKey:'',refundLedger:'',advParty:''};
     if(t.matchedType==='transfer'){
       commit(all=>all.map(x=>(x.id===t.id||x.id===t.matchedRef)?{...x,...clear}:x));
     } else {
@@ -8514,6 +8637,8 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
     && (!q || `${t.desc} ${t.refNo} ${t.amount} ${t.matchedRef||''}`.toLowerCase().includes(q)));
   const statusLabel = t=>{
     if(!t.matched) return null;
+    if(t.matchedType==='creditnote') return `Customer refund: ${t.matchedRef}`;
+    if(t.matchedType==='suprefund') return `Supplier refund: ${t.matchedRef}`;
     if(t.matchedType==='quicksale') return `New Sale: ${t.matchedRef}`;
     if(t.matchedType==='ledger') return `Posted: ${t.matchedRef}`;
     if(t.matchedType==='transfer'){ const p=allTxns.find(x=>x.id===t.matchedRef); return `Transfer ⇄ ${p?acctName(p.acctId):'other bank'}`; }
@@ -8670,7 +8795,7 @@ const BankReconPage = ({inline=true, onClose, currentUser})=>{
                     </tr>
                     {matchingId===t.id&&!t.matched&&<tr><td colSpan={8} style={{padding:0}}>
                       <BankLinkPanel key={t.id} t={t} accounts={accounts} allTxns={allTxns}
-                        onLinkDocs={linkDocs} onPostLedger={postLedger} onTransfer={linkTransfer} onQuickSale={createQuickSale} onClose={()=>setMatchingId(null)}/>
+                        onLinkDocs={linkDocs} onPostLedger={postLedger} onTransfer={linkTransfer} onQuickSale={createQuickSale} onSupplierRefund={supplierRefund} onClose={()=>setMatchingId(null)}/>
                     </td></tr>}
                   </React.Fragment>
                 ))}
@@ -8934,12 +9059,16 @@ const COA = [
   {key:'OTHER_CURRENT_LIAB', name:'Other Current Liabilities',                    type:'liability', group:'Current Liabilities', scheduleGroup:'Other Current Liabilities'},
   {key:'SALES',              name:'Revenue from Operations (Sales)',              type:'income',    group:'Income',   scheduleGroup:'Revenue from Operations'},
   {key:'OTHER_INCOME',       name:'Other Income',                                 type:'income',    group:'Income',   scheduleGroup:'Other Income'},
+  {key:'FX_GAIN',            name:'Foreign Exchange Gain',                        type:'income',    group:'Income',   scheduleGroup:'Other Income'},
+  {key:'GAIN_ON_ASSET_SALE', name:'Profit on Sale of Fixed Assets',               type:'income',    group:'Income',   scheduleGroup:'Other Income'},
   {key:'COGS',               name:'Cost of Materials Consumed',                   type:'expense',   group:'Expenses', scheduleGroup:'Cost of Materials Consumed'},
   {key:'EMPLOYEE_EXP',       name:'Employee Benefit Expense',                     type:'expense',   group:'Expenses', scheduleGroup:'Employee Benefit Expense'},
   {key:'FINANCE_COST',       name:'Finance Costs',                                type:'expense',   group:'Expenses', scheduleGroup:'Finance Costs'},
   {key:'DEPRECIATION',       name:'Depreciation and Amortisation Expense',        type:'expense',   group:'Expenses', scheduleGroup:'Depreciation and Amortisation Expense'},
   {key:'RENT_EXP',           name:'Rent Expense',                                 type:'expense',   group:'Expenses', scheduleGroup:'Rent Expense'},
   {key:'OTHER_EXP',          name:'Other Expenses',                               type:'expense',   group:'Expenses', scheduleGroup:'Other Expenses'},
+  {key:'FX_LOSS',            name:'Foreign Exchange Loss',                        type:'expense',   group:'Expenses', scheduleGroup:'Other Expenses'},
+  {key:'LOSS_ON_ASSET_SALE', name:'Loss on Sale of Fixed Assets',                 type:'expense',   group:'Expenses', scheduleGroup:'Other Expenses'},
 ];
 
 /* Standard captions offered when creating a new ledger, per type — user can also type a brand-new one. */
@@ -9165,7 +9294,7 @@ const buildAutoJournal = () => {
     const docKind = allocs.length ? allocs[0].kind : t.matchedType;
     const docRef  = allocs.length ? allocs[0].ref  : t.matchedRef;
     let settleVoucher = '', settleTxnRef = '';
-    if(docKind==='invoice'){ settleVoucher = invByNo[docRef]?.voucherNo||''; settleTxnRef = invByNo[docRef]?.txnRefNo||''; }
+    if(docKind==='invoice'||docKind==='creditnote'){ settleVoucher = invByNo[docRef]?.voucherNo||''; settleTxnRef = invByNo[docRef]?.txnRefNo||''; }
     else if(docKind==='quicksale'){ settleVoucher = qsById[docRef]?.voucherNo||''; settleTxnRef = qsById[docRef]?.txnRefNo||''; }
     else if(docKind==='expense'){ settleVoucher = expById[docRef]?.voucherNo||''; settleTxnRef = expById[docRef]?.txnRefNo||''; }
 
@@ -9183,7 +9312,7 @@ const buildAutoJournal = () => {
       // partner missing → falls through and is treated as unreconciled
     }
 
-    const partyKey = isCredit ? 'TRADE_RECEIVABLE' : 'TRADE_PAYABLE';
+    const partyKey = docKind==='creditnote' ? 'TRADE_RECEIVABLE' : docKind==='suprefund' ? (t.refundLedger||'TRADE_PAYABLE') : (isCredit ? 'TRADE_RECEIVABLE' : 'TRADE_PAYABLE');
     const lines=[ isCredit ? {account:bk,debit:amt,credit:0} : {account:bk,debit:0,credit:amt} ];
     let category = isCredit?'Unmatched Receipt':'Unmatched Payment';
     if(t.matchedType==='ledger' && t.ledgerKey){
@@ -9194,11 +9323,12 @@ const buildAutoJournal = () => {
       lines.push(isCredit ? {account:partyKey,debit:0,credit:A} : {account:partyKey,debit:A,credit:0});
       const d = +(amt-A).toFixed(2); // + = bank amount exceeds documents, − = bank amount is short
       if(Math.abs(d)>0.004){
-        const rk = t.restKey || (isCredit ? (d>0?'CUSTOMER_ADVANCE':'TDS_RECEIVABLE') : (d>0?'ADVANCES':'OTHER_INCOME'));
+        const rk0 = t.restKey || (docKind==='creditnote' ? (d>0?'OTHER_EXP':'OTHER_INCOME') : docKind==='suprefund' ? (d>0?'OTHER_INCOME':'OTHER_EXP') : (isCredit ? (d>0?'CUSTOMER_ADVANCE':'TDS_RECEIVABLE') : (d>0?'ADVANCES':'OTHER_INCOME')));
         const creditSide = isCredit ? d>0 : d<0;
+        const rk = rk0==='FX' ? (creditSide?'FX_GAIN':'FX_LOSS') : rk0;
         lines.push(creditSide ? {account:rk,debit:0,credit:Math.abs(d)} : {account:rk,debit:Math.abs(d),credit:0});
       }
-      category = docKind==='expense' ? 'Bill Payment' : 'Invoice Receipt';
+      category = docKind==='expense' ? 'Bill Payment' : docKind==='creditnote' ? 'Customer Refund' : docKind==='suprefund' ? 'Supplier Refund' : 'Invoice Receipt';
     } else if(docKind==='invoice'||docKind==='quicksale'||docKind==='expense'){
       // older single-link records: the whole bank amount settles the linked document
       lines.push(isCredit ? {account:partyKey,debit:0,credit:amt} : {account:partyKey,debit:amt,credit:0});
@@ -9239,6 +9369,9 @@ const buildAutoJournal = () => {
       {account:'INVENTORY',debit:0,credit:+cogsByLine[r.id].toFixed(2)},
     ], invByNo[r.ref]?.voucherNo||'', {txnRefNo:invByNo[r.ref]?.txnRefNo||'', docNo:r.ref, category:'Cost of Goods Sold'});
   });
+
+  buildFixedAssetEntries(add);   // asset purchase / opening / monthly depreciation / disposal
+  buildAdvanceEntries(add);      // advances applied to later invoices & bills
 
   return entries;
 };
@@ -11333,6 +11466,1159 @@ const RemindersPage = ({inline=true,onClose,currentUser})=>{
   </div>;
 };
 
+/* ════════════════════════════════════════════════════════════════════════════
+   ARCTIC BOOKS — ACCOUNTING ACCURACY PACK (engine)
+   Everything below plugs into the existing double-entry design: documents stay the
+   source of truth and the ledger is rebuilt from them (buildAutoJournal), so none of
+   these features can drift out of sync with the books.
+   ════════════════════════════════════════════════════════════════════════════ */
+const pad2 = n => String(n).padStart(2,'0');
+const addDaysISO = (ds, n) => { const d=_pd(ds); d.setDate(d.getDate()+n); return _iso(d); };
+const monthEndISO = (y,m) => `${y}-${pad2(m)}-${pad2(new Date(y,m,0).getDate())}`;
+// Adds whole months but keeps the original day-of-month (clamped: 31 Jan + 1 month = 28/29 Feb)
+const addMonthsISO = (ds, n, anchorDay) => {
+  const d=_pd(ds); const day = anchorDay || d.getDate();
+  const t = new Date(d.getFullYear(), d.getMonth()+n, 1);
+  const last = new Date(t.getFullYear(), t.getMonth()+1, 0).getDate();
+  t.setDate(Math.min(day,last)); return _iso(t);
+};
+const r2 = x => +(Number(x)||0).toFixed(2);
+const newId = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+const sameParty = (a,b) => { const x=String(a||'').trim().toLowerCase(), y=String(b||'').trim().toLowerCase(); return !!x && !!y && (x===y || x.includes(y) || y.includes(x)); };
+
+/* ══════════ 1. FIXED ASSET REGISTER + AUTOMATIC MONTHLY DEPRECIATION ══════════ */
+const FA_PRESETS = [   // indicative: Companies Act Sch. II useful life (SLM, years) / Income-tax WDV rate (%)
+  {name:'Buildings (RCC)', life:60, rate:10}, {name:'Plant & Machinery', life:15, rate:15},
+  {name:'Furniture & Fixtures', life:10, rate:10}, {name:'Office Equipment', life:5, rate:15},
+  {name:'Computers & Laptops', life:3, rate:40}, {name:'Servers & Networking', life:6, rate:40},
+  {name:'Motor Vehicles', life:8, rate:15}, {name:'Electrical Installations', life:10, rate:10},
+  {name:'Software (Intangible)', life:3, rate:40}, {name:'Other', life:5, rate:15},
+];
+const getAssets = () => S.get(SK.FA,[]) || [];
+
+/* Depreciation schedule for one asset up to a date. Posts at each completed month-end; the first
+   month is pro-rated by days from the in-service date; in the month of sale it runs up to the sale
+   date. Never takes the book value below salvage. */
+const faSchedule = (a, asOf) => {
+  asOf = asOf || today();
+  const cost=parseFloat(a.cost)||0, salvage=Math.max(0,parseFloat(a.salvage)||0);
+  const accBF = a.mode==='opening' ? (parseFloat(a.accDepBF)||0) : 0;
+  const rows=[]; let acc=accBF;
+  const startStr = a.depFrom || a.purchaseDate || '';
+  if(!startStr || cost<=0) return {rows, accBF, acc, cost};
+  const endStr = (a.disposal && a.disposal.date) ? a.disposal.date : '9999-12-31';
+  const sy=+startStr.slice(0,4), sm=+startStr.slice(5,7), sd=+startStr.slice(8,10)||1;
+  const maxDep = Math.max(0, cost-salvage);
+  const life=parseFloat(a.lifeYears)||0, rate=parseFloat(a.rate)||0;
+  let y=sy, m=sm;
+  for(let guard=0; guard<1500; guard++){
+    const dim=new Date(y,m,0).getDate();
+    const mStart=`${y}-${pad2(m)}-01`, mEnd=`${y}-${pad2(m)}-${pad2(dim)}`;
+    if(mStart>endStr || mStart>asOf) break;
+    const first=(y===sy && m===sm);
+    const fromDay=(first && a.mode!=='opening') ? sd : 1;
+    const dispHere = endStr<=mEnd;
+    const toDay = dispHere ? (+endStr.slice(8,10)) : dim;
+    const entryDate = dispHere ? endStr : mEnd;
+    if(entryDate>asOf) break;
+    const days=Math.max(0,toDay-fromDay+1);
+    const monthly = a.method==='WDV' ? (cost-acc)*rate/1200 : (life>0 ? maxDep/(life*12) : 0);
+    let amt = monthly*days/dim;
+    amt = r2(Math.min(amt, Math.max(0,maxDep-acc)));
+    if(amt>0.004){ acc=r2(acc+amt); rows.push({date:entryDate, ym:`${y}-${pad2(m)}`, amount:amt, accAfter:acc, wdvAfter:r2(cost-acc)}); }
+    if(dispHere) break;
+    m++; if(m>12){m=1;y++;}
+  }
+  return {rows, accBF, acc, cost};
+};
+const faAcquiredOn = a => a.mode==='opening' ? OPENING_DATE : (a.purchaseDate||'');
+
+/* Journal entries the register produces — called from buildAutoJournal */
+const buildFixedAssetEntries = (add) => {
+  getAssets().forEach(a=>{
+    const cost=parseFloat(a.cost)||0; if(cost<=0) return;
+    const code=a.code||a.id; const tag=String(code).replace(/\s+/g,'').toUpperCase();
+    if(a.mode==='opening'){
+      add(OPENING_DATE, `Opening fixed asset — ${a.name}`, 'FAOB', a.id, [{account:'FIXED_ASSETS',debit:cost,credit:0},{account:'CAPITAL',debit:0,credit:cost}], 'OPEN-'+tag, {docNo:code, category:'Opening Fixed Asset'});
+      const bf=parseFloat(a.accDepBF)||0;
+      if(bf>0.004) add(OPENING_DATE, `Opening accumulated depreciation — ${a.name}`, 'FAOB', a.id+'-AD', [{account:'CAPITAL',debit:bf,credit:0},{account:'ACC_DEPRECIATION',debit:0,credit:bf}], 'OPEN-'+tag+'-AD', {docNo:code, category:'Opening Fixed Asset'});
+    } else if(a.mode==='new' && a.purchaseDate){
+      add(a.purchaseDate, `Asset purchase — ${a.name}`, 'FAPUR', a.id, [{account:'FIXED_ASSETS',debit:cost,credit:0},{account:a.paidFromKey||'TRADE_PAYABLE',debit:0,credit:cost}], a.voucherNo||'', {txnRefNo:a.txnRefNo||'', docNo:code, category:'Fixed Asset Purchase'});
+    }
+    faSchedule(a, today()).rows.forEach(r=>{
+      add(r.date, `Depreciation — ${a.name} (${r.ym})`, 'FADEP', a.id+'-'+r.ym,
+        [{account:'DEPRECIATION',debit:r.amount,credit:0},{account:'ACC_DEPRECIATION',debit:0,credit:r.amount}],
+        'DEP-'+tag+'-'+r.ym.replace('-',''), {docNo:code, category:'Depreciation'});
+    });
+    if(a.disposal && a.disposal.date){
+      const dd=a.disposal.date, proceeds=parseFloat(a.disposal.proceeds)||0;
+      const acc=faSchedule(a, dd).acc; const nbv=r2(cost-acc), diff=r2(proceeds-nbv);
+      const lines=[{account:'FIXED_ASSETS',debit:0,credit:cost}];
+      if(acc>0.004) lines.push({account:'ACC_DEPRECIATION',debit:acc,credit:0});
+      if(proceeds>0.004) lines.push({account:a.disposal.receivedKey||'TRADE_RECEIVABLE',debit:proceeds,credit:0});
+      if(diff>0.004) lines.push({account:'GAIN_ON_ASSET_SALE',debit:0,credit:diff});
+      else if(diff<-0.004) lines.push({account:'LOSS_ON_ASSET_SALE',debit:-diff,credit:0});
+      add(dd, `Sale / disposal of asset — ${a.name}`, 'FADISP', a.id, lines, a.disposal.voucherNo||'', {txnRefNo:a.disposal.txnRefNo||'', docNo:code, category:'Asset Disposal'});
+    }
+  });
+};
+
+/* Fixed Asset Schedule for a period (gross block, depreciation, net block) */
+const faPeriodRow = (a, from, to) => {
+  const cost=parseFloat(a.cost)||0; const acq=faAcquiredOn(a); const dis=a.disposal&&a.disposal.date?a.disposal.date:'';
+  if(!acq || acq>to || cost<=0) return null;
+  if(dis && dis<from) return null;                       // sold before the period began
+  const dayBefore=addDaysISO(from,-1);
+  const opened = acq<from;
+  const grossOpen = opened?cost:0, additions = opened?0:cost;
+  const disposedIn = !!dis && dis>=from && dis<=to;
+  const grossDisp = disposedIn?cost:0, grossClose = cost-grossDisp;
+  const accOpen = opened ? faSchedule(a,dayBefore).acc : 0;
+  const accTo = faSchedule(a,to).acc;
+  const depYear = r2(accTo-accOpen);
+  const accDisp = disposedIn ? faSchedule(a,dis).acc : 0;
+  const accClose = r2(accTo-accDisp);
+  const accPrevEnd = opened ? accOpen : 0;
+  return {a, grossOpen, additions, grossDisp, grossClose, accOpen:r2(accOpen), depYear, accDisp:r2(accDisp), accClose,
+          netClose:r2(grossClose-accClose), netOpen:r2(grossOpen-accPrevEnd), disposedIn};
+};
+
+/* ══════════ 2. RECURRING JOURNAL VOUCHERS (rent, EMI, prepaid amortisation, any fixed entry) ══════════ */
+const RJV_FREQ = [['monthly','Monthly',1],['quarterly','Quarterly',3],['halfyearly','Half-yearly',6],['yearly','Yearly',12]];
+const rjvStep = t => (t.kind==='emi'||t.kind==='prepaid') ? 1 : ((RJV_FREQ.find(f=>f[0]===t.frequency)||[0,0,1])[2]);
+const rjvDate = (t,k) => addMonthsISO(t.startDate, k*rjvStep(t));
+const emiOf = (P,annualRate,n) => { P=+P||0; n=+n||0; const r=(+annualRate||0)/1200; if(n<=0) return 0; if(r===0) return r2(P/n); return r2(P*r/(1-Math.pow(1+r,-n))); };
+const emiSchedule = (P,annualRate,n,emiOverride) => {
+  P=+P||0; n=Math.round(+n||0); const r=(+annualRate||0)/1200; const emi = emiOverride>0 ? +emiOverride : emiOf(P,annualRate,n);
+  const rows=[]; let bal=P;
+  for(let k=0;k<n;k++){
+    const interest=r2(bal*r); let principal=r2(emi-interest);
+    if(k===n-1 || principal>bal) principal=r2(bal);
+    const pay=r2(principal+interest); bal=r2(bal-principal);
+    rows.push({k, interest, principal, emi:pay, balance:bal});
+  }
+  return rows;
+};
+const prepaidSchedule = (total,months) => {
+  total=+total||0; months=Math.round(+months||0); if(months<=0) return [];
+  const each=r2(total/months); const rows=[]; let left=r2(total);
+  for(let k=0;k<months;k++){ const amt = k===months-1 ? left : each; rows.push({k, amount:amt}); left=r2(left-amt); }
+  return rows;
+};
+const rjvTotal = t => {
+  if(t.kind==='emi') return Math.round(+t.tenure||0);
+  if(t.kind==='prepaid') return Math.round(+t.months||0);
+  if(t.count && +t.count>0) return Math.round(+t.count);
+  return t.endDate ? 600 : 600;                       // open-ended: bounded by endDate / today
+};
+const rjvLines = (t,k) => {
+  if(t.kind==='emi'){
+    const row = emiSchedule(t.principal,t.rate,t.tenure,+t.emiOverride||0)[k]; if(!row) return null;
+    const ls=[]; if(row.principal>0.004) ls.push({account:t.loanKey, desc:'Principal repaid', debit:row.principal, credit:0});
+    if(row.interest>0.004) ls.push({account:'FINANCE_COST', desc:'Interest', debit:row.interest, credit:0});
+    ls.push({account:t.payKey, desc:'EMI paid', debit:0, credit:row.emi}); return ls;
+  }
+  if(t.kind==='prepaid'){
+    const row=prepaidSchedule(t.total,t.months)[k]; if(!row||row.amount<=0.004) return null;
+    return [{account:t.expenseKey, desc:'Prepaid amortisation', debit:row.amount, credit:0},{account:'PREPAID_EXP', desc:'Reducing prepaid balance', debit:0, credit:row.amount}];
+  }
+  return (t.lines||[]).map(l=>({account:l.account, desc:l.desc||'', debit:r2(l.debit), credit:r2(l.credit)})).filter(l=>l.account && (l.debit||l.credit));
+};
+/* Posts every occurrence that has fallen due (up to `asOf`) as a real Journal Voucher. Safe to call any
+   number of times — each occurrence has a fixed id and the template remembers how many it has produced. */
+const runRecurringJournals = (user, asOf) => {
+  asOf = asOf || today();
+  const tpls = S.get(SK.RJV,[]) || []; if(!tpls.length) return 0;
+  const jvs = [...getManualJournal()]; let created=0, changed=false;
+  const next = tpls.map(t=>{
+    if(!t.active) return t;
+    let gen = parseInt(t.generated,10)||0; const total = rjvTotal(t);
+    while(gen<total){
+      const d=rjvDate(t,gen);
+      if(d>asOf || (t.endDate && d>t.endDate)) break;
+      const lines=rjvLines(t,gen); if(!lines || lines.length<2){ gen++; changed=true; continue; }
+      const id=`RJV-${t.id}-${gen}`;
+      if(!jvs.some(e=>e.id===id)){
+        jvs.push({id, date:d, narration:`${t.name} — #${gen+1}${(t.kind==='emi'||t.kind==='prepaid'||(t.count&&+t.count>0))?' of '+total:''}`,
+          referenceNo:t.refNo||'', reportingMethod:'both', lines, voucherNo:nextVoucherNo(), txnRefNo:nextTxnRefNo(d),
+          srcType:'JV', recurringId:t.id, createdBy:(user&&(user.email||user.name))||'auto', createdAt:new Date().toISOString()});
+        created++;
+      }
+      gen++; changed=true;
+    }
+    return changed ? {...t, generated:gen} : t;
+  });
+  if(created) S.set(SK.JOURNAL, jvs);
+  if(changed) S.set(SK.RJV, next);
+  return created;
+};
+
+/* ══════════ 3. ADVANCES + CREDIT NOTE SETTLEMENT ══════════ */
+const getAdvApps = () => S.get(SK.ADV_APPS,[]) || [];
+/* Money received/paid in advance that is still sitting in the advance ledgers, with the party and the
+   amount already applied to later invoices / bills. Derived from the bank register, so it cannot drift. */
+const getAdvanceRows = () => {
+  const usedBy={}; getAdvApps().filter(a=>a.kind==='customer'||a.kind==='supplier').forEach(a=>{ usedBy[a.advTxnId]=(usedBy[a.advTxnId]||0)+(parseFloat(a.amt)||0); });
+  const invByNo={}; S.get(SK.INV,[]).forEach(i=>{ invByNo[i.invNo]=i; });
+  const expById={}; S.get(SK.EXP,[]).forEach(e=>{ expById[e.id]=e; });
+  const qsById={}; S.get(SK.QSALE,[]).forEach(q=>{ qsById[q.id]=q; });
+  const rows=[];
+  (S.get(SK.BANK,[])||[]).forEach(t=>{
+    const amt=parseFloat(t.amount)||0; if(!amt || !t.matched) return;
+    const isCredit=t.type==='credit'; const advKey=isCredit?'CUSTOMER_ADVANCE':'ADVANCES';
+    const allocs=Array.isArray(t.allocs)?t.allocs.filter(a=>(parseFloat(a.amt)||0)>0.004):[];
+    let adv=0, party=t.advParty||'';
+    if(t.matchedType==='ledger' && t.ledgerKey===advKey) adv=amt;
+    else if(allocs.length && !['creditnote','suprefund'].includes(allocs[0].kind)){
+      const A=allocs.reduce((s,a)=>s+(parseFloat(a.amt)||0),0); const d=r2(amt-A);
+      const rk=t.restKey || (isCredit?(d>0?'CUSTOMER_ADVANCE':'TDS_RECEIVABLE'):(d>0?'ADVANCES':'OTHER_INCOME'));
+      if(d>0.004 && rk===advKey) adv=d;
+      if(!party){ const a0=allocs[0]; party = a0.kind==='invoice' ? (invByNo[a0.ref]?.billTo?.name||'') : a0.kind==='quicksale' ? (qsById[a0.ref]?.customer||'') : (expById[a0.ref]?.vendor||''); }
+    }
+    if(adv<=0.004) return;
+    const used=r2(usedBy[t.id]||0);
+    rows.push({txnId:t.id, kind:isCredit?'customer':'supplier', date:t.date, party, amount:r2(adv), used, balance:r2(adv-used), ref:t.refNo||'', desc:t.desc||'', acctId:t.acctId||'PRIMARY'});
+  });
+  return rows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+};
+const tagAdvanceParty = (txnId, party) => S.set(SK.BANK, (S.get(SK.BANK,[])||[]).map(t=>t.id===txnId?{...t,advParty:party}:t));
+
+/* Credit notes: how much of each has been refunded (bank money-out) or adjusted against an invoice */
+const cnSettledMap = () => {
+  const m={};
+  (S.get(SK.BANK,[])||[]).forEach(t=>{ if(Array.isArray(t.allocs)) t.allocs.forEach(a=>{ if(a.kind==='creditnote') m[a.ref]=(m[a.ref]||0)+(parseFloat(a.amt)||0); }); });
+  getAdvApps().filter(a=>a.kind==='cn').forEach(a=>{ m[a.advTxnId]=(m[a.advTxnId]||0)+(parseFloat(a.amt)||0); });
+  return m;
+};
+const getOpenCreditNotes = () => {
+  const sm=cnSettledMap();
+  return S.get(SK.INV,[]).filter(i=>i.docType==='CREDIT NOTE' && i.status!=='Draft' && i.status!=='Cancelled').map(i=>{
+    const total=Math.abs(getGrand(i)); const settled=r2(sm[i.invNo]||0);
+    return {kind:'creditnote', ref:i.invNo, docNo:i.invNo, party:i.billTo?.name||'Unknown customer', total, settled, out:r2(total-settled), date:i.date, due:i.date, extra:i.origInvNo?('against '+i.origInvNo):''};
+  }).filter(o=>o.out>0.01);
+};
+const creditNoteAgingRows = (asOn) => getOpenCreditNotes().map(o=>({
+  id:o.ref, party:o.party, gstin:'', docNo:o.ref, date:o.date, dueDate:o.date, gross:-o.total, paid:-o.settled, due:-o.out,
+  daysOverdue:0, bucket:'current', status:'Credit', docType:'CREDIT NOTE'}));
+
+/* One-click application of an advance (or credit note) to an invoice / bill */
+const applyAdvance = ({kind, advTxnId, party, docKind, docRef, docNo, amt, date, user}) => {
+  amt=r2(amt); if(amt<=0.004) return null;
+  const rec={id:newId('AA-'), date:date||today(), kind, advTxnId, party:party||'', docKind, docRef, docNo:docNo||docRef, amt,
+    voucherNo:nextVoucherNo(), txnRefNo:nextTxnRefNo(date||today()), createdBy:(user&&(user.email||user.name))||'', createdAt:new Date().toISOString()};
+  S.set(SK.ADV_APPS,[...getAdvApps(), rec]);
+  adjustDocPaid(docKind, docRef, amt, {date:rec.date, refNo:(kind==='cn'?'CN ':'ADV ')+advTxnId});
+  return rec;
+};
+const reverseAdvanceApp = (id) => {
+  const a=getAdvApps().find(x=>x.id===id); if(!a) return;
+  S.set(SK.ADV_APPS, getAdvApps().filter(x=>x.id!==id));
+  adjustDocPaid(a.docKind, a.docRef, -a.amt, {date:a.date, refNo:''});
+};
+/* Ledger entries for advance applications (credit-note adjustments need none — the credit note already credited Receivables) */
+const buildAdvanceEntries = (add) => {
+  getAdvApps().forEach(a=>{
+    const amt=parseFloat(a.amt)||0; if(amt<=0.004) return;
+    if(a.kind==='customer') add(a.date, `Advance adjusted — ${a.party||'customer'} against ${a.docNo}`, 'ADVAPP', a.id, [{account:'CUSTOMER_ADVANCE',debit:amt,credit:0},{account:'TRADE_RECEIVABLE',debit:0,credit:amt}], a.voucherNo, {txnRefNo:a.txnRefNo, docNo:a.docNo, category:'Advance Adjustment'});
+    else if(a.kind==='supplier') add(a.date, `Advance adjusted — ${a.party||'supplier'} against ${a.docNo}`, 'ADVAPP', a.id, [{account:'TRADE_PAYABLE',debit:amt,credit:0},{account:'ADVANCES',debit:0,credit:amt}], a.voucherNo, {txnRefNo:a.txnRefNo, docNo:a.docNo, category:'Advance Adjustment'});
+  });
+};
+
+/* ══════════ 4. MULTI-CURRENCY INVOICES ══════════ */
+const FX_CURRENCIES = [
+  {code:'INR',name:'Indian Rupee',sym:'₹'},{code:'USD',name:'US Dollar',sym:'$'},{code:'EUR',name:'Euro',sym:'€'},{code:'GBP',name:'Pound Sterling',sym:'£'},
+  {code:'AED',name:'UAE Dirham',sym:'AED '},{code:'SGD',name:'Singapore Dollar',sym:'S$'},{code:'AUD',name:'Australian Dollar',sym:'A$'},{code:'CAD',name:'Canadian Dollar',sym:'C$'},
+  {code:'CHF',name:'Swiss Franc',sym:'CHF '},{code:'JPY',name:'Japanese Yen',sym:'¥'},{code:'SAR',name:'Saudi Riyal',sym:'SAR '},{code:'QAR',name:'Qatari Riyal',sym:'QAR '},
+  {code:'MYR',name:'Malaysian Ringgit',sym:'RM '},{code:'ZAR',name:'South African Rand',sym:'R '},{code:'CNY',name:'Chinese Yuan',sym:'CN¥'},{code:'NZD',name:'New Zealand Dollar',sym:'NZ$'},
+];
+const FX_WORD = {USD:'US Dollar',EUR:'Euro',GBP:'Pound Sterling',AED:'UAE Dirham',SGD:'Singapore Dollar',AUD:'Australian Dollar',CAD:'Canadian Dollar',CHF:'Swiss Franc',JPY:'Japanese Yen',SAR:'Saudi Riyal',QAR:'Qatari Riyal',MYR:'Malaysian Ringgit',ZAR:'South African Rand',CNY:'Chinese Yuan',NZD:'New Zealand Dollar'};
+const fxSym = c => (FX_CURRENCIES.find(x=>x.code===c)||{}).sym || (c?c+' ':'₹');
+const fmtC = (n,cur) => (!cur||cur==='INR') ? fmt(n) : fxSym(cur)+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const isFxInv = inv => !!(inv && inv.currency && inv.currency!=='INR' && inv.fc);
+const amountInWordsFC = (amt,cur) => {
+  const n=Math.abs(Number(amt)||0); let whole=Math.floor(n+1e-9), cents=Math.round((n-whole)*100); if(cents>=100){whole+=1;cents=0;}
+  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  const two=x=>x<20?ones[x]:tens[Math.floor(x/10)]+(x%10?'-'+ones[x%10]:'');
+  const three=x=>x>=100?ones[Math.floor(x/100)]+' Hundred'+(x%100?' '+two(x%100):''):two(x);
+  const parts=[[1e9,'Billion'],[1e6,'Million'],[1e3,'Thousand']]; let rest=whole, out=[];
+  parts.forEach(([v,l])=>{ const q=Math.floor(rest/v); if(q){ out.push(three(q)+' '+l); rest-=q*v; } });
+  if(rest) out.push(three(rest));
+  let s=(FX_WORD[cur]||cur)+' '+(out.join(' ')||'Zero'); if(cents) s+=' and '+two(cents)+' Cents'; return s+' Only';
+};
+/* An invoice in a foreign currency is stored in INR (so Receivables, GST, GSTR, Dashboard etc. all keep working)
+   with the original foreign-currency document preserved under inv.fc. */
+const toBaseInvoice = (inv, rate) => {
+  const m = v => { const n=parseFloat(v); return isNaN(n) ? v : r2(n*rate); };
+  const fc = {items:inv.items, subtotal:inv.subtotal, taxBreakdown:inv.taxBreakdown||{}, totalGST:inv.totalGST, roundOff:inv.roundOff, grand:inv.grand};
+  const items=(inv.items||[]).map(it=>({...it, rate:m(it.rate), taxable:m(it.taxable), gstAmt:m(it.gstAmt), total:m(it.total)}));
+  const tb={}; Object.entries(inv.taxBreakdown||{}).forEach(([k,v])=>{ tb[k]=m(v); });
+  const grand=r2((parseFloat(inv.grand)||0)*rate), sub=r2((parseFloat(inv.subtotal)||0)*rate), gst=r2((parseFloat(inv.totalGST)||0)*rate);
+  return {...inv, items, subtotal:sub.toFixed(2), taxBreakdown:tb, totalGST:gst.toFixed(2), roundOff:(inv.docType==='NON GST INVOICE')?0:r2(Math.abs(grand)-(sub+gst)), grand, exchRate:rate, fc};
+};
+const unwrapFcInvoice = inv => (inv && inv.fc) ? {...inv, ...inv.fc} : inv;
+// Print view: swap the stored INR numbers for the original foreign-currency document, remembering the INR equivalent
+const fcView = inv => (inv && inv.fc) ? {...inv, ...inv.fc, __cur:inv.currency, __rate:inv.exchRate, __inr:Math.abs(parseFloat(inv.grand)||0)} : inv;
+const getFxRates = () => S.get(SK.FXR,{}) || {};
+const saveFxRate = (cur,rate,date) => { if(!cur||cur==='INR'||!(rate>0)) return; S.set(SK.FXR,{...getFxRates(),[cur]:{rate:+rate,date:date||today()}}); };
+// Foreign-currency receivables still open (what is owed, in the foreign currency and at booking rate)
+const getOpenFxInvoices = () => S.get(SK.INV,[]).filter(i=>isFxInv(i) && ['TAX INVOICE','NON GST INVOICE','DEBIT NOTE'].includes(i.docType) && i.status!=='Draft' && i.status!=='Cancelled').map(i=>{
+  const total=Math.abs(getGrand(i)); const out=r2(total-invPaid(i)); const rate=parseFloat(i.exchRate)||1;
+  return {inv:i, invNo:i.invNo, party:i.billTo?.name||'', date:i.date, cur:i.currency, rate, out, fcOut:r2(out/rate), fcTotal:Math.abs(parseFloat(i.fc.grand)||0)};
+}).filter(o=>o.out>0.01);
+
+/* ══════════ 5. CASH FLOW STATEMENT (indirect method) + RATIO ANALYSIS ══════════ */
+const isCashAcct = a => a.key==='BANK' || a.key==='CASH_IN_HAND' || a.parent==='BANK';
+const getCashFlow = (from, to) => {
+  const accts=getAllAccounts();
+  const open=getTrialBalance(addDaysISO(from,-1)), close=getTrialBalance(to);
+  const bal=(tb,k)=>{ const r=tb.find(x=>x.account===k); return r?r.balance:0; };
+  const keys=[...new Set([...open.map(r=>r.account),...close.map(r=>r.account)])];
+  const typeOf = k => (accts.find(a=>a.key===k)||coaByKey(k));
+  let cashOpen=0, cashClose=0, netProfit=0, dep=0;
+  const wc=[], inv=[], fin=[]; const faD={fa:0, ad:0};
+  const addTo=(arr,label,amt)=>{ if(Math.abs(amt)<0.005) return; const ex=arr.find(x=>x.label===label); if(ex) ex.amount=r2(ex.amount+amt); else arr.push({label,amount:r2(amt)}); };
+  keys.forEach(k=>{
+    const a=typeOf(k); const d=bal(close,k)-bal(open,k);
+    if(isCashAcct(a)){ cashOpen+=bal(open,k); cashClose+=bal(close,k); return; }
+    if(a.type==='income'||a.type==='expense'){ netProfit += -d; if(a.scheduleGroup==='Depreciation and Amortisation Expense') dep+=d; return; }
+    if(a.key==='RETAINED_EARNINGS') return;
+    const eff=-d;                                                     // asset ↑ = cash ↓ ; liability/equity ↑ = cash ↑
+    if(k==='FIXED_ASSETS'){ faD.fa+=d; return; }
+    if(k==='ACC_DEPRECIATION'){ faD.ad+=d; return; }
+    if(k==='INVESTMENTS' || (a.type==='asset' && a.group==='Non-Current Assets')) { addTo(inv, (a.scheduleGroup||a.name), eff); return; }
+    if(a.type==='equity' || /Borrowings/.test(a.scheduleGroup||'') || (a.type==='liability' && a.group==='Non-Current Liabilities' && k!=='LT_PROVISION')){
+      const isBorrow = a.type==='liability';
+      addTo(fin, a.type==='equity' ? 'Capital introduced / (withdrawn)' : isBorrow ? 'Borrowings raised / (repaid)' : (a.scheduleGroup||a.name), eff); return; }
+    const lbl = a.type==='asset' ? ({'Trade Receivables':'(Increase)/decrease in trade receivables','Inventories':'(Increase)/decrease in inventories'}[a.scheduleGroup]||`(Increase)/decrease in ${(a.scheduleGroup||a.name).toLowerCase()}`)
+                                 : ({'Trade Payables':'Increase/(decrease) in trade payables'}[a.scheduleGroup]||`Increase/(decrease) in ${(a.scheduleGroup||a.name).toLowerCase()}`);
+    addTo(wc, lbl, eff);
+  });
+  // gain / loss on sale of assets: shown as non-operating, so it is backed out of operating profit and shown at sale proceeds in investing
+  const lines=getAllLedgerLines().filter(l=>(l.date||'')>=from && (l.date||'')<=to);
+  const gain=r2(lines.filter(l=>l.account==='GAIN_ON_ASSET_SALE').reduce((s,l)=>s+l.credit-l.debit,0));
+  const loss=r2(lines.filter(l=>l.account==='LOSS_ON_ASSET_SALE').reduce((s,l)=>s+l.debit-l.credit,0));
+  const adj=[]; addTo(adj,'Depreciation and amortisation',dep); addTo(adj,'(Gain) on sale of fixed assets',-gain); addTo(adj,'Loss on sale of fixed assets',loss);
+  const faNet = -(faD.fa+faD.ad) - dep;                // purchases (−) / net book value of disposals (+) excluding depreciation
+  const invFA=[]; addTo(invFA,'Purchase of fixed assets (net of book value of disposals)', faNet);
+  addTo(invFA,'Gain / (loss) realised on sale of fixed assets', gain-loss);
+  const invAll=[...invFA,...inv];
+  const sum=a=>r2(a.reduce((s,x)=>s+x.amount,0));
+  netProfit=r2(netProfit);
+  const cfo=r2(netProfit+sum(adj)+sum(wc)), cfi=sum(invAll), cff=sum(fin);
+  const netChange=r2(cfo+cfi+cff), actual=r2(cashClose-cashOpen);
+  return {netProfit, adj, wc, cfo, invAll, cfi, fin, cff, netChange, cashOpen:r2(cashOpen), cashClose:r2(cashClose), diff:r2(actual-netChange)};
+};
+
+const getRatios = (from, to) => {
+  const accts=getAllAccounts(); const close=getTrialBalance(to);
+  const sumB=(pred,sign=1)=>close.reduce((s,r)=>{ const a=coaByKey(r.account); return pred(a,r)?s+sign*r.balance:s; },0);
+  const cash=sumB(a=>isCashAcct(a));
+  const curAssets=sumB(a=>a.type==='asset' && a.group==='Current Assets');
+  const curLiab=sumB(a=>a.type==='liability' && a.group==='Current Liabilities',-1);
+  const inventory=sumB(a=>a.key==='INVENTORY'), prepaid=sumB(a=>a.key==='PREPAID_EXP');
+  const recv=sumB(a=>a.key==='TRADE_RECEIVABLE'), pay=sumB(a=>a.key==='TRADE_PAYABLE',-1);
+  const debt=sumB(a=>a.key==='LT_BORROWING'||a.key==='ST_BORROWING',-1);
+  const totalAssets=sumB(a=>a.type==='asset'), totalLiab=sumB(a=>a.type==='liability',-1);
+  const bs=getBalanceSheet(to); const equity=bs.totalEquity;
+  const pl=getPLAccrual(from,to);
+  const rows=pl.rows; const sumPL=(pred)=>rows.filter(pred).reduce((s,r)=>s+r.amount,0);
+  const revenue=sumPL(r=>r.type==='income' && (coaByKey(r.account).scheduleGroup==='Revenue from Operations'));
+  const otherInc=sumPL(r=>r.type==='income')-revenue;
+  const cogs=sumPL(r=>r.type==='expense' && coaByKey(r.account).scheduleGroup==='Cost of Materials Consumed');
+  const fin=sumPL(r=>r.type==='expense' && coaByKey(r.account).scheduleGroup==='Finance Costs');
+  const dep=sumPL(r=>r.type==='expense' && coaByKey(r.account).scheduleGroup==='Depreciation and Amortisation Expense');
+  const np=pl.net, ebit=np+fin, ebitda=ebit+dep;
+  const days=Math.max(1,daysBetween(from,to)+1); const ann=365/days;
+  const lines=getAllLedgerLines().filter(l=>(l.date||'')>=from && (l.date||'')<=to && l.reportingMethod!=='cash');
+  const billedSales=lines.filter(l=>l.account==='TRADE_RECEIVABLE' && (l.srcType==='INV'||l.srcType==='QSALE')).reduce((s,l)=>s+l.debit-l.credit,0);
+  const billedPurch=lines.filter(l=>l.account==='TRADE_PAYABLE' && l.srcType==='EXP').reduce((s,l)=>s+l.credit-l.debit,0);
+  const div=(a,b)=>b>0.004||b<-0.004 ? a/b : null;
+  const dso=div(recv*days,billedSales), dpo=div(pay*days,billedPurch), dio=cogs>0.004?div(inventory*days,cogs):null;
+  const ccc=(dso!=null&&dpo!=null) ? dso+(dio||0)-dpo : null;
+  const list=[
+    {g:'Liquidity', k:'cr', label:'Current ratio', v:div(curAssets,curLiab), t:'x', good:v=>v>=1.5?'good':v>=1?'warn':'bad', note:'Current assets ÷ current liabilities. 1.5–2 is comfortable.'},
+    {g:'Liquidity', k:'qr', label:'Quick ratio', v:div(curAssets-inventory-prepaid,curLiab), t:'x', good:v=>v>=1?'good':v>=0.7?'warn':'bad', note:'(Current assets − inventory − prepaid) ÷ current liabilities. 1+ is healthy.'},
+    {g:'Liquidity', k:'cash', label:'Cash ratio', v:div(cash,curLiab), t:'x', good:v=>v>=0.5?'good':v>=0.2?'warn':'bad', note:'Cash & bank ÷ current liabilities.'},
+    {g:'Liquidity', k:'wc', label:'Working capital', v:curAssets-curLiab, t:'₹', good:v=>v>=0?'good':'bad', note:'Current assets − current liabilities.'},
+    {g:'Profitability', k:'gm', label:'Gross margin', v:revenue>0.004?(revenue-cogs)/revenue*100:null, t:'%', good:v=>v>=30?'good':v>=15?'warn':'bad', note:'(Revenue − cost of materials) ÷ revenue.'},
+    {g:'Profitability', k:'em', label:'EBITDA margin', v:revenue>0.004?ebitda/revenue*100:null, t:'%', good:v=>v>=15?'good':v>=5?'warn':'bad', note:'(Net profit + finance cost + depreciation) ÷ revenue.'},
+    {g:'Profitability', k:'nm', label:'Net profit margin', v:revenue>0.004?np/revenue*100:null, t:'%', good:v=>v>=10?'good':v>=3?'warn':'bad', note:'Net profit ÷ revenue from operations.'},
+    {g:'Profitability', k:'roe', label:'Return on equity (annualised)', v:equity>0.004?np*ann/equity*100:null, t:'%', good:v=>v>=15?'good':v>=8?'warn':'bad', note:'Net profit (annualised) ÷ closing equity.'},
+    {g:'Profitability', k:'roa', label:'Return on assets (annualised)', v:totalAssets>0.004?np*ann/totalAssets*100:null, t:'%', good:v=>v>=8?'good':v>=3?'warn':'bad', note:'Net profit (annualised) ÷ total assets.'},
+    {g:'Leverage', k:'de', label:'Debt-to-equity', v:equity>0.004?debt/equity:null, t:'x', good:v=>v<=1?'good':v<=2?'warn':'bad', note:'Borrowings ÷ equity. Lower is safer.'},
+    {g:'Leverage', k:'le', label:'Total liabilities ÷ equity', v:equity>0.004?totalLiab/equity:null, t:'x', good:v=>v<=1.5?'good':v<=3?'warn':'bad', note:'All liabilities ÷ equity.'},
+    {g:'Leverage', k:'ic', label:'Interest coverage', v:fin>0.004?ebit/fin:null, t:'x', good:v=>v>=3?'good':v>=1.5?'warn':'bad', note:'EBIT ÷ finance costs.'},
+    {g:'Efficiency', k:'dso', label:'DSO — days sales outstanding', v:dso, t:'d', good:v=>v<=45?'good':v<=75?'warn':'bad', note:'Receivables ÷ credit sales billed (incl. GST) × days in period. Lower = faster collection.'},
+    {g:'Efficiency', k:'dpo', label:'DPO — days payables outstanding', v:dpo, t:'d', good:v=>v>=30?'good':v>=15?'warn':'bad', note:'Payables ÷ purchase bills received × days in period. Higher = longer to pay suppliers.'},
+    {g:'Efficiency', k:'dio', label:'DIO — days inventory outstanding', v:dio, t:'d', good:v=>v<=60?'good':v<=120?'warn':'bad', note:'Inventory ÷ cost of materials × days.'},
+    {g:'Efficiency', k:'ccc', label:'Cash conversion cycle', v:ccc, t:'d', good:v=>v<=45?'good':v<=90?'warn':'bad', note:'DSO + DIO − DPO. Days your cash is tied up in operations.'},
+    {g:'Efficiency', k:'rt', label:'Receivables turnover', v:div(billedSales*ann,recv), t:'x', good:v=>v>=8?'good':v>=4?'warn':'bad', note:'Credit sales (annualised) ÷ receivables.'},
+    {g:'Efficiency', k:'it', label:'Inventory turnover', v:cogs>0.004?div(cogs*ann,inventory):null, t:'x', good:v=>v>=6?'good':v>=3?'warn':'bad', note:'Cost of materials (annualised) ÷ inventory.'},
+    {g:'Efficiency', k:'at', label:'Asset turnover', v:div(revenue*ann,totalAssets), t:'x', good:v=>v>=1?'good':v>=0.5?'warn':'bad', note:'Revenue (annualised) ÷ total assets.'},
+  ];
+  return {list, base:{revenue:r2(revenue), cogs:r2(cogs), np:r2(np), ebitda:r2(ebitda), cash:r2(cash), recv:r2(recv), pay:r2(pay), inventory:r2(inventory), equity:r2(equity), days}};
+};
+const fmtRatio = (v,t) => v==null||isNaN(v) ? '—' : t==='%' ? v.toFixed(1)+'%' : t==='x' ? v.toFixed(2)+'×' : t==='d' ? Math.round(v)+' days' : fmt(v);
+
+/* ══════════ 6. BUDGET VS ACTUAL (per expense / income head, by month) ══════════ */
+const FY_MONTHS = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+const getBudgetFY = (fy) => (S.get(SK.BUDGET,{})||{})['FY'+fy] || {};
+const saveBudgetFY = (fy, rows) => S.set(SK.BUDGET, {...(S.get(SK.BUDGET,{})||{}), ['FY'+fy]:rows});
+/* actuals for every income/expense ledger, month by month for a financial year (Apr..Mar) */
+const getMonthlyActuals = (fy) => {
+  const from=fyStartOf(fy), to=fyEndOf(fy); const out={};
+  getAllLedgerLines().forEach(l=>{
+    const d=l.date||''; if(d<from||d>to||l.reportingMethod==='cash') return;
+    const a=coaByKey(l.account); if(a.type!=='income' && a.type!=='expense') return;
+    const mi=(parseInt(d.slice(5,7),10)+8)%12;
+    if(!out[l.account]) out[l.account]=new Array(12).fill(0);
+    out[l.account][mi]+= a.type==='income' ? (l.credit-l.debit) : (l.debit-l.credit);
+  });
+  Object.keys(out).forEach(k=>{ out[k]=out[k].map(r2); });
+  return out;
+};
+
+/* ══════════ bank-line helpers used by the Bank Reconciliation upgrade ══════════ */
+const hasAdvanceApps = (txnId) => getAdvApps().some(a=>a.advTxnId===txnId);
+
+/* ════════════════════════ ACCOUNTING ACCURACY PACK — SCREENS ════════════════════════ */
+const PageShell = ({children}) => <div className="inline-card"><div className="inline-card-inner"><div className="modal-body">{children}</div></div></div>;
+const Kpi = ({label,value,color,sub}) => <div className="card" style={{padding:'12px 14px',flex:'1 1 170px',minWidth:150}}>
+  <div style={{fontSize:10.5,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>{label}</div>
+  <div style={{fontSize:19,fontWeight:800,color:color||'var(--text)',marginTop:4,fontFamily:'Sora,sans-serif'}}>{value}</div>
+  {sub&&<div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{sub}</div>}
+</div>;
+const InfoNote = ({children,tone}) => <div className="alert" style={{background:tone==='warn'?'rgba(241,73,92,0.07)':'rgba(79,111,232,0.06)',border:`1px solid ${tone==='warn'?'rgba(241,73,92,0.25)':'rgba(79,111,232,0.2)'}`,borderRadius:10,fontSize:12,marginBottom:14}}>{children}</div>;
+const isAdminUser = u => u?.role==='admin'||u?.role==='superadmin';
+const FyPicker = ({value,onChange}) => <div className="field" style={{marginBottom:0}}><label className="field-label">Financial Year</label>
+  <select className="field-input" value={value} onChange={e=>onChange(parseInt(e.target.value,10))}>{[0,1,2,3,4,5].map(k=>getFY()-k).map(y=><option key={y} value={y}>FY {y}-{String(y+1).slice(2)}</option>)}</select></div>;
+const LedgerSelect = ({value,onChange,extra=[],style}) => {
+  const opts=[...getPaymentLedgers().map(a=>[a.key,a.name]), ...extra];
+  return <select className="field-input" style={style} value={value} onChange={e=>onChange(e.target.value)}>{opts.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select>;
+};
+
+/* ═══════════════ FIXED ASSET REGISTER ═══════════════ */
+const blankAsset = () => ({id:newId('FA'), code:'', name:'', category:'Office Equipment', mode:'new', purchaseDate:today(), depFrom:'', cost:'', salvage:'', method:'SLM', lifeYears:5, rate:15, accDepBF:'', paidFromKey:'TRADE_PAYABLE', billId:'', location:'', serial:'', notes:''});
+
+const FixedAssetsPage = ({currentUser}) => {
+  const [list,setList]=useState(getAssets());
+  const [tab,setTab]=useState('register');
+  const [form,setForm]=useState(null);
+  const [dispose,setDispose]=useState(null);
+  const [selId,setSelId]=useState(null);
+  const [selFY,setSelFY]=useState(getFY());
+  const isAdmin=isAdminUser(currentUser);
+  const from=fyStartOf(selFY), fyEnd=fyEndOf(selFY), to=fyEnd<today()?fyEnd:today();
+  const reload=()=>setList(getAssets());
+  const rows=useMemo(()=>list.map(a=>faPeriodRow(a,from,to)).filter(Boolean),[list,selFY]);
+  const tot=rows.reduce((t,r)=>({gOpen:t.gOpen+r.grossOpen,add:t.add+r.additions,dis:t.dis+r.grossDisp,gClose:t.gClose+r.grossClose,aOpen:t.aOpen+r.accOpen,dep:t.dep+r.depYear,aDis:t.aDis+r.accDisp,aClose:t.aClose+r.accClose,net:t.net+r.netClose,netO:t.netO+r.netOpen}),{gOpen:0,add:0,dis:0,gClose:0,aOpen:0,dep:0,aDis:0,aClose:0,net:0,netO:0});
+  const bills=S.get(SK.EXP,[])||[];
+
+  const startAdd=()=>setForm(blankAsset());
+  const preset=(name)=>{ const p=FA_PRESETS.find(x=>x.name===name); setForm(f=>({...f,category:name,...(p?{lifeYears:p.life,rate:p.rate}:{})})); };
+  const pickBill=(id)=>{
+    const b=bills.find(x=>x.id===id); if(!b){ setForm(f=>({...f,billId:''})); return; }
+    const its=expItems(b); const taxable=its.reduce((s,i)=>s+(parseFloat(i.taxable)||0),0);
+    setForm(f=>({...f,billId:id,name:f.name||(its[0]&&(its[0].product||its[0].desc))||b.vendor||'',cost:r2(taxable)||f.cost,purchaseDate:b.billDate||b.date||f.purchaseDate}));
+  };
+  const saveAsset=()=>{
+    const f=form;
+    if(!f.name.trim()){toast.error('Asset name is required');return;}
+    const cost=parseFloat(f.cost)||0; if(cost<=0){toast.error('Enter the cost of the asset');return;}
+    if(!f.purchaseDate){toast.error('Enter the purchase / in-service date');return;}
+    const life=parseFloat(f.lifeYears)||0, rate=parseFloat(f.rate)||0, salv=parseFloat(f.salvage)||0;
+    if(f.method==='SLM'&&life<=0){toast.error('Enter the useful life in years');return;}
+    if(f.method==='WDV'&&rate<=0){toast.error('Enter the WDV rate (% per year)');return;}
+    if(salv>=cost){toast.error('Salvage value must be less than cost');return;}
+    if(f.mode==='opening' && (parseFloat(f.accDepBF)||0)>=cost){toast.error('Accumulated depreciation b/f must be less than cost');return;}
+    const exists=list.find(x=>x.id===f.id);
+    let code=f.code; if(!code){ let n=list.length+1; code='FA-'+String(n).padStart(4,'0'); while(list.some(x=>x.code===code)){ n++; code='FA-'+String(n).padStart(4,'0'); } }
+    const rec={...f, code, name:f.name.trim(), cost, salvage:salv, lifeYears:life, rate, accDepBF:parseFloat(f.accDepBF)||0, depFrom:f.depFrom||f.purchaseDate, updatedAt:new Date().toISOString()};
+    if(rec.mode==='new' && !rec.voucherNo){ rec.voucherNo=nextVoucherNo(); rec.txnRefNo=nextTxnRefNo(rec.purchaseDate); }
+    if(!exists){ rec.createdAt=new Date().toISOString(); rec.createdBy=currentUser?.email||''; }
+    S.set(SK.FA, exists ? list.map(x=>x.id===f.id?rec:x) : [...list,rec]);
+    logAudit(exists?'FIXED_ASSET_EDITED':'FIXED_ASSET_ADDED',`${rec.code} ${rec.name} — ${fmt(cost)}`,currentUser);
+    reload(); setForm(null);
+    toast.success(exists?'Asset updated — depreciation journals recalculated':'Asset added — monthly depreciation will post automatically');
+  };
+  const delAsset=(a)=>{
+    if(!isAdmin){toast.error('Only Admin can delete an asset');return;}
+    if(!window.confirm(`Delete ${a.code} — ${a.name}?\n\nThe purchase / opening entry and every depreciation journal this asset generated will disappear from the ledger.`)) return;
+    S.set(SK.FA, list.filter(x=>x.id!==a.id)); reload(); if(selId===a.id) setSelId(null);
+    logAudit('FIXED_ASSET_DELETED',`${a.code} ${a.name}`,currentUser); toast.info('Asset deleted');
+  };
+  const startDispose=(a)=>setDispose({a, date:today(), proceeds:'', receivedKey:(getPaymentLedgers()[0]||{}).key||'TRADE_RECEIVABLE'});
+  const dispCalc = dispose ? (()=>{ const acc=faSchedule(dispose.a,dispose.date).acc; const nbv=r2((parseFloat(dispose.a.cost)||0)-acc); const p=parseFloat(dispose.proceeds)||0; return {acc,nbv,diff:r2(p-nbv)}; })() : null;
+  const confirmDispose=()=>{
+    const d=dispose;
+    if(d.date<(d.a.purchaseDate||'')&&d.a.mode!=='opening'){toast.error('Sale date cannot be before the purchase date');return;}
+    S.set(SK.FA, list.map(x=>x.id===d.a.id?{...x,disposal:{date:d.date,proceeds:parseFloat(d.proceeds)||0,receivedKey:d.receivedKey,voucherNo:nextVoucherNo(),txnRefNo:nextTxnRefNo(d.date)}}:x));
+    logAudit('FIXED_ASSET_DISPOSED',`${d.a.code} ${d.a.name} sold for ${fmt(parseFloat(d.proceeds)||0)}`,currentUser);
+    reload(); setDispose(null); toast.success('Disposal posted — gain / loss on sale booked automatically');
+  };
+  const undoDispose=(a)=>{ if(!isAdmin){toast.error('Only Admin can reverse a disposal');return;} if(!window.confirm('Reverse the disposal of '+a.name+'?')) return; const {disposal,...rest}=a; S.set(SK.FA,list.map(x=>x.id===a.id?rest:x)); reload(); toast.info('Disposal reversed'); };
+
+  const doExport=(f)=>{
+    if(tab==='schedule') exportTableAs(f,`FixedAssetSchedule_FY${selFY}`,`Fixed Asset Schedule — FY ${selFY}-${String(selFY+1).slice(2)}`,
+      ['Asset Code','Asset','Gross Opening','Additions','Disposals','Gross Closing','Dep. Opening','Dep. For Year','Dep. On Disposals','Dep. Closing','Net Block Closing','Net Block Opening'],
+      [...rows.map(r=>[r.a.code,r.a.name,fmtN(r.grossOpen),fmtN(r.additions),fmtN(r.grossDisp),fmtN(r.grossClose),fmtN(r.accOpen),fmtN(r.depYear),fmtN(r.accDisp),fmtN(r.accClose),fmtN(r.netClose),fmtN(r.netOpen)]),
+       ['','Total',fmtN(tot.gOpen),fmtN(tot.add),fmtN(tot.dis),fmtN(tot.gClose),fmtN(tot.aOpen),fmtN(tot.dep),fmtN(tot.aDis),fmtN(tot.aClose),fmtN(tot.net),fmtN(tot.netO)]]);
+    else exportTableAs(f,'FixedAssetRegister','Fixed Asset Register',['Code','Asset','Category','Acquired','Method','Cost','Accumulated Dep.','Book Value','Status'],
+      list.map(a=>{ const s=faSchedule(a,today()); return [a.code,a.name,a.category,fmtDate(faAcquiredOn(a)==='1900-01-01'?a.depFrom:a.purchaseDate),a.method==='WDV'?`WDV ${a.rate}%`:`SLM ${a.lifeYears}y`,fmtN(a.cost),fmtN(s.acc),fmtN((parseFloat(a.cost)||0)-s.acc),a.disposal?'Sold '+fmtDate(a.disposal.date):'In use']; }));
+  };
+  const allDep=useMemo(()=>{ const out=[]; list.forEach(a=>faSchedule(a,today()).rows.forEach(r=>out.push({...r,a}))); return out.sort((x,y)=>y.date.localeCompare(x.date)); },[list]);
+  const sel=list.find(a=>a.id===selId);
+
+  return <PageShell>
+    <InfoNote>Add each asset once. From then on the software posts <b>depreciation journals automatically at every month-end</b> (Dr Depreciation, Cr Accumulated Depreciation) — they show in the General Ledger, Trial Balance, P&amp;L and Balance Sheet with a <b>DEP-</b> voucher number. Selling an asset books the gain or loss for you.</InfoNote>
+    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:14}}>
+      <Kpi label="Gross block" value={fmt(tot.gClose)} sub={`${rows.filter(r=>r.grossClose>0).length} assets in use`}/>
+      <Kpi label="Accumulated depreciation" value={fmt(tot.aClose)} color="var(--gold)"/>
+      <Kpi label="Net book value" value={fmt(tot.net)} color="var(--green)"/>
+      <Kpi label={`Depreciation FY ${selFY}-${String(selFY+1).slice(2)}`} value={fmt(tot.dep)} color="var(--primary2)"/>
+    </div>
+    <div style={{display:'flex',gap:12,alignItems:'flex-end',flexWrap:'wrap',marginBottom:12}}>
+      <FyPicker value={selFY} onChange={setSelFY}/>
+      <div style={{flex:1}}/>
+      <ExportMenu onExport={doExport} disabled={!list.length}/>
+      <button className="btn btn-primary" onClick={startAdd}>+ Add Asset</button>
+    </div>
+    <TabBar value={tab} onChange={setTab} tabs={[['register','Asset Register'],['schedule','FA Schedule (Sch. III)'],['journals','Depreciation Journals']]}/>
+
+    {form&&<div className="card" style={{padding:16,marginBottom:16}}>
+      <div style={{fontWeight:700,fontSize:14,marginBottom:12}}>{list.some(x=>x.id===form.id)?'Edit asset':'New fixed asset'}</div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
+        {[['new','New purchase — post the purchase entry'],['bill','Already booked via a Purchase Bill'],['opening','Existing asset (opening balance)']].map(([k,l])=>
+          <button key={k} className={'btn btn-sm '+(form.mode===k?'btn-primary':'btn-outline')} onClick={()=>setForm(f=>({...f,mode:k}))}>{l}</button>)}
+      </div>
+      {form.mode==='bill'&&<div className="field"><label className="field-label">Purchase bill (optional — pre-fills cost &amp; date)</label>
+        <select className="field-input" value={form.billId||''} onChange={e=>pickBill(e.target.value)}>
+          <option value="">— choose a bill —</option>
+          {bills.map(b=><option key={b.id} value={b.id}>{b.billNo||b.id} — {b.vendor||'Vendor'} — {fmt(b.total)}{b.expenseAccountKey==='FIXED_ASSETS'?'':'  (head: '+coaByKey(b.expenseAccountKey||guessExpenseAccount(b.category)).name+')'}</option>)}
+        </select>
+        {(()=>{ const b=bills.find(x=>x.id===form.billId); return b&&b.expenseAccountKey!=='FIXED_ASSETS'?<div style={{fontSize:11,color:'var(--red)',marginTop:4}}>⚠ This bill is not booked to “Fixed Assets (Tangible)”, so its cost sits in an expense. Change the bill’s Expense Head to Fixed Assets so the asset is capitalised — otherwise the cost is expensed AND depreciated.</div>:null; })()}
+        <div style={{fontSize:11,color:'var(--text3)',marginTop:4}}>The bill posts the cost to Fixed Assets; this register only adds the depreciation, so nothing is counted twice.</div>
+      </div>}
+      <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+        <div className="field" style={{flex:'2 1 220px'}}><label className="field-label">Asset name *</label><input className="field-input" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="e.g. Dell Latitude laptop"/></div>
+        <div className="field" style={{flex:'1 1 190px'}}><label className="field-label">Asset class</label>
+          <select className="field-input" value={form.category} onChange={e=>preset(e.target.value)}>{FA_PRESETS.map(p=><option key={p.name}>{p.name}</option>)}</select></div>
+        <div className="field" style={{flex:'1 1 150px'}}><label className="field-label">Serial / location</label><input className="field-input" value={form.serial||''} onChange={e=>setForm(f=>({...f,serial:e.target.value}))} placeholder="optional"/></div>
+      </div>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+        <div className="field"><label className="field-label">{form.mode==='opening'?'Original purchase date':'Purchase date *'}</label><input type="date" className="field-input" value={form.purchaseDate} onChange={e=>setForm(f=>({...f,purchaseDate:e.target.value}))}/></div>
+        <div className="field"><label className="field-label">{form.mode==='opening'?'Depreciate from (books start)':'In-service date'}</label><input type="date" className="field-input" value={form.depFrom||''} onChange={e=>setForm(f=>({...f,depFrom:e.target.value}))}/>
+          <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>{form.mode==='opening'?'First month the software should post depreciation':'Blank = purchase date. First month is pro-rated by days.'}</div></div>
+        <div className="field"><label className="field-label">Cost (excl. GST) *</label><input type="number" className="field-input" value={form.cost} onChange={e=>setForm(f=>({...f,cost:e.target.value}))} placeholder="0.00"/></div>
+        <div className="field"><label className="field-label">Salvage value</label><input type="number" className="field-input" value={form.salvage} onChange={e=>setForm(f=>({...f,salvage:e.target.value}))} placeholder="0.00"/></div>
+        {form.mode==='opening'&&<div className="field"><label className="field-label">Accumulated depreciation b/f</label><input type="number" className="field-input" value={form.accDepBF} onChange={e=>setForm(f=>({...f,accDepBF:e.target.value}))} placeholder="0.00"/></div>}
+        {form.mode==='new'&&<div className="field" style={{minWidth:210}}><label className="field-label">Paid / payable from</label>
+          <LedgerSelect value={form.paidFromKey} onChange={v=>setForm(f=>({...f,paidFromKey:v}))} extra={[['TRADE_PAYABLE','Trade Payables (on credit)'],['CAPITAL',"Owner's Capital (introduced)"],['LT_BORROWING','Long-term Borrowings (loan-funded)']]}/></div>}
+      </div>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'flex-end'}}>
+        <div className="field"><label className="field-label">Depreciation method</label>
+          <select className="field-input" value={form.method} onChange={e=>setForm(f=>({...f,method:e.target.value}))}><option value="SLM">Straight Line (SLM)</option><option value="WDV">Written Down Value (WDV)</option></select></div>
+        {form.method==='SLM'?<div className="field"><label className="field-label">Useful life (years)</label><input type="number" className="field-input" value={form.lifeYears} onChange={e=>setForm(f=>({...f,lifeYears:e.target.value}))}/></div>
+          :<div className="field"><label className="field-label">WDV rate (% per year)</label><input type="number" className="field-input" value={form.rate} onChange={e=>setForm(f=>({...f,rate:e.target.value}))}/></div>}
+        <div style={{fontSize:11,color:'var(--text3)',paddingBottom:14,flex:1,minWidth:240}}>Indicative defaults: Companies Act Sch. II lives for SLM, Income-tax block rates for WDV — change them to match your policy.</div>
+      </div>
+      {(()=>{ const c=parseFloat(form.cost)||0; if(c<=0) return null; const p=faSchedule({...form,cost:c,salvage:parseFloat(form.salvage)||0,lifeYears:parseFloat(form.lifeYears)||0,rate:parseFloat(form.rate)||0,accDepBF:parseFloat(form.accDepBF)||0,depFrom:form.depFrom||form.purchaseDate},'9999-12-31');
+        const first=p.rows.slice(0,3); return first.length?<div style={{fontSize:11.5,color:'var(--text2)',marginBottom:10}}>Preview — first months: {first.map(r=>`${r.ym}: ${fmt(r.amount)}`).join('  ·  ')}{p.rows.length>3?`  …  fully depreciated after ${p.rows.length} months`:''}</div>:null; })()}
+      <div style={{display:'flex',gap:8}}><button className="btn btn-primary" onClick={saveAsset}>Save asset</button><button className="btn btn-outline" onClick={()=>setForm(null)}>Cancel</button></div>
+    </div>}
+
+    {dispose&&<div className="card" style={{padding:16,marginBottom:16,borderColor:'var(--gold)'}}>
+      <div style={{fontWeight:700,fontSize:14,marginBottom:10}}>Sell / dispose — {dispose.a.code} {dispose.a.name}</div>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+        <div className="field"><label className="field-label">Date of sale</label><input type="date" className="field-input" value={dispose.date} onChange={e=>setDispose(d=>({...d,date:e.target.value}))}/></div>
+        <div className="field"><label className="field-label">Sale proceeds (0 if scrapped)</label><input type="number" className="field-input" value={dispose.proceeds} onChange={e=>setDispose(d=>({...d,proceeds:e.target.value}))}/></div>
+        <div className="field" style={{minWidth:230}}><label className="field-label">Proceeds received in</label><LedgerSelect value={dispose.receivedKey} onChange={v=>setDispose(d=>({...d,receivedKey:v}))} extra={[['TRADE_RECEIVABLE','Trade Receivables (sold on credit)']]}/></div>
+      </div>
+      <div style={{fontSize:12.5,marginBottom:10}}>Depreciation up to sale: <b>{fmt(dispCalc.acc)}</b> · Book value: <b>{fmt(dispCalc.nbv)}</b> · {dispCalc.diff>=0?'Gain on sale':'Loss on sale'}: <b style={{color:dispCalc.diff>=0?'var(--green)':'var(--red)'}}>{fmt(Math.abs(dispCalc.diff))}</b></div>
+      <div style={{fontSize:11,color:'var(--text3)',marginBottom:10}}>GST on the sale (if any) is not included here — raise a sales invoice for it separately.</div>
+      <div style={{display:'flex',gap:8}}><button className="btn btn-primary" onClick={confirmDispose}>Post disposal</button><button className="btn btn-outline" onClick={()=>setDispose(null)}>Cancel</button></div>
+    </div>}
+
+    {tab==='register'&&(list.length===0?<Empty text="No fixed assets yet — click “+ Add Asset”."/>:
+      <Wrap min={980}><HeadRow><th style={th}>Code</th><th style={th}>Asset</th><th style={th}>Method</th><th style={thR}>Cost</th><th style={thR}>Acc. depreciation</th><th style={thR}>Book value</th><th style={th}>Status</th><th style={th}></th></HeadRow>
+        <tbody>{list.map(a=>{ const s=faSchedule(a,today()); const bv=r2((parseFloat(a.cost)||0)-s.acc);
+          return <tr key={a.id} style={{borderBottom:'1px solid var(--border)',background:selId===a.id?'var(--primary-bg)':'transparent'}}>
+            <td style={{...td,fontFamily:'monospace'}}>{a.code}</td>
+            <td style={td}><div style={{fontWeight:600}}>{a.name}</div><div style={{fontSize:10.5,color:'var(--text3)'}}>{a.category} · {a.mode==='opening'?'opening balance':a.mode==='bill'?'via bill':'purchased '+fmtDate(a.purchaseDate)}</div></td>
+            <td style={td}>{a.method==='WDV'?`WDV ${a.rate}%`:`SLM ${a.lifeYears} yrs`}</td>
+            <td style={tdR}>{fmt(a.cost)}</td><td style={tdR}>{fmt(s.acc)}</td><td style={{...tdR,fontWeight:700}}>{fmt(bv)}</td>
+            <td style={td}>{a.disposal?<span className="badge badge-gold">Sold {fmtDate(a.disposal.date)}</span>:bv<=(parseFloat(a.salvage)||0)+0.01?<span className="badge badge-blue">Fully depreciated</span>:<span className="badge badge-green">In use</span>}</td>
+            <td style={{...td,whiteSpace:'nowrap'}}>
+              <button className="btn btn-sm btn-outline" onClick={()=>setSelId(selId===a.id?null:a.id)}>{selId===a.id?'Hide':'Schedule'}</button>{' '}
+              <button className="btn btn-sm btn-outline" onClick={()=>setForm({...a,cost:a.cost,salvage:a.salvage||'',accDepBF:a.accDepBF||''})}>Edit</button>{' '}
+              {!a.disposal?<button className="btn btn-sm btn-outline" onClick={()=>startDispose(a)}>Sell</button>:<button className="btn btn-sm btn-outline" onClick={()=>undoDispose(a)}>Undo sale</button>}{' '}
+              <button className="btn btn-sm btn-danger btn-icon" onClick={()=>delAsset(a)}><Ic n="trash" s={11}/></button>
+            </td></tr>; })}</tbody></Wrap>)}
+    {tab==='register'&&sel&&<div style={{marginTop:14}}>
+      <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>Month-wise depreciation — {sel.code} {sel.name}</div>
+      {(()=>{ const s=faSchedule(sel,today()); return s.rows.length===0?<Empty text="No depreciation has fallen due yet — the first journal posts at the end of the in-service month."/>:
+        <Wrap min={640}><HeadRow><th style={th}>Month</th><th style={th}>Posted on</th><th style={thR}>Depreciation</th><th style={thR}>Accumulated</th><th style={thR}>Book value</th><th style={th}>Voucher</th></HeadRow>
+        <tbody>{s.rows.map(r=><tr key={r.ym} style={{borderBottom:'1px solid var(--border)'}}><td style={td}>{r.ym}</td><td style={td}>{fmtDate(r.date)}</td><td style={tdR}>{fmt(r.amount)}</td><td style={tdR}>{fmt(r.accAfter)}</td><td style={tdR}>{fmt(r.wdvAfter)}</td><td style={{...td,fontFamily:'monospace',fontSize:11}}>DEP-{String(sel.code).replace(/\s+/g,'').toUpperCase()}-{r.ym.replace('-','')}</td></tr>)}</tbody></Wrap>; })()}
+    </div>}
+
+    {tab==='schedule'&&(rows.length===0?<Empty text="No assets in this financial year."/>:
+      <Wrap min={1100}><HeadRow><th style={th}>Asset</th><th style={thR}>Gross: Opening</th><th style={thR}>Additions</th><th style={thR}>Disposals</th><th style={thR}>Gross: Closing</th><th style={thR}>Dep: Opening</th><th style={thR}>For the year</th><th style={thR}>On disposals</th><th style={thR}>Dep: Closing</th><th style={thR}>Net block</th><th style={thR}>Prev. net block</th></HeadRow>
+        <tbody>{rows.map(r=><tr key={r.a.id} style={{borderBottom:'1px solid var(--border)'}}><td style={td}><b>{r.a.code}</b> {r.a.name}</td><td style={tdR}>{fmtN(r.grossOpen)}</td><td style={tdR}>{fmtN(r.additions)}</td><td style={tdR}>{fmtN(r.grossDisp)}</td><td style={{...tdR,fontWeight:700}}>{fmtN(r.grossClose)}</td><td style={tdR}>{fmtN(r.accOpen)}</td><td style={tdR}>{fmtN(r.depYear)}</td><td style={tdR}>{fmtN(r.accDisp)}</td><td style={{...tdR,fontWeight:700}}>{fmtN(r.accClose)}</td><td style={{...tdR,fontWeight:700,color:'var(--green)'}}>{fmtN(r.netClose)}</td><td style={tdR}>{fmtN(r.netOpen)}</td></tr>)}
+          <tr style={{background:'var(--card2)',fontWeight:800}}><td style={td}>Total</td><td style={tdR}>{fmtN(tot.gOpen)}</td><td style={tdR}>{fmtN(tot.add)}</td><td style={tdR}>{fmtN(tot.dis)}</td><td style={tdR}>{fmtN(tot.gClose)}</td><td style={tdR}>{fmtN(tot.aOpen)}</td><td style={tdR}>{fmtN(tot.dep)}</td><td style={tdR}>{fmtN(tot.aDis)}</td><td style={tdR}>{fmtN(tot.aClose)}</td><td style={tdR}>{fmtN(tot.net)}</td><td style={tdR}>{fmtN(tot.netO)}</td></tr></tbody></Wrap>)}
+
+    {tab==='journals'&&(allDep.length===0?<Empty text="No depreciation journals yet."/>:
+      <Wrap min={760}><HeadRow><th style={th}>Date</th><th style={th}>Asset</th><th style={thR}>Debit: Depreciation</th><th style={thR}>Credit: Accumulated Dep.</th><th style={th}>Voucher No.</th></HeadRow>
+        <tbody>{allDep.slice(0,400).map(r=><tr key={r.a.id+r.ym} style={{borderBottom:'1px solid var(--border)'}}><td style={td}>{fmtDate(r.date)}</td><td style={td}>{r.a.code} — {r.a.name}</td><td style={tdR}>{fmt(r.amount)}</td><td style={tdR}>{fmt(r.amount)}</td><td style={{...td,fontFamily:'monospace',fontSize:11}}>DEP-{String(r.a.code).replace(/\s+/g,'').toUpperCase()}-{r.ym.replace('-','')}</td></tr>)}</tbody></Wrap>)}
+  </PageShell>;
+};
+
+/* ═══════════════ RECURRING JOURNAL VOUCHERS ═══════════════ */
+const blankRJV = (kind) => ({id:newId('RJ'), name:'', kind:kind||'fixed', active:true, startDate:today(), frequency:'monthly', count:'', endDate:'', refNo:'', generated:0,
+  lines:[{account:'RENT_EXP',desc:'',debit:'',credit:''},{account:(getPaymentLedgers()[0]||{}).key||'CASH_IN_HAND',desc:'',debit:'',credit:''}],
+  loanKey:'', payKey:(getPaymentLedgers()[0]||{}).key||'CASH_IN_HAND', principal:'', rate:'', tenure:'', emiOverride:'',
+  total:'', months:'', expenseKey:'RENT_EXP'});
+const rjvPerPeriod = t => t.kind==='emi' ? emiOf(t.principal,t.rate,t.tenure) : t.kind==='prepaid' ? ((+t.months>0)?r2((+t.total||0)/(+t.months)):0) : r2((t.lines||[]).reduce((s,l)=>s+(parseFloat(l.debit)||0),0));
+
+const RecurringJournalsPage = ({currentUser}) => {
+  const [list,setList]=useState(S.get(SK.RJV,[])||[]);
+  const [form,setForm]=useState(null);
+  const [jvs,setJvs]=useState(getManualJournal());
+  const isAdmin=isAdminUser(currentUser);
+  const reload=()=>{ setList(S.get(SK.RJV,[])||[]); setJvs(getManualJournal()); };
+  const runNow=()=>{ const n=runRecurringJournals(currentUser); reload(); n?toast.success(`${n} journal voucher${n===1?'':'s'} posted`):toast.info('Nothing is due — every recurring entry is up to date'); };
+  const save=()=>{
+    const f=form; if(!f.name.trim()){toast.error('Give this recurring entry a name');return;}
+    if(!f.startDate){toast.error('Pick the first posting date');return;}
+    if(f.kind==='fixed'){
+      const ls=(f.lines||[]).filter(l=>l.account&&(parseFloat(l.debit)||parseFloat(l.credit)));
+      const d=ls.reduce((s,l)=>s+(parseFloat(l.debit)||0),0), c=ls.reduce((s,l)=>s+(parseFloat(l.credit)||0),0);
+      if(ls.length<2||Math.abs(d-c)>0.01||d<=0){toast.error('Debits must equal credits (at least two lines)');return;}
+    }
+    if(f.kind==='emi'){
+      if(!f.loanKey){toast.error('Choose the loan ledger');return;}
+      if(!(+f.principal>0)||!(+f.tenure>0)){toast.error('Enter the loan principal and number of instalments');return;}
+    }
+    if(f.kind==='prepaid'){ if(!(+f.total>0)||!(+f.months>0)){toast.error('Enter the prepaid amount and number of months');return;} if(!f.expenseKey){toast.error('Choose the expense ledger');return;} }
+    const rec={...f,name:f.name.trim(),lines:(f.lines||[]).filter(l=>l.account&&(parseFloat(l.debit)||parseFloat(l.credit))).map(l=>({account:l.account,desc:l.desc||'',debit:parseFloat(l.debit)||0,credit:parseFloat(l.credit)||0}))};
+    const exists=list.some(x=>x.id===f.id);
+    S.set(SK.RJV, exists?list.map(x=>x.id===f.id?rec:x):[...list,rec]);
+    logAudit('RECURRING_JV_SAVED',rec.name,currentUser);
+    setForm(null);
+    const n=runRecurringJournals(currentUser); reload();
+    toast.success(n?`Saved — ${n} past-due voucher${n===1?'':'s'} posted now; the rest will post on their due dates`:'Saved — it will post automatically on each due date');
+  };
+  const toggle=t=>{ S.set(SK.RJV,list.map(x=>x.id===t.id?{...x,active:!x.active}:x)); reload(); };
+  const del=t=>{ if(!isAdmin){toast.error('Only Admin can delete');return;} if(!window.confirm(`Delete “${t.name}”?\n\nVouchers already posted stay in the books; future ones stop.`))return; S.set(SK.RJV,list.filter(x=>x.id!==t.id)); reload(); };
+  const upLine=(i,k,v)=>setForm(f=>({...f,lines:f.lines.map((l,j)=>j===i?{...l,[k]:v}:l)}));
+  const locked = form && form.kind!=='fixed' && (parseInt(form.generated,10)||0)>0;
+  const emiRows = form&&form.kind==='emi' ? emiSchedule(form.principal,form.rate,form.tenure,+form.emiOverride||0) : [];
+  const ppRows = form&&form.kind==='prepaid' ? prepaidSchedule(form.total,form.months) : [];
+  const fd=form?(form.lines||[]).reduce((s,l)=>s+(parseFloat(l.debit)||0),0):0, fc=form?(form.lines||[]).reduce((s,l)=>s+(parseFloat(l.credit)||0),0):0;
+  const generatedJvs=jvs.filter(j=>j.recurringId).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,40);
+  const typeLabel={fixed:'Fixed entry',emi:'Loan EMI',prepaid:'Prepaid amortisation'};
+
+  return <PageShell>
+    <InfoNote>Set up rent, loan EMIs, insurance or prepaid amortisation <b>once</b>. A real Journal Voucher is posted automatically on every due date (when anyone opens the app) — no more month-end reminders. EMI entries split each instalment into principal and interest using the loan’s amortisation schedule.</InfoNote>
+    <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:14,alignItems:'center'}}>
+      <button className="btn btn-primary" onClick={()=>setForm(blankRJV('fixed'))}>+ Rent / fixed entry</button>
+      <button className="btn btn-outline" onClick={()=>setForm(blankRJV('emi'))}>+ Loan EMI</button>
+      <button className="btn btn-outline" onClick={()=>setForm(blankRJV('prepaid'))}>+ Prepaid amortisation</button>
+      <div style={{flex:1}}/>
+      <button className="btn btn-outline-primary" onClick={runNow}><Ic n="refresh" s={13}/> Post due entries now</button>
+    </div>
+
+    {form&&<div className="card" style={{padding:16,marginBottom:16}}>
+      <div style={{fontWeight:700,fontSize:14,marginBottom:10}}>{list.some(x=>x.id===form.id)?'Edit':'New'} recurring entry — {typeLabel[form.kind]}</div>
+      {locked&&<InfoNote tone="warn">{form.generated} instalment(s) have already been posted, so the schedule figures are locked. You can still change the name, ledgers for future vouchers, or pause it.</InfoNote>}
+      <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+        <div className="field" style={{flex:'2 1 240px'}}><label className="field-label">Name *</label><input className="field-input" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder={form.kind==='emi'?'e.g. HDFC term loan EMI':form.kind==='prepaid'?'e.g. Insurance FY26-27':'e.g. Office rent — Whitefield'}/></div>
+        <div className="field"><label className="field-label">{form.kind==='fixed'?'First posting date':form.kind==='emi'?'Next EMI date':'First amortisation date'} *</label><input type="date" className="field-input" value={form.startDate} disabled={locked} onChange={e=>setForm(f=>({...f,startDate:e.target.value}))}/></div>
+        <div className="field"><label className="field-label">Reference no.</label><input className="field-input" value={form.refNo||''} onChange={e=>setForm(f=>({...f,refNo:e.target.value}))} placeholder="Loan a/c no., agreement no."/></div>
+      </div>
+
+      {form.kind==='fixed'&&<>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          <div className="field"><label className="field-label">Repeats</label><select className="field-input" value={form.frequency} onChange={e=>setForm(f=>({...f,frequency:e.target.value}))}>{RJV_FREQ.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select></div>
+          <div className="field"><label className="field-label">Number of times</label><input type="number" className="field-input" value={form.count} onChange={e=>setForm(f=>({...f,count:e.target.value}))} placeholder="blank = no limit"/></div>
+          <div className="field"><label className="field-label">Or stop after</label><input type="date" className="field-input" value={form.endDate||''} onChange={e=>setForm(f=>({...f,endDate:e.target.value}))}/></div>
+        </div>
+        <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap',alignItems:'center'}}><span style={{fontSize:11,color:'var(--text3)'}}>Quick start:</span>
+          {[['Rent','RENT_EXP'],['Insurance','OTHER_EXP'],['Salary accrual','EMPLOYEE_EXP'],['Subscription','OTHER_EXP']].map(([l,k])=><button key={l} className="btn btn-sm btn-outline" onClick={()=>setForm(f=>({...f,name:f.name||l,lines:[{...f.lines[0],account:k},f.lines[1]]}))}>{l}</button>)}</div>
+        <div className="dt-wrap" style={{marginBottom:8}}><table className="dt" style={{width:'100%'}}><thead><tr><th>Account</th><th>Line note</th><th style={{textAlign:'right'}}>Debit</th><th style={{textAlign:'right'}}>Credit</th><th></th></tr></thead>
+          <tbody>{form.lines.map((l,i)=><tr key={i}>
+            <td style={{minWidth:260}}><AccountSelect value={l.account} onChange={v=>upLine(i,'account',v)} createType="expense" placeholder="Choose ledger…"/></td>
+            <td><input className="field-input" value={l.desc||''} onChange={e=>upLine(i,'desc',e.target.value)}/></td>
+            <td><input type="number" className="field-input" style={{textAlign:'right'}} value={l.debit} onChange={e=>upLine(i,'debit',e.target.value)}/></td>
+            <td><input type="number" className="field-input" style={{textAlign:'right'}} value={l.credit} onChange={e=>upLine(i,'credit',e.target.value)}/></td>
+            <td>{form.lines.length>2&&<button className="btn btn-sm btn-danger btn-icon" onClick={()=>setForm(f=>({...f,lines:f.lines.filter((_,j)=>j!==i)}))}><Ic n="trash" s={11}/></button>}</td></tr>)}</tbody></table></div>
+        <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:10,fontSize:12.5}}>
+          <button className="btn btn-sm btn-outline" onClick={()=>setForm(f=>({...f,lines:[...f.lines,blankJVLine()]}))}>+ Add line</button>
+          <span>Debit {fmt(fd)} · Credit {fmt(fc)}</span>
+          <b style={{color:Math.abs(fd-fc)<0.01&&fd>0?'var(--green)':'var(--red)'}}>{Math.abs(fd-fc)<0.01&&fd>0?'✓ Balanced':'Difference '+fmt(Math.abs(fd-fc))}</b></div>
+      </>}
+
+      {form.kind==='emi'&&<>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          <div className="field" style={{minWidth:260}}><label className="field-label">Loan ledger (liability) *</label><AccountSelect value={form.loanKey} onChange={v=>setForm(f=>({...f,loanKey:v}))} types={['liability']} createType="liability" placeholder="e.g. Long-term Borrowings"/></div>
+          <div className="field" style={{minWidth:230}}><label className="field-label">EMI paid from *</label><LedgerSelect value={form.payKey} onChange={v=>setForm(f=>({...f,payKey:v}))}/></div>
+        </div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          <div className="field"><label className="field-label">Outstanding principal *</label><input type="number" className="field-input" disabled={locked} value={form.principal} onChange={e=>setForm(f=>({...f,principal:e.target.value}))}/></div>
+          <div className="field"><label className="field-label">Interest rate % p.a.</label><input type="number" className="field-input" disabled={locked} value={form.rate} onChange={e=>setForm(f=>({...f,rate:e.target.value}))}/></div>
+          <div className="field"><label className="field-label">Instalments remaining *</label><input type="number" className="field-input" disabled={locked} value={form.tenure} onChange={e=>setForm(f=>({...f,tenure:e.target.value}))}/></div>
+          <div className="field"><label className="field-label">EMI (override, optional)</label><input type="number" className="field-input" disabled={locked} value={form.emiOverride||''} onChange={e=>setForm(f=>({...f,emiOverride:e.target.value}))} placeholder={String(emiOf(form.principal,form.rate,form.tenure)||'')}/></div>
+        </div>
+        <div style={{fontSize:11,color:'var(--text3)',marginBottom:8}}>For a loan already running, enter the <b>current outstanding principal</b> and the <b>instalments still to pay</b>. The loan receipt itself is recorded in Bank Reconciliation (post it to the loan ledger).</div>
+        {emiRows.length>0&&<div style={{marginBottom:10,fontSize:12.5}}>EMI <b>{fmt(emiRows[0].emi)}</b> · total interest <b>{fmt(emiRows.reduce((s,r)=>s+r.interest,0))}</b> · total payable <b>{fmt(emiRows.reduce((s,r)=>s+r.emi,0))}</b>
+          <div style={{maxHeight:170,overflow:'auto',marginTop:6,border:'1px solid var(--border)',borderRadius:8}}><table style={{width:'100%',borderCollapse:'collapse'}}><thead><tr style={{background:'var(--card2)'}}><th style={th}>#</th><th style={th}>Date</th><th style={thR}>Principal</th><th style={thR}>Interest</th><th style={thR}>EMI</th><th style={thR}>Balance</th></tr></thead>
+            <tbody>{emiRows.map(r=><tr key={r.k} style={{borderBottom:'1px solid var(--border)'}}><td style={td}>{r.k+1}</td><td style={td}>{form.startDate?fmtDate(rjvDate(form,r.k)):''}</td><td style={tdR}>{fmtN(r.principal)}</td><td style={tdR}>{fmtN(r.interest)}</td><td style={tdR}>{fmtN(r.emi)}</td><td style={tdR}>{fmtN(r.balance)}</td></tr>)}</tbody></table></div></div>}
+      </>}
+
+      {form.kind==='prepaid'&&<>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          <div className="field" style={{minWidth:260}}><label className="field-label">Expense ledger *</label><AccountSelect value={form.expenseKey} onChange={v=>setForm(f=>({...f,expenseKey:v}))} types={['expense']} createType="expense"/></div>
+          <div className="field"><label className="field-label">Total prepaid amount *</label><input type="number" className="field-input" disabled={locked} value={form.total} onChange={e=>setForm(f=>({...f,total:e.target.value}))}/></div>
+          <div className="field"><label className="field-label">Spread over (months) *</label><input type="number" className="field-input" disabled={locked} value={form.months} onChange={e=>setForm(f=>({...f,months:e.target.value}))}/></div>
+        </div>
+        <div style={{fontSize:11,color:'var(--text3)',marginBottom:8}}>Record the advance payment first (Bank Reconciliation → post to “Prepaid Expenses”, or the Journal template). Each month this posts <b>Dr {coaByKey(form.expenseKey).name} / Cr Prepaid Expenses</b>.{ppRows.length>0&&<> Monthly amount <b>{fmt(ppRows[0].amount)}</b>{ppRows.length>1&&ppRows[ppRows.length-1].amount!==ppRows[0].amount?` (last month ${fmt(ppRows[ppRows.length-1].amount)} to absorb rounding)`:''}.</>}</div>
+      </>}
+      <div style={{display:'flex',gap:8}}><button className="btn btn-primary" onClick={save}>Save &amp; activate</button><button className="btn btn-outline" onClick={()=>setForm(null)}>Cancel</button></div>
+    </div>}
+
+    {list.length===0&&!form?<Empty text="No recurring entries yet. Add your rent, loan EMI or an insurance premium above."/>:list.length>0&&
+      <Wrap min={900}><HeadRow><th style={th}>Name</th><th style={th}>Type</th><th style={th}>Repeats</th><th style={thR}>Per period</th><th style={th}>Progress</th><th style={th}>Next posting</th><th style={th}>Status</th><th style={th}></th></HeadRow>
+        <tbody>{list.map(t=>{ const total=rjvTotal(t); const gen=parseInt(t.generated,10)||0; const done=gen>=total && total<600; const nd=done?null:rjvDate(t,gen); const over=nd&&nd<=today()&&t.active;
+          return <tr key={t.id} style={{borderBottom:'1px solid var(--border)'}}>
+            <td style={{...td,fontWeight:600}}>{t.name}</td><td style={td}>{typeLabel[t.kind]}</td>
+            <td style={td}>{t.kind==='fixed'?(RJV_FREQ.find(f=>f[0]===t.frequency)||[])[1]:'Monthly'}</td>
+            <td style={tdR}>{fmt(rjvPerPeriod(t))}</td>
+            <td style={td}>{gen}{total<600?` / ${total}`:''} posted</td>
+            <td style={td}>{done?<span className="badge badge-green">Completed</span>:nd?<span style={{color:over?'var(--red)':'var(--text)'}}>{fmtDate(nd)}{over?' (due)':''}</span>:'—'}</td>
+            <td style={td}>{t.active?<span className="badge badge-green">Active</span>:<span className="badge badge-gold">Paused</span>}</td>
+            <td style={{...td,whiteSpace:'nowrap'}}><button className="btn btn-sm btn-outline" onClick={()=>setForm({...t,lines:(t.lines&&t.lines.length?t.lines:[{account:'',desc:'',debit:'',credit:''},{account:'',desc:'',debit:'',credit:''}])})}>Edit</button>{' '}
+              <button className="btn btn-sm btn-outline" onClick={()=>toggle(t)}>{t.active?'Pause':'Resume'}</button>{' '}
+              <button className="btn btn-sm btn-danger btn-icon" onClick={()=>del(t)}><Ic n="trash" s={11}/></button></td></tr>; })}</tbody></Wrap>}
+
+    {generatedJvs.length>0&&<div style={{marginTop:18}}>
+      <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>Recently auto-posted vouchers</div>
+      <Wrap min={680}><HeadRow><th style={th}>Date</th><th style={th}>Voucher No.</th><th style={th}>Narration</th><th style={thR}>Amount</th></HeadRow>
+        <tbody>{generatedJvs.map(j=><tr key={j.id} style={{borderBottom:'1px solid var(--border)'}}><td style={td}>{fmtDate(j.date)}</td><td style={{...td,fontFamily:'monospace',fontSize:11}}>{j.voucherNo}</td><td style={td}>{j.narration}</td><td style={tdR}>{fmt((j.lines||[]).reduce((s,l)=>s+(l.debit||0),0))}</td></tr>)}</tbody></Wrap>
+      <div style={{fontSize:11,color:'var(--text3)',marginTop:6}}>Posted vouchers are ordinary Journal Vouchers — you can see (and reverse) them under Accounting → Journal Vouchers.</div></div>}
+  </PageShell>;
+};
+
+/* ═══════════════ ADVANCE & CREDIT-NOTE APPLICATION ═══════════════ */
+const AdvanceApplicationPage = ({currentUser}) => {
+  const [tab,setTab]=useState('customer');
+  const [tick,setTick]=useState(0); const bump=()=>setTick(t=>t+1);
+  const [open,setOpen]=useState(null);
+  const [showAll,setShowAll]=useState(false);
+  const [amts,setAmts]=useState({});
+  const [appDate,setAppDate]=useState(today());
+  const advRows=useMemo(()=>getAdvanceRows(),[tick]);
+  const cnRows=useMemo(()=>getOpenCreditNotes(),[tick]);
+  const apps=getAdvApps();
+  const custRows=advRows.filter(r=>r.kind==='customer'&&r.balance>0.01);
+  const supRows=advRows.filter(r=>r.kind==='supplier'&&r.balance>0.01);
+  const sumBal=a=>a.reduce((s,r)=>s+(r.balance!=null?r.balance:r.out),0);
+  const customers=S.get(SK.CUST,[])||[];
+  const vendors=[...new Set((S.get(SK.EXP,[])||[]).map(e=>e.vendor).filter(Boolean))];
+
+  // source = {id, kind:'customer'|'supplier'|'cn', party, balance}
+  const docsFor=(src)=>{
+    const all=src.kind==='supplier'?getOpenItems('debit'):getOpenItems('credit');
+    const mine=(showAll||!src.party)?all:all.filter(o=>sameParty(o.party,src.party));
+    return mine.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  };
+  const doApply=(src,o,amt)=>{
+    amt=r2(Math.min(amt,src.balance,o.out));
+    if(amt<=0.004){toast.error('Nothing to apply');return 0;}
+    if(src.kind!=='cn' && src.date && appDate<src.date) { toast.error('Application date cannot be before the advance date ('+fmtDate(src.date)+')'); return 0; }
+    applyAdvance({kind:src.kind,advTxnId:src.id,party:src.party||o.party,docKind:src.kind==='supplier'?'expense':'invoice',docRef:o.ref,docNo:o.docNo||o.ref,amt,date:appDate,user:currentUser});
+    logAudit('ADVANCE_APPLIED',`${src.kind==='cn'?'Credit note ':'Advance '}${src.label||src.id} → ${o.docNo||o.ref}: ${fmt(amt)}`,currentUser);
+    return amt;
+  };
+  const applyOne=(src,o)=>{ const k=src.id+'|'+o.ref; const want=amts[k]!==undefined&&amts[k]!==''?parseFloat(amts[k]):Math.min(src.balance,o.out); const done=doApply(src,o,want); if(done){ toast.success(`${fmt(done)} applied to ${o.docNo||o.ref}`); setAmts(a=>({...a,[k]:''})); bump(); if(src.balance-done<=0.01) setOpen(null); } };
+  const applyAuto=(src)=>{ let rem=src.balance, n=0, total=0; const docs=docsFor(src);
+    if(!docs.length){toast.info('No open '+(src.kind==='supplier'?'bills':'invoices')+' for this party');return;}
+    docs.forEach(o=>{ if(rem<=0.004) return; const done=doApply({...src,balance:rem},o,Math.min(rem,o.out)); if(done){ rem=r2(rem-done); total+=done; n++; } });
+    bump(); if(n){ toast.success(`${fmt(total)} applied across ${n} ${src.kind==='supplier'?'bill':'invoice'}${n===1?'':'s'} (oldest first)`); setOpen(null); } };
+  const undo=(a)=>{ if(!window.confirm(`Reverse this application of ${fmt(a.amt)} to ${a.docNo}?\n\nThe ${a.docKind==='expense'?'bill':'invoice'} becomes outstanding again.`))return; reverseAdvanceApp(a.id); logAudit('ADVANCE_APPLICATION_REVERSED',`${a.advTxnId} → ${a.docNo} ${fmt(a.amt)}`,currentUser); bump(); toast.info('Reversed'); };
+  const tag=(r,name)=>{ tagAdvanceParty(r.txnId,name.trim()); bump(); toast.success('Party saved'); };
+
+  const Panel = ({src}) => {
+    const docs=docsFor(src);
+    return <div style={{background:'var(--card2)',padding:12,borderTop:'1px solid var(--border)'}}>
+      <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:8}}>
+        <span style={{fontSize:12}}>Apply <b>{fmt(src.balance)}</b> available to:</span>
+        <label style={{fontSize:11.5,display:'flex',gap:5,alignItems:'center',cursor:'pointer'}}><input type="checkbox" checked={showAll} onChange={e=>setShowAll(e.target.checked)}/> show other parties too</label>
+        <div style={{flex:1}}/>
+        {docs.length>0&&<button className="btn btn-sm btn-primary" onClick={()=>applyAuto(src)}>Apply oldest-first — one click</button>}
+        <button className="btn btn-sm btn-outline" onClick={()=>setOpen(null)}>Close</button>
+      </div>
+      {docs.length===0?<div style={{fontSize:12,color:'var(--text3)'}}>No open {src.kind==='supplier'?'bills':'invoices'} found{src.party?` for “${src.party}”`:''}. {src.party&&!showAll?'Tick “show other parties” if the name is spelt differently.':''}</div>:
+      <div style={{border:'1px solid var(--border)',borderRadius:8,background:'var(--card)',maxHeight:240,overflow:'auto'}}>
+        {docs.map(o=>{ const k=src.id+'|'+o.ref; return <div key={o.ref} style={{display:'flex',gap:10,alignItems:'center',padding:'8px 12px',borderBottom:'1px solid var(--border)'}}>
+          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:12.5}}>{o.docNo||o.ref} — {o.party}</div><div style={{fontSize:11,color:'var(--text3)'}}>{fmtDate(o.date)} · due {fmtDate(o.due)} · outstanding {fmt(o.out)}</div></div>
+          <input type="number" className="field-input" style={{width:110,padding:'5px 8px',textAlign:'right'}} placeholder={String(Math.min(src.balance,o.out))} value={amts[k]||''} onChange={e=>setAmts(a=>({...a,[k]:e.target.value}))}/>
+          <button className="btn btn-sm btn-primary" onClick={()=>applyOne(src,o)}>Apply</button></div>; })}
+      </div>}
+    </div>;
+  };
+
+  const advTable=(rows,kind)=>rows.length===0?<Empty text={kind==='customer'?'No unapplied customer advances. Advances appear here when a bank receipt is posted to “Advances from Customers” or exceeds the invoices it settles.':'No unapplied supplier advances. They appear when a bank payment is posted to “Advance to supplier” or exceeds the bills it settles.'}/>:
+    <div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden'}}>
+      <div style={{display:'grid',gridTemplateColumns:'90px 1.4fr 1fr 110px 110px 110px 120px',gap:8,padding:'9px 12px',background:'var(--card2)',fontSize:10,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}><div>Date</div><div>{kind==='customer'?'Customer':'Supplier'}</div><div>Bank narration</div><div style={{textAlign:'right'}}>Advance</div><div style={{textAlign:'right'}}>Applied</div><div style={{textAlign:'right'}}>Balance</div><div></div></div>
+      {rows.map(r=><div key={r.txnId} style={{borderTop:'1px solid var(--border)'}}>
+        <div style={{display:'grid',gridTemplateColumns:'90px 1.4fr 1fr 110px 110px 110px 120px',gap:8,padding:'9px 12px',alignItems:'center',fontSize:12.5}}>
+          <div>{fmtDate(r.date)}</div>
+          <div>{r.party?<b>{r.party}</b>:<PartyTagger r={r} kind={kind} onSave={tag} list={kind==='customer'?customers.map(c=>c.name):vendors}/>}</div>
+          <div style={{fontSize:11.5,color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={r.desc}>{r.desc}{r.ref?` · ${r.ref}`:''}</div>
+          <div style={{textAlign:'right'}}>{fmt(r.amount)}</div><div style={{textAlign:'right',color:'var(--text3)'}}>{fmt(r.used)}</div><div style={{textAlign:'right',fontWeight:700,color:'var(--green)'}}>{fmt(r.balance)}</div>
+          <div style={{textAlign:'right'}}><button className="btn btn-sm btn-primary" onClick={()=>setOpen(open===r.txnId?null:r.txnId)}>Apply…</button></div>
+        </div>
+        {open===r.txnId&&<Panel src={{id:r.txnId,kind,party:r.party,balance:r.balance,date:r.date,label:r.ref||r.desc}}/>}
+      </div>)}
+    </div>;
+
+  return <PageShell>
+    <InfoNote>When a customer pays in advance (or you pay a supplier in advance) the money sits in an advance ledger. Pick the later invoice or bill here and it is settled in one click — the ledger entry (Dr Advance / Cr Receivable, or Dr Payable / Cr Advance) and the invoice’s paid status update together. No manual journal needed.</InfoNote>
+    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:14}}>
+      <Kpi label="Customer advances held" value={fmt(sumBal(custRows))} color="var(--primary2)" sub={`${custRows.length} unapplied`}/>
+      <Kpi label="Supplier advances given" value={fmt(sumBal(supRows))} color="var(--gold)" sub={`${supRows.length} unapplied`}/>
+      <Kpi label="Open credit notes" value={fmt(sumBal(cnRows))} color="var(--green)" sub={`${cnRows.length} not yet settled`}/>
+    </div>
+    <div style={{display:'flex',gap:12,alignItems:'flex-end',flexWrap:'wrap',marginBottom:6}}>
+      <TabBar value={tab} onChange={t=>{setTab(t);setOpen(null);}} tabs={[['customer','Customer advances'],['supplier','Supplier advances'],['cn','Credit notes'],['history','Applications']]}/>
+      <div style={{flex:1}}/>
+      <div className="field" style={{marginBottom:16}}><label className="field-label">Application date</label><input type="date" className="field-input" value={appDate} onChange={e=>setAppDate(e.target.value)}/></div>
+    </div>
+    {tab==='customer'&&advTable(custRows,'customer')}
+    {tab==='supplier'&&advTable(supRows,'supplier')}
+    {tab==='cn'&&<>
+      <InfoNote>A credit note already reduces what the customer owes in your ledger. Settle it either by <b>adjusting it against an invoice</b> (below) or by <b>refunding the customer</b> — do that in Bank Reconciliation: open the bank debit and choose “Refund to customer”.</InfoNote>
+      {cnRows.length===0?<Empty text="Every credit note is fully settled."/>:<div style={{border:'1px solid var(--border)',borderRadius:10,overflow:'hidden'}}>
+        {cnRows.map(c=><div key={c.ref} style={{borderBottom:'1px solid var(--border)'}}>
+          <div style={{display:'flex',gap:10,padding:'10px 12px',alignItems:'center'}}>
+            <div style={{flex:1}}><div style={{fontWeight:600,fontSize:12.5}}>{c.docNo} — {c.party}</div><div style={{fontSize:11,color:'var(--text3)'}}>{fmtDate(c.date)} {c.extra} · total {fmt(c.total)}{c.settled>0?` · settled ${fmt(c.settled)}`:''}</div></div>
+            <div style={{fontWeight:700,color:'var(--green)'}}>{fmt(c.out)}</div>
+            <button className="btn btn-sm btn-primary" onClick={()=>setOpen(open===c.ref?null:c.ref)}>Adjust against invoice…</button></div>
+          {open===c.ref&&<Panel src={{id:c.ref,kind:'cn',party:c.party,balance:c.out,date:c.date,label:c.docNo}}/>}</div>)}</div>}
+    </>}
+    {tab==='history'&&(apps.length===0?<Empty text="Nothing applied yet."/>:
+      <Wrap min={820}><HeadRow><th style={th}>Date</th><th style={th}>Type</th><th style={th}>Party</th><th style={th}>Applied to</th><th style={thR}>Amount</th><th style={th}>Voucher No.</th><th style={th}></th></HeadRow>
+        <tbody>{[...apps].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(a=><tr key={a.id} style={{borderBottom:'1px solid var(--border)'}}>
+          <td style={td}>{fmtDate(a.date)}</td><td style={td}>{a.kind==='customer'?'Customer advance':a.kind==='supplier'?'Supplier advance':'Credit note'}</td><td style={td}>{a.party}</td><td style={td}>{a.docNo}</td><td style={tdR}>{fmt(a.amt)}</td><td style={{...td,fontFamily:'monospace',fontSize:11}}>{a.voucherNo}</td>
+          <td style={td}><button className="btn btn-sm btn-outline" onClick={()=>undo(a)}>Reverse</button></td></tr>)}</tbody></Wrap>)}
+  </PageShell>;
+};
+const PartyTagger = ({r,kind,onSave,list}) => {
+  const [v,setV]=useState('');
+  const id='dl'+r.txnId;
+  return <div style={{display:'flex',gap:4}}>
+    <input className="field-input" list={id} style={{padding:'4px 8px',fontSize:12}} placeholder={kind==='customer'?'Whose advance? type customer…':'Whose advance? type supplier…'} value={v} onChange={e=>setV(e.target.value)}/>
+    <datalist id={id}>{(list||[]).map(n=><option key={n} value={n}/>)}</datalist>
+    <button className="btn btn-sm btn-outline" disabled={!v.trim()} onClick={()=>onSave(r,v)}>Save</button></div>;
+};
+
+/* ═══════════════ MULTI-CURRENCY: rates, exposure, revaluation, realised gain/loss ═══════════════ */
+const FxPage = ({currentUser}) => {
+  const [tick,setTick]=useState(0); const bump=()=>setTick(t=>t+1);
+  const [tab,setTab]=useState('exposure');
+  const [asOn,setAsOn]=useState(today());
+  const [close,setClose]=useState({});
+  const [autoRev,setAutoRev]=useState(true);
+  const [newCur,setNewCur]=useState('USD'); const [newRate,setNewRate]=useState(''); const [newDate,setNewDate]=useState(today());
+  const [selFY,setSelFY]=useState(getFY());
+  const rates=getFxRates();
+  const open=useMemo(()=>getOpenFxInvoices(),[tick]);
+  const rateFor=c=>{ const v=close[c]!==undefined&&close[c]!==''?parseFloat(close[c]):(rates[c]?parseFloat(rates[c].rate):0); return v>0?v:0; };
+  const rows=open.map(o=>{ const cr=rateFor(o.cur); const reval=cr>0?r2(o.fcOut*cr):o.out; return {...o,cr,reval,unreal:r2(reval-o.out)}; });
+  const curs=[...new Set(rows.map(r=>r.cur))];
+  const byCur=curs.map(c=>{ const rr=rows.filter(r=>r.cur===c); return {cur:c,fc:r2(rr.reduce((s,r)=>s+r.fcOut,0)),booked:r2(rr.reduce((s,r)=>s+r.out,0)),reval:r2(rr.reduce((s,r)=>s+r.reval,0)),unreal:r2(rr.reduce((s,r)=>s+r.unreal,0)),rate:rateFor(c)}; });
+  const totalUnreal=r2(byCur.reduce((s,c)=>s+c.unreal,0));
+  const missing=curs.filter(c=>!(rateFor(c)>0));
+  const fyFrom=fyStartOf(selFY), fyTo=fyEndOf(selFY);
+  const fxLines=useMemo(()=>getAllLedgerLines().filter(l=>(l.account==='FX_GAIN'||l.account==='FX_LOSS')&&(l.date||'')>=fyFrom&&(l.date||'')<=fyTo).sort((a,b)=>(b.date||'').localeCompare(a.date||'')),[tick,selFY]);
+  const gainTot=r2(fxLines.reduce((s,l)=>s+(l.account==='FX_GAIN'?l.credit-l.debit:0),0)), lossTot=r2(fxLines.reduce((s,l)=>s+(l.account==='FX_LOSS'?l.debit-l.credit:0),0));
+
+  const postReval=()=>{
+    if(missing.length){toast.error('Enter the closing rate for '+missing.join(', '));return;}
+    if(Math.abs(totalUnreal)<0.005){toast.info('No difference to post');return;}
+    const dup=getManualJournal().some(j=>j.referenceNo==='FX-REVAL' && j.date===asOn);
+    if(dup && !window.confirm('A revaluation journal already exists for '+fmtDate(asOn)+'. Post another?')) return;
+    const gain=totalUnreal>0, amt=Math.abs(totalUnreal);
+    const lines=gain?[{account:'TRADE_RECEIVABLE',desc:'Revalue foreign-currency receivables',debit:amt,credit:0},{account:'FX_GAIN',desc:'Unrealised exchange gain',debit:0,credit:amt}]
+                    :[{account:'FX_LOSS',desc:'Unrealised exchange loss',debit:amt,credit:0},{account:'TRADE_RECEIVABLE',desc:'Revalue foreign-currency receivables',debit:0,credit:amt}];
+    const jv={id:newId('JV-'),date:asOn,narration:`Unrealised FX ${gain?'gain':'loss'} on open receivables — ${byCur.map(c=>`${c.cur} @ ${c.rate}`).join(', ')}`,referenceNo:'FX-REVAL',reportingMethod:'both',lines,
+      voucherNo:nextVoucherNo(),txnRefNo:nextTxnRefNo(asOn),srcType:'JV',createdBy:currentUser?.email||''};
+    if(autoRev) jv.reverseDate=addDaysISO(asOn,1);
+    S.set(SK.JOURNAL,[...getManualJournal(),jv]);
+    byCur.forEach(c=>saveFxRate(c.cur,c.rate,asOn));
+    logAudit('FX_REVALUATION_POSTED',`${fmt(amt)} ${gain?'gain':'loss'} as on ${asOn}`,currentUser);
+    bump(); toast.success(`Revaluation ${gain?'gain':'loss'} of ${fmt(amt)} posted${autoRev?' — auto-reverses next day':''}`);
+  };
+  const addRate=()=>{ const v=parseFloat(newRate); if(!(v>0)){toast.error('Enter a rate');return;} saveFxRate(newCur,v,newDate); setNewRate(''); bump(); toast.success('Rate saved'); };
+  const doExport=f=>exportTableAs(f,'FX_Exposure','Foreign-currency receivables',['Invoice','Customer','Date','Currency','Outstanding (FC)','Booked rate','Booked (₹)','Closing rate','Revalued (₹)','Unrealised gain/(loss)'],
+    rows.map(r=>[r.invNo,r.party,fmtDate(r.date),r.cur,fmtN(r.fcOut),r.rate,fmtN(r.out),r.cr,fmtN(r.reval),fmtN(r.unreal)]));
+
+  return <PageShell>
+    <InfoNote>Create an invoice in USD, EUR, GBP… from the invoice form (Currency + exchange rate). The ledger is kept in ₹ at the booking rate. When the customer pays, Bank Reconciliation books the difference between the ₹ received and the ₹ booked as <b>Foreign Exchange Gain / Loss</b> automatically. At period end, revalue what is still open here.</InfoNote>
+    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:14}}>
+      <Kpi label="Open foreign invoices" value={String(open.length)} sub={curs.join(', ')||'none'}/>
+      <Kpi label="Booked value (₹)" value={fmt(rows.reduce((s,r)=>s+r.out,0))}/>
+      <Kpi label="Unrealised gain / (loss)" value={fmt(totalUnreal)} color={totalUnreal>=0?'var(--green)':'var(--red)'} sub="at the closing rates below"/>
+      <Kpi label={`Realised FY ${selFY}-${String(selFY+1).slice(2)}`} value={fmt(gainTot-lossTot)} color={gainTot-lossTot>=0?'var(--green)':'var(--red)'} sub={`gain ${fmt(gainTot)} · loss ${fmt(lossTot)}`}/>
+    </div>
+    <TabBar value={tab} onChange={setTab} tabs={[['exposure','Exposure & revaluation'],['rates','Exchange rates'],['realised','Realised gain / loss']]}/>
+
+    {tab==='exposure'&&<>
+      <div style={{display:'flex',gap:12,alignItems:'flex-end',flexWrap:'wrap',marginBottom:12}}>
+        <div className="field" style={{marginBottom:0}}><label className="field-label">Revalue as on</label><input type="date" className="field-input" value={asOn} onChange={e=>setAsOn(e.target.value)}/></div>
+        {curs.map(c=><div className="field" key={c} style={{marginBottom:0}}><label className="field-label">Closing rate — ₹ per {c}</label><input type="number" className="field-input" style={{width:130}} value={close[c]!==undefined?close[c]:(rates[c]?rates[c].rate:'')} onChange={e=>setClose(x=>({...x,[c]:e.target.value}))}/></div>)}
+        <div style={{flex:1}}/><ExportMenu onExport={doExport} disabled={!rows.length}/>
+      </div>
+      {rows.length===0?<Empty text="No open foreign-currency invoices."/>:<>
+        <Wrap min={1000}><HeadRow><th style={th}>Invoice</th><th style={th}>Customer</th><th style={th}>Date</th><th style={thR}>Outstanding (FC)</th><th style={thR}>Booked rate</th><th style={thR}>Booked ₹</th><th style={thR}>Closing rate</th><th style={thR}>Revalued ₹</th><th style={thR}>Unrealised</th></HeadRow>
+          <tbody>{rows.map(r=><tr key={r.invNo} style={{borderBottom:'1px solid var(--border)'}}><td style={{...td,fontFamily:'monospace'}}>{r.invNo}</td><td style={td}>{r.party}</td><td style={td}>{fmtDate(r.date)}</td><td style={tdR}>{fmtC(r.fcOut,r.cur)}</td><td style={tdR}>{r.rate}</td><td style={tdR}>{fmt(r.out)}</td><td style={tdR}>{r.cr||'—'}</td><td style={tdR}>{fmt(r.reval)}</td><td style={{...tdR,fontWeight:700,color:r.unreal>=0?'var(--green)':'var(--red)'}}>{fmt(r.unreal)}</td></tr>)}</tbody></Wrap>
+        <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap',marginTop:12}}>
+          <label style={{display:'flex',gap:6,alignItems:'center',fontSize:12,cursor:'pointer'}}><input type="checkbox" checked={autoRev} onChange={e=>setAutoRev(e.target.checked)}/> Auto-reverse the next day (recommended — the real gain/loss is booked when the customer pays)</label>
+          <button className="btn btn-primary" onClick={postReval} disabled={!rows.length}>Post revaluation journal ({fmt(totalUnreal)})</button></div>
+        {missing.length>0&&<div style={{fontSize:11.5,color:'var(--red)',marginTop:6}}>Enter a closing rate for {missing.join(', ')}.</div>}
+      </>}
+    </>}
+
+    {tab==='rates'&&<>
+      <div style={{display:'flex',gap:10,alignItems:'flex-end',flexWrap:'wrap',marginBottom:14}}>
+        <div className="field" style={{marginBottom:0}}><label className="field-label">Currency</label><select className="field-input" value={newCur} onChange={e=>setNewCur(e.target.value)}>{FX_CURRENCIES.filter(c=>c.code!=='INR').map(c=><option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}</select></div>
+        <div className="field" style={{marginBottom:0}}><label className="field-label">₹ per 1 unit</label><input type="number" className="field-input" value={newRate} onChange={e=>setNewRate(e.target.value)}/></div>
+        <div className="field" style={{marginBottom:0}}><label className="field-label">As on</label><input type="date" className="field-input" value={newDate} onChange={e=>setNewDate(e.target.value)}/></div>
+        <button className="btn btn-primary" onClick={addRate}>Save rate</button></div>
+      {Object.keys(rates).length===0?<Empty text="No rates saved yet. They are remembered automatically whenever you save a foreign-currency invoice."/>:
+        <Wrap min={520}><HeadRow><th style={th}>Currency</th><th style={thR}>₹ per unit</th><th style={th}>As on</th></HeadRow><tbody>{Object.entries(rates).map(([c,v])=><tr key={c} style={{borderBottom:'1px solid var(--border)'}}><td style={td}>{c} — {(FX_CURRENCIES.find(x=>x.code===c)||{}).name}</td><td style={tdR}>{v.rate}</td><td style={td}>{fmtDate(v.date)}</td></tr>)}</tbody></Wrap>}
+    </>}
+
+    {tab==='realised'&&<>
+      <div style={{marginBottom:12}}><FyPicker value={selFY} onChange={setSelFY}/></div>
+      {fxLines.length===0?<Empty text="No exchange gain or loss has been booked in this year."/>:
+        <Wrap min={760}><HeadRow><th style={th}>Date</th><th style={th}>Narration</th><th style={th}>Voucher</th><th style={thR}>Gain</th><th style={thR}>Loss</th></HeadRow>
+          <tbody>{fxLines.map((l,i)=><tr key={i} style={{borderBottom:'1px solid var(--border)'}}><td style={td}>{fmtDate(l.date)}</td><td style={td}>{l.narration}</td><td style={{...td,fontFamily:'monospace',fontSize:11}}>{l.voucherNo}</td>
+            <td style={{...tdR,color:'var(--green)'}}>{l.account==='FX_GAIN'?fmt(l.credit-l.debit):''}</td><td style={{...tdR,color:'var(--red)'}}>{l.account==='FX_LOSS'?fmt(l.debit-l.credit):''}</td></tr>)}</tbody></Wrap>}
+    </>}
+  </PageShell>;
+};
+
+/* ═══════════════ CASH FLOW STATEMENT + RATIO ANALYSIS ═══════════════ */
+const CashFlowRatiosPage = ({currentUser}) => {
+  const [tab,setTab]=useState('cashflow');
+  const [selFY,setSelFY]=useState(getFY());
+  const [from,setFrom]=useState(fyStartOf(getFY()));
+  const [to,setTo]=useState(today());
+  const pickFY=y=>{ setSelFY(y); setFrom(fyStartOf(y)); const e=fyEndOf(y); setTo(e<today()?e:today()); };
+  const cf=useMemo(()=>getCashFlow(from,to),[from,to]);
+  const rt=useMemo(()=>getRatios(from,to),[from,to]);
+  const rtPrev=useMemo(()=>getRatios(shiftYear(from,-1),shiftYear(to,-1)),[from,to]);
+  const prevMap={}; rtPrev.list.forEach(x=>{prevMap[x.k]=x.v;});
+  const col={good:'var(--green)',warn:'var(--gold)',bad:'var(--red)'};
+  const Sec=({title,rows,total,totalLabel})=><>
+    <tr style={{background:'var(--card2)'}}><td colSpan={2} style={{...td,fontWeight:800,fontSize:12.5}}>{title}</td></tr>
+    {rows.length===0&&<tr><td style={{...td,paddingLeft:28,color:'var(--text3)'}}>No movement</td><td style={tdR}>—</td></tr>}
+    {rows.map((r,i)=><tr key={i} style={{borderBottom:'1px solid var(--border)'}}><td style={{...td,paddingLeft:28}}>{r.label}</td><td style={tdR}>{fmt(r.amount)}</td></tr>)}
+    <tr style={{borderBottom:'2px solid var(--border2)'}}><td style={{...td,fontWeight:800}}>{totalLabel}</td><td style={{...tdR,fontWeight:800,color:total>=0?'var(--green)':'var(--red)'}}>{fmt(total)}</td></tr></>;
+  const doExport=f=>{
+    if(tab==='cashflow'){ const rows=[['Net profit for the period',fmtN(cf.netProfit)],...cf.adj.map(r=>['  '+r.label,fmtN(r.amount)]),...cf.wc.map(r=>['  '+r.label,fmtN(r.amount)]),['NET CASH FROM OPERATING ACTIVITIES',fmtN(cf.cfo)],...cf.invAll.map(r=>['  '+r.label,fmtN(r.amount)]),['NET CASH FROM INVESTING ACTIVITIES',fmtN(cf.cfi)],...cf.fin.map(r=>['  '+r.label,fmtN(r.amount)]),['NET CASH FROM FINANCING ACTIVITIES',fmtN(cf.cff)],['NET INCREASE / (DECREASE) IN CASH',fmtN(cf.netChange)],['Cash & bank — opening',fmtN(cf.cashOpen)],['Cash & bank — closing',fmtN(cf.cashClose)]];
+      exportTableAs(f,`CashFlow_${from}_to_${to}`,`Cash Flow Statement (${fmtDate(from)} to ${fmtDate(to)})`,['Particulars','Amount (Rs)'],rows); }
+    else exportTableAs(f,`Ratios_${from}_to_${to}`,`Ratio Analysis (${fmtDate(from)} to ${fmtDate(to)})`,['Group','Ratio','This period','Previous year','How it is calculated'],rt.list.map(x=>[x.g,x.label,fmtRatio(x.v,x.t),fmtRatio(prevMap[x.k],x.t),x.note]));
+  };
+  const groups=['Liquidity','Profitability','Leverage','Efficiency'];
+  return <PageShell>
+    <div style={{display:'flex',gap:12,alignItems:'flex-end',flexWrap:'wrap',marginBottom:12}}>
+      <FyPicker value={selFY} onChange={pickFY}/>
+      <div className="field" style={{marginBottom:0}}><label className="field-label">From</label><input type="date" className="field-input" value={from} onChange={e=>setFrom(e.target.value)}/></div>
+      <div className="field" style={{marginBottom:0}}><label className="field-label">To</label><input type="date" className="field-input" value={to} onChange={e=>setTo(e.target.value)}/></div>
+      <div style={{flex:1}}/><ExportMenu onExport={doExport}/>
+    </div>
+    <TabBar value={tab} onChange={setTab} tabs={[['cashflow','Cash Flow Statement'],['ratios','Ratio Analysis']]}/>
+    {tab==='cashflow'&&<>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:14}}>
+        <Kpi label="Operating" value={fmt(cf.cfo)} color={cf.cfo>=0?'var(--green)':'var(--red)'}/><Kpi label="Investing" value={fmt(cf.cfi)} color={cf.cfi>=0?'var(--green)':'var(--gold)'}/><Kpi label="Financing" value={fmt(cf.cff)}/><Kpi label="Closing cash & bank" value={fmt(cf.cashClose)} color="var(--primary2)"/></div>
+      <Wrap min={560}><tbody>
+        <tr style={{background:'var(--card2)'}}><td style={{...td,fontWeight:800}}>A. Cash flow from operating activities</td><td style={tdR}></td></tr>
+        <tr style={{borderBottom:'1px solid var(--border)'}}><td style={{...td,paddingLeft:28}}>Net profit for the period</td><td style={tdR}>{fmt(cf.netProfit)}</td></tr>
+        {cf.adj.map((r,i)=><tr key={'a'+i} style={{borderBottom:'1px solid var(--border)'}}><td style={{...td,paddingLeft:28}}>Add / (less): {r.label}</td><td style={tdR}>{fmt(r.amount)}</td></tr>)}
+        {cf.wc.map((r,i)=><tr key={'w'+i} style={{borderBottom:'1px solid var(--border)'}}><td style={{...td,paddingLeft:28}}>{r.label}</td><td style={tdR}>{fmt(r.amount)}</td></tr>)}
+        <tr style={{borderBottom:'2px solid var(--border2)'}}><td style={{...td,fontWeight:800}}>Net cash from operating activities</td><td style={{...tdR,fontWeight:800,color:cf.cfo>=0?'var(--green)':'var(--red)'}}>{fmt(cf.cfo)}</td></tr>
+        <Sec title="B. Cash flow from investing activities" rows={cf.invAll} total={cf.cfi} totalLabel="Net cash from investing activities"/>
+        <Sec title="C. Cash flow from financing activities" rows={cf.fin} total={cf.cff} totalLabel="Net cash from financing activities"/>
+        <tr style={{background:'var(--card2)'}}><td style={{...td,fontWeight:800}}>Net increase / (decrease) in cash (A+B+C)</td><td style={{...tdR,fontWeight:800}}>{fmt(cf.netChange)}</td></tr>
+        <tr><td style={td}>Cash &amp; bank at the beginning</td><td style={tdR}>{fmt(cf.cashOpen)}</td></tr>
+        <tr><td style={{...td,fontWeight:800}}>Cash &amp; bank at the end</td><td style={{...tdR,fontWeight:800}}>{fmt(cf.cashClose)}</td></tr>
+      </tbody></Wrap>
+      <div style={{marginTop:10,fontSize:12,color:Math.abs(cf.diff)<0.5?'var(--green)':'var(--red)'}}>{Math.abs(cf.diff)<0.5?'✓ Ties to the closing balance of your Cash & Bank ledgers.':'⚠ Difference of '+fmt(cf.diff)+' against ledger cash — check for entries dated outside the period.'}</div>
+      <div style={{fontSize:11,color:'var(--text3)',marginTop:4}}>Indirect method (AS-3 / Ind AS 7). Interest paid is left inside operating activities.</div>
+    </>}
+    {tab==='ratios'&&<>
+      <div style={{fontSize:12,color:'var(--text3)',marginBottom:12}}>Period of {rt.base.days} days · revenue {fmt(rt.base.revenue)} · net profit {fmt(rt.base.np)}. Compared with the same period last year.</div>
+      {groups.map(g=><div key={g} style={{marginBottom:18}}>
+        <div style={{fontWeight:800,fontSize:13,marginBottom:8}}>{g}</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(230px,1fr))',gap:10}}>
+          {rt.list.filter(x=>x.g===g).map(x=>{ const st=x.v==null?null:x.good(x.v); const pv=prevMap[x.k];
+            return <div key={x.k} className="card" style={{padding:'12px 14px',borderLeft:`3px solid ${st?col[st]:'var(--border2)'}`}} title={x.note}>
+              <div style={{fontSize:11,color:'var(--text3)',fontWeight:600}}>{x.label}</div>
+              <div style={{fontSize:21,fontWeight:800,fontFamily:'Sora,sans-serif',color:st?col[st]:'var(--text3)',margin:'4px 0'}}>{fmtRatio(x.v,x.t)}</div>
+              <div style={{fontSize:10.5,color:'var(--text3)'}}>Last year: {fmtRatio(pv,x.t)}</div>
+              <div style={{fontSize:10,color:'var(--text3)',marginTop:4,lineHeight:1.35}}>{x.note}</div></div>; })}
+        </div></div>)}
+    </>}
+  </PageShell>;
+};
+
+/* ═══════════════ BUDGET VS ACTUAL ═══════════════ */
+const BudgetPage = ({currentUser}) => {
+  const [selFY,setSelFY]=useState(getFY());
+  const [kind,setKind]=useState('expense');
+  const [edit,setEdit]=useState(false);
+  const [draft,setDraft]=useState({});
+  const nowIdx=(new Date().getMonth()+9)%12;
+  const [m1,setM1]=useState(0); const [m2,setM2]=useState(selFY===getFY()?nowIdx:11);
+  const [uplift,setUplift]=useState('10');
+  const [tick,setTick]=useState(0);
+  const budget=useMemo(()=>getBudgetFY(selFY),[selFY,tick]);
+  const actual=useMemo(()=>getMonthlyActuals(selFY),[selFY,tick]);
+  const accts=getAllAccounts().filter(a=>a.type===kind && !a.groupOnly);
+  const sumR=(arr,a,b)=>(arr||new Array(12).fill(0)).slice(a,b+1).reduce((s,v)=>s+(parseFloat(v)||0),0);
+  const heads=accts.filter(a=>edit||sumR(budget[a.key],0,11)!==0||sumR(actual[a.key],0,11)!==0);
+  const changeFY=y=>{ setSelFY(y); setM1(0); setM2(y===getFY()?nowIdx:11); setEdit(false); };
+  const rows=heads.map(a=>{ const b=sumR(budget[a.key],m1,m2), ac=sumR(actual[a.key],m1,m2); const isExp=kind==='expense';
+    const variance=isExp?r2(b-ac):r2(ac-b); const pct=b>0?ac/b*100:(ac>0?999:0);
+    const st=b<=0?(ac>0?'unbudgeted':'none'):isExp?(pct>100?'over':pct>=90?'near':'ok'):(pct>=100?'ok':pct>=80?'near':'over'); return {a,b,ac,variance,pct,st}; });
+  const tb=rows.reduce((s,r)=>s+r.b,0), ta=rows.reduce((s,r)=>s+r.ac,0), overN=rows.filter(r=>r.st==='over'||r.st==='unbudgeted').length;
+  const stCol={ok:'var(--green)',near:'var(--gold)',over:'var(--red)',unbudgeted:'var(--red)',none:'var(--text3)'};
+  const stTxt=kind==='expense'?{ok:'Within budget',near:'Near limit',over:'Over budget',unbudgeted:'No budget set',none:''}:{ok:'On target',near:'Slightly behind',over:'Behind target',unbudgeted:'No target set',none:''};
+
+  const startEdit=()=>{ const d={}; accts.forEach(a=>{ d[a.key]=(budget[a.key]||new Array(12).fill(0)).map(v=>v||''); }); setDraft(d); setEdit(true); };
+  const setM=(k,i,v)=>setDraft(d=>({...d,[k]:d[k].map((x,j)=>j===i?v:x)}));
+  const setAnnual=(k,v)=>{ const n=parseFloat(v)||0; setDraft(d=>({...d,[k]:new Array(12).fill(0).map((_,i)=>n?r2(n/12):'')})); };
+  const fromLY=()=>{ const ly=getMonthlyActuals(selFY-1), f=1+(parseFloat(uplift)||0)/100; setDraft(d=>{ const n={...d}; accts.forEach(a=>{ if(ly[a.key]) n[a.key]=ly[a.key].map(v=>v?r2(v*f):''); }); return n; }); toast.info(`Filled from FY ${selFY-1} actuals +${uplift||0}% — review and save`); };
+  const saveDraft=()=>{ const all={...budget}; accts.forEach(a=>{ const arr=(draft[a.key]||[]).map(v=>parseFloat(v)||0); if(arr.some(v=>v)) all[a.key]=arr; else delete all[a.key]; }); saveBudgetFY(selFY,all); logAudit('BUDGET_SAVED',`FY ${selFY}-${String(selFY+1).slice(2)} ${kind}`,currentUser); setEdit(false); setTick(t=>t+1); toast.success('Budget saved'); };
+  const doExport=f=>exportTableAs(f,`Budget_vs_Actual_FY${selFY}_${kind}`,`Budget vs Actual — ${kind==='expense'?'Expense':'Income'} heads (${FY_MONTHS[m1]} to ${FY_MONTHS[m2]} FY ${selFY}-${String(selFY+1).slice(2)})`,['Head','Budget','Actual','Variance','% used'],
+    [...rows.map(r=>[r.a.name,fmtN(r.b),fmtN(r.ac),fmtN(r.variance),r.b>0?r.pct.toFixed(1)+'%':'—']),['Total',fmtN(tb),fmtN(ta),fmtN(kind==='expense'?tb-ta:ta-tb),tb>0?(ta/tb*100).toFixed(1)+'%':'—']]);
+
+  return <PageShell>
+    <div style={{display:'flex',gap:12,alignItems:'flex-end',flexWrap:'wrap',marginBottom:12}}>
+      <FyPicker value={selFY} onChange={changeFY}/>
+      <div className="field" style={{marginBottom:0}}><label className="field-label">From month</label><select className="field-input" value={m1} onChange={e=>setM1(Math.min(+e.target.value,m2))}>{FY_MONTHS.map((m,i)=><option key={m} value={i}>{m}</option>)}</select></div>
+      <div className="field" style={{marginBottom:0}}><label className="field-label">To month</label><select className="field-input" value={m2} onChange={e=>setM2(Math.max(+e.target.value,m1))}>{FY_MONTHS.map((m,i)=><option key={m} value={i}>{m}</option>)}</select></div>
+      <div style={{flex:1}}/>
+      {!edit&&<ExportMenu onExport={doExport} disabled={!rows.length}/>}
+      {!edit?<button className="btn btn-primary" onClick={startEdit}>Set / edit budget</button>:<><button className="btn btn-primary" onClick={saveDraft}>Save budget</button><button className="btn btn-outline" onClick={()=>setEdit(false)}>Cancel</button></>}
+    </div>
+    <TabBar value={kind} onChange={k=>{setKind(k);setEdit(false);}} tabs={[['expense','Expense heads'],['income','Income heads']]}/>
+    {!edit&&<>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:14}}>
+        <Kpi label="Budget" value={fmt(tb)}/><Kpi label="Actual" value={fmt(ta)} color="var(--primary2)"/>
+        <Kpi label={kind==='expense'?'Remaining / (overspent)':'Ahead / (behind)'} value={fmt(kind==='expense'?tb-ta:ta-tb)} color={(kind==='expense'?tb-ta:ta-tb)>=0?'var(--green)':'var(--red)'}/>
+        <Kpi label="Heads needing attention" value={String(overN)} color={overN?'var(--red)':'var(--green)'} sub={kind==='expense'?'over budget or unbudgeted':'behind target'}/></div>
+      {rows.length===0?<Empty text={'No budget or activity yet. Click “Set / edit budget” to enter one for each head.'}/>:
+      <Wrap min={820}><HeadRow><th style={th}>Head</th><th style={thR}>Budget</th><th style={thR}>Actual</th><th style={thR}>{kind==='expense'?'Remaining':'Ahead/(behind)'}</th><th style={{...th,minWidth:170}}>Used</th><th style={th}>Status</th></HeadRow>
+        <tbody>{rows.map(r=><tr key={r.a.key} style={{borderBottom:'1px solid var(--border)'}}>
+          <td style={{...td,fontWeight:600}}>{r.a.name}</td><td style={tdR}>{r.b?fmt(r.b):'—'}</td><td style={tdR}>{fmt(r.ac)}</td>
+          <td style={{...tdR,fontWeight:700,color:r.variance>=0?'var(--green)':'var(--red)'}}>{r.b||r.ac?fmt(r.variance):'—'}</td>
+          <td style={td}><div style={{display:'flex',alignItems:'center',gap:8}}><div style={{flex:1,height:7,background:'var(--card3)',borderRadius:4,overflow:'hidden'}}><div style={{width:Math.min(100,r.pct)+'%',height:'100%',background:stCol[r.st]}}/></div><span style={{fontSize:11,minWidth:40,textAlign:'right'}}>{r.b>0?r.pct.toFixed(0)+'%':'—'}</span></div></td>
+          <td style={{...td,color:stCol[r.st],fontWeight:600,fontSize:11.5}}>{stTxt[r.st]}</td></tr>)}
+          <tr style={{background:'var(--card2)',fontWeight:800}}><td style={td}>Total</td><td style={tdR}>{fmt(tb)}</td><td style={tdR}>{fmt(ta)}</td><td style={tdR}>{fmt(kind==='expense'?tb-ta:ta-tb)}</td><td style={td}>{tb>0?(ta/tb*100).toFixed(0)+'%':'—'}</td><td style={td}></td></tr></tbody></Wrap>}
+    </>}
+    {edit&&<>
+      <InfoNote>Type a <b>yearly</b> figure to spread it evenly across the 12 months, or type each month yourself (seasonal costs). Leave a head blank for no budget. Actuals come straight from the ledger.</InfoNote>
+      <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:10,flexWrap:'wrap'}}><span style={{fontSize:12}}>Quick fill from last year’s actuals, plus</span>
+        <input type="number" className="field-input" style={{width:70,padding:'5px 8px'}} value={uplift} onChange={e=>setUplift(e.target.value)}/><span style={{fontSize:12}}>%</span>
+        <button className="btn btn-sm btn-outline-primary" onClick={fromLY}>Fill budget</button></div>
+      <div style={{overflow:'auto',maxHeight:'58vh',border:'1px solid var(--border)',borderRadius:10}}>
+        <table style={{borderCollapse:'collapse',minWidth:1250,width:'100%'}}><thead><tr style={{background:'var(--card2)',position:'sticky',top:0,zIndex:2}}><th style={{...th,minWidth:200}}>Head</th><th style={thR}>Yearly</th>{FY_MONTHS.map(m=><th key={m} style={thR}>{m}</th>)}</tr></thead>
+          <tbody>{accts.map(a=>{ const arr=draft[a.key]||new Array(12).fill(''); const yr=r2(arr.reduce((s,v)=>s+(parseFloat(v)||0),0));
+            return <tr key={a.key} style={{borderBottom:'1px solid var(--border)'}}><td style={{...td,fontWeight:600}}>{a.name}</td>
+              <td style={{padding:'4px 6px'}}><input type="number" className="field-input" style={{width:100,padding:'5px 6px',textAlign:'right'}} value={yr||''} onChange={e=>setAnnual(a.key,e.target.value)} placeholder="0"/></td>
+              {arr.map((v,i)=><td key={i} style={{padding:'4px 3px'}}><input type="number" className="field-input" style={{width:74,padding:'5px 5px',textAlign:'right',fontSize:11.5}} value={v} onChange={e=>setM(a.key,i,e.target.value)}/></td>)}</tr>; })}</tbody></table></div>
+    </>}
+  </PageShell>;
+};
+
+
+/* ═══════════ TOP BAR (white header) ═══════════ */
+const PAGE_TITLES = {
+            invoice:'New Invoice',history:'Invoice History',pohistory:'Purchase Orders',
+            expenses:'Purchases',customers:'Customer Database',
+            dashboard:'Dashboard',company:'Company Settings',hsn:'HSN / SAC Database',
+            terms:'Terms & Conditions',admin:'Admin Panel',
+            inventory:'Inventory & Stock',aging:'Ageing — Receivables & Payables',bankrecon:'Bank Reconciliation',salesview:'Sales',reports:'Financial Statements',
+            coa:'Chart of Accounts',journal:'Journal Vouchers',ledger:'General Ledger',trialbalance:'Trial Balance',cashflow:'Cash Flow & Ratio Analysis',budget:'Budget vs Actual',fixedassets:'Fixed Asset Register',recjournal:'Recurring Journal Vouchers',advances:'Advance & Credit Note Application',fxpage:'Multi-Currency & Exchange Gain/Loss',
+            quotations:'Quotations / Estimates',dc:'Delivery Challans',recurring:'Recurring Invoices',reminders:'Payment Reminders'
+          };
+const PAGE_SECTIONS = {invoice:'Sales',history:'Sales',quotations:'Sales',dc:'Sales',recurring:'Sales',salesview:'Sales',reminders:'Sales',customers:'Sales',
+  pohistory:'Purchases',expenses:'Purchases',inventory:'Inventory',dashboard:'Overview',
+  aging:'Accounting',bankrecon:'Accounting',reports:'Accounting',coa:'Accounting',journal:'Accounting',ledger:'Accounting',trialbalance:'Accounting',
+  cashflow:'Accounting',budget:'Accounting',fixedassets:'Accounting',recjournal:'Accounting',advances:'Accounting',fxpage:'Accounting',
+  company:'Settings',hsn:'Settings',terms:'Settings',admin:'Settings'};
+const SEARCHABLE_PAGES = ['history','pohistory','expenses','customers','hsn'];
+const useClickAway = (ref, fn) => { useEffect(()=>{ const h=e=>{ if(ref.current && !ref.current.contains(e.target)) fn(); }; document.addEventListener('mousedown',h); return ()=>document.removeEventListener('mousedown',h); },[]); };
+
+const TopSearch = ({page,value,onChange,onGoSearch}) => {
+  const ref=useRef(null);
+  useEffect(()=>{ const h=e=>{ if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){ e.preventDefault(); ref.current&&ref.current.focus(); } }; window.addEventListener('keydown',h); return ()=>window.removeEventListener('keydown',h); },[]);
+  const can=SEARCHABLE_PAGES.includes(page);
+  return <div className="tb2-search">
+    <Ic n="search" s={14}/>
+    <input ref={ref} value={value} onChange={e=>onChange(e.target.value)} placeholder={can?'Search this list…':'Search invoices, customers…  (Enter)'}
+      onKeyDown={e=>{ if(e.key==='Enter'&&!can&&value.trim()) onGoSearch(); if(e.key==='Escape'){ onChange(''); e.target.blur(); } }}/>
+    {value?<button className="tb2-clear" title="Clear" onClick={()=>onChange('')}><Ic n="x" s={11}/></button>:<kbd>Ctrl K</kbd>}
+  </div>;
+};
+
+const TopQuickCreate = ({user,canSee,go,newInvoice}) => {
+  const [open,setOpen]=useState(false); const ref=useRef(null); useClickAway(ref,()=>setOpen(false));
+  const items=[
+    ['Sales invoice','Create a GST invoice',()=>newInvoice(),'file',true],
+    ['Purchase bill','Record a vendor bill',()=>go('expenses'),'cart',canSee(user.role,'expenses')],
+    ['Journal voucher','Manual accounting entry',()=>go('journal'),'list',canSee(user.role,'reports')],
+    ['Bank entry','Match receipts & payments',()=>go('bankrecon'),'bank',canSee(user.role,'bankrecon')],
+    ['Customer','Add to customer database',()=>go('customers'),'users',canSee(user.role,'customers')],
+  ].filter(x=>x[4]);
+  return <div className="tb2-menu-wrap" ref={ref}>
+    <button className="tb2-new" onClick={()=>setOpen(o=>!o)}><Ic n="plus" s={14}/><span className="tb2-hide-sm">New</span><Ic n="chevron" s={10}/></button>
+    {open&&<div className="tb2-menu" style={{right:0,minWidth:250}}>
+      <div className="tb2-menu-head">Create new</div>
+      {items.map(([t,sub,fn,ic])=><div key={t} className="tb2-menu-item" onClick={()=>{setOpen(false);fn();}}>
+        <span className="tb2-menu-ic"><Ic n={ic} s={14}/></span><span><div className="tb2-menu-t">{t}</div><div className="tb2-menu-s">{sub}</div></span></div>)}
+    </div>}
+  </div>;
+};
+
+const SyncDot = () => {
+  const [ok,setOk]=useState(_cloudReady);
+  useEffect(()=>{ const t=setInterval(()=>setOk(_cloudReady),4000); return ()=>clearInterval(t); },[]);
+  return <div className={'tb2-sync '+(ok?'ok':'off')} title={ok?'Connected — all changes are saved to the cloud':'Offline — changes will NOT be saved until the connection returns'}>
+    <span className="tb2-sync-dot"/><span className="tb2-hide-md">{ok?'Synced':'Offline'}</span></div>;
+};
+
+const TopUserMenu = ({user,theme,setTheme,logout,goCompany}) => {
+  const [open,setOpen]=useState(false); const ref=useRef(null); useClickAway(ref,()=>setOpen(false));
+  return <div className="tb2-menu-wrap" ref={ref}>
+    <div className={'tb2-user'+(open?' open':'')} onClick={()=>setOpen(o=>!o)}>
+      <div className="tb2-avatar">{(user.name||'?')[0].toUpperCase()}</div>
+      <div className="tb2-user-txt tb2-hide-sm"><div className="tb2-user-name">{user.name}</div><div className="tb2-role">{user.role}</div></div>
+      <Ic n="chevron" s={10}/>
+    </div>
+    {open&&<div className="tb2-menu" style={{right:0,minWidth:220}}>
+      <div className="tb2-menu-head" style={{textTransform:'none',letterSpacing:0}}><b style={{color:'var(--text)',fontSize:13}}>{user.name}</b><div style={{fontSize:11,color:'var(--text3)',fontWeight:500}}>{user.email||user.role}</div></div>
+      <div className="tb2-menu-item" onClick={()=>{setTheme(t=>t==='dark'?'light':'dark');setOpen(false);}}><span className="tb2-menu-ic"><Ic n={theme==='dark'?'sun':'moon'} s={14}/></span><span className="tb2-menu-t">{theme==='dark'?'Switch to light mode':'Switch to dark mode'}</span></div>
+      <div className="tb2-menu-item" onClick={()=>{setOpen(false);goCompany();}}><span className="tb2-menu-ic"><Ic n="settings" s={14}/></span><span className="tb2-menu-t">Company settings</span></div>
+      <div className="tb2-menu-sep"/>
+      <div className="tb2-menu-item danger" onClick={()=>{setOpen(false);logout();}}><span className="tb2-menu-ic"><Ic n="logout" s={14}/></span><span className="tb2-menu-t">Log out</span></div>
+    </div>}
+  </div>;
+};
+
 const NavGroup = ({icon, label, page, childKeys, children})=>{
   const anyActive = childKeys.some(k=>k===page);
   const [open,setOpen]=useState(anyActive);
@@ -11380,6 +12666,7 @@ const App = ()=>{
       try{ ensureDefaultExpenseHeads(); }catch(err){ console.warn('Expense head seeding skipped:', err.message); }
       try{ ensureVoucherNumbers(); }catch(err){ console.warn('Voucher number backfill skipped:', err.message); }
       try{ ensureTxnRefNumbers(); }catch(err){ console.warn('Transaction reference number backfill skipped:', err.message); }
+      try{ const n=runRecurringJournals(user); if(n) setTimeout(()=>toast.info(n+' recurring journal voucher'+(n===1?'':'s')+' posted automatically'),1500); }catch(err){ console.warn('Recurring journals skipped:', err.message); }
       setLoadMsg('Almost ready...');
       seedUsers();
       const _p=(S.get(SK.USERS,[])||[]).find(u=>u.email&&u.email.toLowerCase()===(fu.email||'').toLowerCase());
@@ -11565,12 +12852,18 @@ const App = ()=>{
           onClick={()=>{setPage('salesview');setModal(null);setMobSidebarOpen(false);}} active={page==='salesview'&&!modal}/>}
 
         {canSee(user.role,'reports')&&
-        <NavGroup icon={<Ic n="chart" s={17}/>} label="Accounting" page={page} childKeys={['reports','coa','journal','ledger','trialbalance']}>
+        <NavGroup icon={<Ic n="chart" s={17}/>} label="Accounting" page={page} childKeys={['reports','coa','journal','ledger','trialbalance','cashflow','budget','fixedassets','recjournal','advances','fxpage']}>
           <NavItem icon={<Ic n="chart" s={14}/>} label="Financial Statements" onClick={()=>{setPage('reports');setModal(null);setMobSidebarOpen(false);}} active={page==='reports'&&!modal}/>
           <NavItem icon={<Ic n="list" s={14}/>} label="Chart of Accounts" onClick={()=>{setPage('coa');setModal(null);setMobSidebarOpen(false);}} active={page==='coa'&&!modal}/>
           <NavItem icon={<Ic n="file" s={14}/>} label="Journal Vouchers" onClick={()=>{setPage('journal');setModal(null);setMobSidebarOpen(false);}} active={page==='journal'&&!modal}/>
           <NavItem icon={<Ic n="history" s={14}/>} label="General Ledger" onClick={()=>{setPage('ledger');setModal(null);setMobSidebarOpen(false);}} active={page==='ledger'&&!modal}/>
           <NavItem icon={<Ic n="dollar" s={14}/>} label="Trial Balance" onClick={()=>{setPage('trialbalance');setModal(null);setMobSidebarOpen(false);}} active={page==='trialbalance'&&!modal}/>
+          <NavItem icon={<Ic n="chart" s={14}/>} label="Cash Flow & Ratios" onClick={()=>{setPage('cashflow');setModal(null);setMobSidebarOpen(false);}} active={page==='cashflow'&&!modal}/>
+          <NavItem icon={<Ic n="list" s={14}/>} label="Budget vs Actual" onClick={()=>{setPage('budget');setModal(null);setMobSidebarOpen(false);}} active={page==='budget'&&!modal}/>
+          <NavItem icon={<Ic n="dollar" s={14}/>} label="Fixed Assets" onClick={()=>{setPage('fixedassets');setModal(null);setMobSidebarOpen(false);}} active={page==='fixedassets'&&!modal}/>
+          <NavItem icon={<Ic n="history" s={14}/>} label="Recurring Journals" onClick={()=>{setPage('recjournal');setModal(null);setMobSidebarOpen(false);}} active={page==='recjournal'&&!modal}/>
+          <NavItem icon={<Ic n="file" s={14}/>} label="Advance Application" onClick={()=>{setPage('advances');setModal(null);setMobSidebarOpen(false);}} active={page==='advances'&&!modal}/>
+          <NavItem icon={<Ic n="dollar" s={14}/>} label="Multi-Currency (FX)" onClick={()=>{setPage('fxpage');setModal(null);setMobSidebarOpen(false);}} active={page==='fxpage'&&!modal}/>
         </NavGroup>}
 
         {(canSee(user.role,'quotations')||canSee(user.role,'dc')||canSee(user.role,'recurring')||canSee(user.role,'reminders'))&&
@@ -11651,63 +12944,39 @@ const App = ()=>{
           <div style={{width:11,height:2,borderRadius:2,background:'var(--text2)'}}/>
         </button>
 
-        {/* LEFT — Company Identity */}
-        <div className="topbar-company">
-          <LogoIcon size={32}/>
-          <div className="topbar-company-info">
-            <div className="topbar-company-name">{S.get(SK.CO,{}).name||'Arctic Books'}</div>
-            <div className="topbar-company-gstin">{S.get(SK.CO,{}).gstin?`GSTIN: ${S.get(SK.CO,{}).gstin}`:'Complete Accounting Software'}</div>
+        {/* LEFT — company chip */}
+        <div className="tb2-company" title={S.get(SK.CO,{}).name||'Arctic Books'}>
+          <LogoIcon size={30}/>
+          <div className="tb2-company-info">
+            <div className="tb2-company-name">{S.get(SK.CO,{}).name||'Arctic Books'}</div>
+            <div className="tb2-company-gstin">{S.get(SK.CO,{}).gstin?`GSTIN ${S.get(SK.CO,{}).gstin}`:'Complete Accounting Software'}</div>
           </div>
         </div>
 
-        {/* CENTER — Page Context */}
-        <div className="topbar-center">
-          <div className="topbar-page-dot"/>
-          <span className="topbar-page-label">{{
-            invoice:'New Invoice',history:'Invoice History',pohistory:'Purchase Orders',
-            expenses:'Purchases',customers:'Customer Database',
-            dashboard:'Dashboard',company:'Company Settings',hsn:'HSN / SAC Database',
-            terms:'Terms & Conditions',admin:'Admin Panel',
-            inventory:'Inventory & Stock',aging:'Ageing — Receivables & Payables',bankrecon:'Bank Reconciliation',salesview:'Sales',reports:'Financial Statements',
-            coa:'Chart of Accounts',journal:'Journal Vouchers',ledger:'General Ledger',trialbalance:'Trial Balance',
-            quotations:'Quotations / Estimates',dc:'Delivery Challans',recurring:'Recurring Invoices',reminders:'Payment Reminders'
-          }[page]||'Arctic Books'}</span>
-          <span className="topbar-page-sep">|</span>
-          <span className="topbar-page-sub">Arctic Books</span>
+        {/* PAGE CONTEXT — breadcrumb + title */}
+        <div className="tb2-page">
+          <div className="tb2-crumb"><span>{PAGE_SECTIONS[page]||'Arctic Books'}</span><Ic n="chevron" s={10}/><span className="tb2-crumb-now">{PAGE_TITLES[page]||'Arctic Books'}</span></div>
+          <div className="tb2-title">{PAGE_TITLES[page]||'Arctic Books'}</div>
         </div>
 
-        {/* RIGHT — Actions */}
-        <div className="topbar-right">
-          {/* Theme toggle */}
-          <div className="topbar-icon-btn" title="Toggle theme" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
-            {theme==='dark'?<Ic n="sun" s={15}/>:<Ic n="moon" s={15}/>}
-          </div>
+        {/* SEARCH */}
+        <div className="tb2-center">
+          <TopSearch page={page} value={searchQuery} onChange={setSearchQuery} onGoSearch={()=>{setModal(null);setPage('history');}}/>
+        </div>
 
-          {/* Overdue alert */}
-          {overdueCount>0&&(
-            <div className="topbar-icon-btn" style={{color:'var(--red)',borderColor:'rgba(248,81,73,0.3)'}}
-              title={`${overdueCount} overdue invoice${overdueCount>1?'s':''}`}
-              onClick={()=>{setPage('history');setModal(null);}}>
-              <Ic n="alert" s={15}/>
-              <span className="topbar-notif red">{overdueCount}</span>
-            </div>
-          )}
-
-          {/* Invoice count */}
-          <div className="topbar-icon-btn" title="Invoice History"
+        {/* ACTIONS */}
+        <div className="tb2-right">
+          <TopQuickCreate user={user} canSee={canSee} go={(p)=>{setModal(null);setSearchQuery('');setPage(p);}}
+            newInvoice={()=>{setLoadedInv(null);setFormKey(k=>k+1);setModal(null);setPage('invoice');}}/>
+          <div className="tb2-chip tb2-hide-md" title="Current financial year"><Ic n="calendar" s={12}/>FY {getFY()}-{String(getFY()+1).slice(2)}</div>
+          <SyncDot/>
+          <div className="tb2-divider"/>
+          <div className={'tb2-icon'+(overdueCount>0?' alert':'')} title={overdueCount>0?`${overdueCount} overdue invoice${overdueCount>1?'s':''} — click to review`:'No overdue invoices'}
             onClick={()=>{setPage('history');setModal(null);}}>
-            <Ic n="history" s={15}/>
-            {invCount>0&&<span className="topbar-notif">{invCount}</span>}
+            <Ic n="bell" s={16}/>{overdueCount>0&&<span className="tb2-badge">{overdueCount>99?'99+':overdueCount}</span>}
           </div>
-
-          {/* User pill */}
-          <div className="topbar-user">
-            <div className="topbar-avatar">{user.name[0]}</div>
-            <div>
-              <div className="topbar-user-name">{user.name}</div>
-              <div className="topbar-user-role">{user.role}</div>
-            </div>
-          </div>
+          <div className="tb2-icon tb2-hide-sm" title={`Invoice History (${invCount} documents)`} onClick={()=>{setPage('history');setModal(null);}}><Ic n="history" s={16}/></div>
+          <TopUserMenu user={user} theme={theme} setTheme={setTheme} logout={logout} goCompany={()=>{setModal(null);setPage('company');}}/>
         </div>
 
       </div>
@@ -11732,6 +13001,12 @@ const App = ()=>{
         {page==='journal'&&canSee(user.role,'reports')&&<JournalVouchersPage currentUser={user}/>}
         {page==='ledger'&&canSee(user.role,'reports')&&<GeneralLedgerPage/>}
         {page==='trialbalance'&&canSee(user.role,'reports')&&<TrialBalancePage/>}
+        {page==='cashflow'&&canSee(user.role,'reports')&&<CashFlowRatiosPage currentUser={user}/>}
+        {page==='budget'&&canSee(user.role,'reports')&&<BudgetPage currentUser={user}/>}
+        {page==='fixedassets'&&canSee(user.role,'reports')&&<FixedAssetsPage currentUser={user}/>}
+        {page==='recjournal'&&canSee(user.role,'reports')&&<RecurringJournalsPage currentUser={user}/>}
+        {page==='advances'&&canSee(user.role,'reports')&&<AdvanceApplicationPage currentUser={user}/>}
+        {page==='fxpage'&&canSee(user.role,'reports')&&<FxPage currentUser={user}/>}
         {page==='quotations'&&canSee(user.role,'quotations')&&<QuotationsPage currentUser={user}/>}
         {page==='dc'&&canSee(user.role,'dc')&&<DeliveryChallanPage currentUser={user}/>}
         {page==='recurring'&&canSee(user.role,'recurring')&&<RecurringInvoicesPage currentUser={user}/>}
