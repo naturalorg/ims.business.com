@@ -835,6 +835,36 @@ div:has(>table){overflow-x:auto;max-width:100%}
   .tb2-page{flex:1;padding:0 10px}.tb2-title{font-size:15px}.tb2-crumb{display:none}
   .tb2-hide-sm{display:none!important}.tb2-right{padding:0 10px;gap:7px}.tb2-user{padding:0 6px 0 4px}
 }
+
+/* header insights */
+.tb2-pulse{display:flex;align-items:center;gap:9px;height:38px;padding:0 13px 0 8px;border-radius:11px;border:1px solid;cursor:pointer;transition:all .18s;white-space:nowrap}
+[data-theme="light"] .tb2-pulse{background:#F1FBF7;border-color:#BFE9D8}
+[data-theme="dark"] .tb2-pulse{background:#0F1A17;border-color:#1E4034}
+.tb2-pulse:hover,.tb2-pulse.open{border-color:#17A673}
+.tb2-pulse-ic{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:#17A673;color:#fff}
+.tb2-pulse-l{display:block;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);line-height:1.1}
+.tb2-pulse-v{display:block;font-size:13px;font-weight:800;font-family:'Sora',sans-serif;color:var(--text);line-height:1.2}
+.tb2-eye{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;text-transform:none;letter-spacing:0;cursor:pointer;color:var(--primary2);padding:3px 8px;border-radius:7px;background:var(--primary-bg)}
+.tb2-alerts{position:relative;display:flex;align-items:center;gap:7px;height:38px;padding:0 13px;border-radius:11px;border:1px solid;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--text2);transition:all .18s;white-space:nowrap}
+[data-theme="light"] .tb2-alerts{background:#fff;border-color:#E4E1FF}
+[data-theme="dark"] .tb2-alerts{background:#12161D;border-color:#21262D}
+.tb2-alerts:hover,.tb2-alerts.open{border-color:var(--primary);color:var(--primary2)}
+.tb2-alerts.has{color:var(--red);border-color:rgba(241,73,92,.4)}
+.tb2-al-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-right:2px}
+.tb2-pal-back{position:fixed;inset:0;z-index:1000;background:rgba(10,8,40,.5);backdrop-filter:blur(4px);display:flex;justify-content:center;align-items:flex-start;padding-top:12vh;animation:tb2in .14s ease-out}
+.tb2-pal{width:min(640px,92vw);border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--border2);box-shadow:0 24px 70px rgba(10,8,40,.45)}
+.tb2-pal-in{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);color:var(--text3)}
+.tb2-pal-in input{flex:1;background:transparent;border:none;outline:none;font-size:14.5px;color:var(--text);font-family:inherit}
+.tb2-pal-in kbd,.tb2-pal-foot{font-size:10.5px;color:var(--text3)}
+.tb2-pal-in kbd{padding:2px 7px;border:1px solid var(--border2);border-radius:5px;font-weight:700;font-family:inherit}
+.tb2-pal-list{max-height:52vh;overflow-y:auto;padding:6px}
+.tb2-pal-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer}
+.tb2-pal-item.on{background:var(--primary-bg)}
+.tb2-pal-t{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb2-pal-g{font-size:10.5px;font-weight:700;color:var(--text3);white-space:nowrap}
+.tb2-pal-foot{display:flex;gap:16px;padding:9px 16px;border-top:1px solid var(--border);background:var(--card2)}
+@media(max-width:1280px){.tb2-pulse-l{display:none}.tb2-pulse{padding:0 11px 0 7px}}
+@media(max-width:900px){.tb2-pulse span span.tb2-pulse-l{display:none}.tb2-alerts{padding:0 11px}}
 </style>
 </head>
 <body>
@@ -12565,13 +12595,13 @@ const useClickAway = (ref, fn) => { useEffect(()=>{ const h=e=>{ if(ref.current 
 
 const TopSearch = ({page,value,onChange,onGoSearch}) => {
   const ref=useRef(null);
-  useEffect(()=>{ const h=e=>{ if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){ e.preventDefault(); ref.current&&ref.current.focus(); } }; window.addEventListener('keydown',h); return ()=>window.removeEventListener('keydown',h); },[]);
+  useEffect(()=>{ const h=e=>{ if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){ e.preventDefault(); window.dispatchEvent(new Event('ab-palette')); } }; window.addEventListener('keydown',h); return ()=>window.removeEventListener('keydown',h); },[]);
   const can=SEARCHABLE_PAGES.includes(page);
   return <div className="tb2-search">
     <Ic n="search" s={14}/>
     <input ref={ref} value={value} onChange={e=>onChange(e.target.value)} placeholder={can?'Search this list…':'Search invoices, customers…  (Enter)'}
       onKeyDown={e=>{ if(e.key==='Enter'&&!can&&value.trim()) onGoSearch(); if(e.key==='Escape'){ onChange(''); e.target.blur(); } }}/>
-    {value?<button className="tb2-clear" title="Clear" onClick={()=>onChange('')}><Ic n="x" s={11}/></button>:<kbd>Ctrl K</kbd>}
+    {value?<button className="tb2-clear" title="Clear" onClick={()=>onChange('')}><Ic n="x" s={11}/></button>:<kbd style={{cursor:'pointer'}} title="Open command palette" onClick={()=>window.dispatchEvent(new Event('ab-palette'))}>Ctrl K</kbd>}
   </div>;
 };
 
@@ -12616,6 +12646,132 @@ const TopUserMenu = ({user,theme,setTheme,logout,goCompany}) => {
       <div className="tb2-menu-sep"/>
       <div className="tb2-menu-item danger" onClick={()=>{setOpen(false);logout();}}><span className="tb2-menu-ic"><Ic n="logout" s={14}/></span><span className="tb2-menu-t">Log out</span></div>
     </div>}
+  </div>;
+};
+
+
+/* ═══════════ HEADER INSIGHTS: Cash Pulse + Action Center + Command Palette ═══════════ */
+const fmtShort = n => { const v=Math.abs(Number(n)||0), sg=(Number(n)||0)<0?'-':''; return v>=1e7?`${sg}₹${(v/1e7).toFixed(2)} Cr`:v>=1e5?`${sg}₹${(v/1e5).toFixed(2)} L`:`${sg}₹${Math.round(v).toLocaleString('en-IN')}`; };
+const computePulse = () => {
+  const td=today(), in7=addDaysISO(td,7);
+  const ar=getOpenItems('credit'), ap=getOpenItems('debit');
+  const sum=a=>r2(a.reduce((s,o)=>s+o.out,0));
+  const dueOf=o=>o.due||o.date||td;
+  const arOver=ar.filter(o=>dueOf(o)<td), apOver=ap.filter(o=>dueOf(o)<td);
+  const arSoon=ar.filter(o=>dueOf(o)>=td&&dueOf(o)<=in7), apSoon=ap.filter(o=>dueOf(o)>=td&&dueOf(o)<=in7);
+  const unrec=(S.get(SK.BANK,[])||[]).filter(t=>!t.matched).length;
+  const cn=getOpenCreditNotes(), adv=getAdvanceRows().filter(r=>r.balance>0.01);
+  const rj=(S.get(SK.RJV,[])||[]).filter(t=>{ const g=parseInt(t.generated,10)||0; return t.active && g<rjvTotal(t) && rjvDate(t,g)<=td; }).length;
+  const tb=getTrialBalance(td);
+  const cash=r2(tb.filter(r=>isCashAcct(coaByKey(r.account))).reduce((s,r)=>s+r.balance,0));
+  const over=[]; const fy=getFY(); const bud=getBudgetFY(fy); const bk=Object.keys(bud);
+  if(bk.length){ const act=getMonthlyActuals(fy); const mi=(new Date().getMonth()+9)%12;
+    bk.forEach(k=>{ const a=coaByKey(k); if(a.type!=='expense') return; const b=(bud[k]||[]).slice(0,mi+1).reduce((s,v)=>s+(+v||0),0), ac=(act[k]||[]).slice(0,mi+1).reduce((s,v)=>s+v,0); if(b>0&&ac>b+0.5) over.push({name:a.name,by:r2(ac-b)}); }); }
+  const co=S.get(SK.CO,{})||{}; let gst=[];
+  if(co.gstin){ const dn=new Date(); const nxt=day=>{ let d=new Date(dn.getFullYear(),dn.getMonth(),day); if(_iso(d)<td) d=new Date(dn.getFullYear(),dn.getMonth()+1,day); return _iso(d); };
+    gst=[['GSTR-1',nxt(11)],['GSTR-3B',nxt(20)]].map(([name,date])=>({name,date,days:daysBetween(td,date)})); }
+  const alerts=[];
+  if(arOver.length) alerts.push({tone:'red',t:`${arOver.length} overdue invoice${arOver.length>1?'s':''}`,s:`${fmt(sum(arOver))} to collect`,p:'aging'});
+  if(apOver.length) alerts.push({tone:'red',t:`${apOver.length} overdue bill${apOver.length>1?'s':''}`,s:`${fmt(sum(apOver))} to pay`,p:'aging'});
+  if(over.length) alerts.push({tone:'red',t:`${over.length} budget head${over.length>1?'s':''} overspent`,s:over.slice(0,2).map(o=>o.name).join(', ')+(over.length>2?'…':''),p:'budget'});
+  gst.filter(g=>g.days<=7).forEach(g=>alerts.push({tone:g.days<=3?'red':'amber',t:`${g.name} due ${g.days===0?'today':'in '+g.days+' day'+(g.days>1?'s':'')}`,s:`${fmtDate(g.date)} · monthly filers`,p:'history'}));
+  if(arSoon.length) alerts.push({tone:'amber',t:`${arSoon.length} invoice${arSoon.length>1?'s':''} due this week`,s:`${fmt(sum(arSoon))} expected`,p:'aging'});
+  if(apSoon.length) alerts.push({tone:'amber',t:`${apSoon.length} bill${apSoon.length>1?'s':''} due this week`,s:`${fmt(sum(apSoon))} to pay`,p:'aging'});
+  if(unrec) alerts.push({tone:'amber',t:`${unrec} bank line${unrec>1?'s':''} to reconcile`,s:'Match them to invoices, bills or ledgers',p:'bankrecon'});
+  if(rj) alerts.push({tone:'blue',t:`${rj} recurring entr${rj>1?'ies':'y'} waiting to post`,s:'Open Recurring Journals to post them',p:'recjournal'});
+  if(adv.length) alerts.push({tone:'blue',t:`${adv.length} unapplied advance${adv.length>1?'s':''}`,s:`${fmt(adv.reduce((s,r)=>s+r.balance,0))} can be set off`,p:'advances'});
+  if(cn.length) alerts.push({tone:'blue',t:`${cn.length} credit note${cn.length>1?'s':''} not settled`,s:`${fmt(cn.reduce((s,c)=>s+c.out,0))} open`,p:'advances'});
+  return {cash, recv:sum(ar), pay:sum(ap), recvOver:sum(arOver), payOver:sum(apOver), alerts};
+};
+const useHeaderPulse = (page) => {
+  const [d,setD]=useState(null);
+  useEffect(()=>{ const id=setTimeout(()=>{ try{ setD(computePulse()); }catch(e){ console.warn('Header pulse skipped:',e.message); } },80); return ()=>clearTimeout(id); },[page]);
+  useEffect(()=>{ const t=setInterval(()=>{ try{ setD(computePulse()); }catch(e){} },90000); return ()=>clearInterval(t); },[]);
+  return d;
+};
+const BellSvg = ({s=16}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
+
+const TopInsights = ({page,go}) => {
+  const d=useHeaderPulse(page);
+  const [hide,setHide]=useState(()=>{ try{ return localStorage.getItem('ab_hide_nums')==='1'; }catch(e){ return false; } });
+  const [pOpen,setPOpen]=useState(false), [aOpen,setAOpen]=useState(false);
+  const pRef=useRef(null), aRef=useRef(null);
+  useClickAway(pRef,()=>setPOpen(false)); useClickAway(aRef,()=>setAOpen(false));
+  const toggleHide=()=>{ setHide(h=>{ const n=!h; try{ localStorage.setItem('ab_hide_nums',n?'1':'0'); }catch(e){} return n; }); };
+  const mask=v=>hide?'₹ ••••••':fmtShort(v);
+  const full=v=>hide?'₹ ••••••••':fmt(v);
+  const urgent=d?d.alerts.filter(a=>a.tone!=='blue').length:0;
+  const tones={red:'#F1495C',amber:'#E69A12',blue:'#4F6FE8'};
+  const net=d?d.cash+d.recv-d.pay:0;
+  const Row=({label,val,sub,color,p})=><div className="tb2-menu-item" onClick={()=>{setPOpen(false);go(p);}}>
+    <div style={{flex:1}}><div className="tb2-menu-t">{label}</div>{sub&&<div className="tb2-menu-s">{sub}</div>}</div><b style={{fontSize:13,color:color||'var(--text)'}}>{val}</b></div>;
+  return <>
+    <div className="tb2-menu-wrap" ref={pRef}>
+      <div className={'tb2-pulse'+(pOpen?' open':'')} onClick={()=>{setPOpen(o=>!o);setAOpen(false);}} title="Cash pulse — your money at a glance">
+        <span className="tb2-pulse-ic"><Ic n="dollar" s={13}/></span>
+        <span><span className="tb2-pulse-l">Cash &amp; bank</span><span className="tb2-pulse-v">{d?mask(d.cash):'—'}</span></span>
+      </div>
+      {pOpen&&<div className="tb2-menu" style={{right:0,minWidth:300}}>
+        <div className="tb2-menu-head" style={{display:'flex',alignItems:'center'}}><span style={{flex:1}}>Cash pulse · today</span>
+          <span className="tb2-eye" onClick={e=>{e.stopPropagation();toggleHide();}} title={hide?'Show amounts':'Hide amounts (for screen sharing)'}><Ic n={hide?'eyeoff':'eye'} s={13}/>{hide?'Hidden':'Hide'}</span></div>
+        {!d?<div style={{padding:14,fontSize:12,color:'var(--text3)'}}>Calculating…</div>:<>
+          <Row label="Cash & bank balance" sub="Cash in hand + all bank accounts" val={full(d.cash)} color="var(--primary2)" p="bankrecon"/>
+          <Row label="To collect" sub={d.recvOver>0?`${full(d.recvOver)} overdue`:'Nothing overdue'} val={full(d.recv)} color="var(--green)" p="aging"/>
+          <Row label="To pay" sub={d.payOver>0?`${full(d.payOver)} overdue`:'Nothing overdue'} val={full(d.pay)} color="var(--red)" p="aging"/>
+          <div className="tb2-menu-sep"/>
+          <div style={{display:'flex',padding:'6px 10px 8px',alignItems:'center'}}><div style={{flex:1}}><div className="tb2-menu-t">Net position</div><div className="tb2-menu-s">Cash + to collect − to pay</div></div><b style={{fontSize:14,color:net>=0?'var(--green)':'var(--red)'}}>{full(net)}</b></div>
+        </>}
+      </div>}
+    </div>
+    <div className="tb2-menu-wrap" ref={aRef}>
+      <div className={'tb2-alerts'+(urgent?' has':'')+(aOpen?' open':'')} onClick={()=>{setAOpen(o=>!o);setPOpen(false);}} title="Action center — things that need your attention">
+        <BellSvg s={15}/><span className="tb2-hide-md">Alerts</span>{urgent>0&&<span className="tb2-badge">{urgent>99?'99+':urgent}</span>}
+      </div>
+      {aOpen&&<div className="tb2-menu" style={{right:0,minWidth:330,maxHeight:'70vh',overflowY:'auto'}}>
+        <div className="tb2-menu-head">Action center</div>
+        {!d?<div style={{padding:14,fontSize:12,color:'var(--text3)'}}>Checking your books…</div>:
+         d.alerts.length===0?<div style={{padding:'18px 14px',textAlign:'center'}}><div style={{fontSize:22}}>✅</div><div className="tb2-menu-t" style={{marginTop:4}}>You’re all caught up</div><div className="tb2-menu-s">No overdue items, nothing waiting to reconcile.</div></div>:
+         d.alerts.map((a,i)=><div key={i} className="tb2-menu-item" onClick={()=>{setAOpen(false);go(a.p);}}>
+           <span className="tb2-al-dot" style={{background:tones[a.tone]}}/><span style={{flex:1,minWidth:0}}><div className="tb2-menu-t">{a.t}</div><div className="tb2-menu-s">{a.s}</div></span><Ic n="chevron" s={11}/></div>)}
+      </div>}
+    </div>
+  </>;
+};
+
+const TopPalette = ({user,canSee,go,newInvoice,openInvoice,searchFor}) => {
+  const [open,setOpen]=useState(false); const [q,setQ]=useState(''); const [idx,setIdx]=useState(0); const inp=useRef(null);
+  useEffect(()=>{ const h=()=>{ setOpen(true); setQ(''); setIdx(0); }; window.addEventListener('ab-palette',h); return ()=>window.removeEventListener('ab-palette',h); },[]);
+  useEffect(()=>{ if(open) setTimeout(()=>inp.current&&inp.current.focus(),30); },[open]);
+  const ACC=['cashflow','budget','fixedassets','recjournal','advances','fxpage','coa','journal','ledger','trialbalance'];
+  const allowed=k=>k==='admin'?(user.role==='admin'||user.role==='superadmin'):ACC.includes(k)?canSee(user.role,'reports'):canSee(user.role,k);
+  const needle=q.trim().toLowerCase();
+  const items=useMemo(()=>{
+    if(!open) return [];
+    const out=[];
+    const acts=[['New sales invoice','Action',()=>newInvoice()],['New purchase bill','Action',()=>go('expenses')],['New journal voucher','Action',()=>go('journal')],['Reconcile bank','Action',()=>go('bankrecon')]];
+    acts.forEach(([t,g,fn])=>{ if(!needle||t.toLowerCase().includes(needle)) out.push({t,g,fn}); });
+    Object.keys(PAGE_TITLES).filter(allowed).forEach(k=>{ const t=PAGE_TITLES[k]; if(!needle||t.toLowerCase().includes(needle)||(PAGE_SECTIONS[k]||'').toLowerCase().includes(needle)) out.push({t,g:'Go to · '+(PAGE_SECTIONS[k]||'App'),fn:()=>go(k)}); });
+    if(needle.length>=2){
+      (S.get(SK.INV,[])||[]).filter(i=>`${i.invNo} ${i.billTo?.name||''}`.toLowerCase().includes(needle)).slice(0,6)
+        .forEach(i=>out.push({t:`${i.invNo} — ${i.billTo?.name||''}`,g:'Invoice · '+fmt(Math.abs(getGrand(i))),fn:()=>openInvoice(i)}));
+      (S.get(SK.CUST,[])||[]).filter(c=>(c.name||'').toLowerCase().includes(needle)).slice(0,4)
+        .forEach(c=>out.push({t:c.name,g:'Customer',fn:()=>searchFor('customers',c.name)}));
+    }
+    return out.slice(0,14);
+  },[open,needle]);
+  useEffect(()=>{ setIdx(0); },[needle]);
+  if(!open) return null;
+  const run=it=>{ setOpen(false); it&&it.fn(); };
+  const onKey=e=>{ if(e.key==='Escape') setOpen(false); else if(e.key==='ArrowDown'){ e.preventDefault(); setIdx(i=>Math.min(items.length-1,i+1)); } else if(e.key==='ArrowUp'){ e.preventDefault(); setIdx(i=>Math.max(0,i-1)); } else if(e.key==='Enter'){ e.preventDefault(); run(items[idx]); } };
+  return <div className="tb2-pal-back" onMouseDown={e=>{ if(e.target===e.currentTarget) setOpen(false); }}>
+    <div className="tb2-pal">
+      <div className="tb2-pal-in"><Ic n="search" s={16}/><input ref={inp} value={q} onChange={e=>setQ(e.target.value)} onKeyDown={onKey} placeholder="Jump to a page, start an action, or find an invoice / customer…"/><kbd>Esc</kbd></div>
+      <div className="tb2-pal-list">
+        {items.length===0&&<div style={{padding:22,textAlign:'center',color:'var(--text3)',fontSize:12.5}}>Nothing matches “{q}”.</div>}
+        {items.map((it,i)=><div key={i} className={'tb2-pal-item'+(i===idx?' on':'')} onMouseEnter={()=>setIdx(i)} onClick={()=>run(it)}><span className="tb2-pal-t">{it.t}</span><span className="tb2-pal-g">{it.g}</span></div>)}
+      </div>
+      <div className="tb2-pal-foot"><span>↑↓ navigate</span><span>Enter open</span><span>Esc close</span><span style={{marginLeft:'auto'}}>Tip: type 2+ letters of a customer or invoice no.</span></div>
+    </div>
   </div>;
 };
 
@@ -12969,17 +13125,18 @@ const App = ()=>{
           <TopQuickCreate user={user} canSee={canSee} go={(p)=>{setModal(null);setSearchQuery('');setPage(p);}}
             newInvoice={()=>{setLoadedInv(null);setFormKey(k=>k+1);setModal(null);setPage('invoice');}}/>
           <div className="tb2-chip tb2-hide-md" title="Current financial year"><Ic n="calendar" s={12}/>FY {getFY()}-{String(getFY()+1).slice(2)}</div>
-          <SyncDot/>
+          <TopInsights page={page} go={(p)=>{setModal(null);setSearchQuery('');setPage(p);}}/>
           <div className="tb2-divider"/>
-          <div className={'tb2-icon'+(overdueCount>0?' alert':'')} title={overdueCount>0?`${overdueCount} overdue invoice${overdueCount>1?'s':''} — click to review`:'No overdue invoices'}
-            onClick={()=>{setPage('history');setModal(null);}}>
-            <Ic n="bell" s={16}/>{overdueCount>0&&<span className="tb2-badge">{overdueCount>99?'99+':overdueCount}</span>}
-          </div>
-          <div className="tb2-icon tb2-hide-sm" title={`Invoice History (${invCount} documents)`} onClick={()=>{setPage('history');setModal(null);}}><Ic n="history" s={16}/></div>
           <TopUserMenu user={user} theme={theme} setTheme={setTheme} logout={logout} goCompany={()=>{setModal(null);setPage('company');}}/>
         </div>
 
       </div>
+
+      <TopPalette user={user} canSee={canSee}
+        go={(p)=>{setModal(null);setSearchQuery('');setPage(p);}}
+        newInvoice={()=>{setLoadedInv(null);setFormKey(k=>k+1);setModal(null);setPage('invoice');}}
+        openInvoice={(inv)=>{setModal(null);loadInv(inv);}}
+        searchFor={(p,q)=>{setModal(null);setPage(p);setSearchQuery(q);}}/>
 
       {/* ── PAGE CONTENT — all sections render inline here ── */}
       <div className="app-body page-enter" key={page}>
